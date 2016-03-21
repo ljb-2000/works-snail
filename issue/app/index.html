@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html ng-app="myIssue">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问题管理平台</title>
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css" />
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="container-fluid" ng-controller="issueCtrl">
+        <!--头部开始-->
+        <div class="row">
+            <div class="col-xs-12 header">
+                <img class="i-logo" src='images/logo.png'>问 题 管 理 平 台
+            </div>
+        </div>
+        <!--头部结束-->
+        <!--二级头部开始-->
+        <div class="row">
+            <div class="col-xs-12 i-nav">
+                <span class="glyphicon glyphicon-volume-up mr30" style="color:#6B6868"></span>
+                今天是<span ng-bind="datetime"></span>，当前总问题：<span class="red">562</span> 例；处理中问题：<span class="blue">10</span> 例；已解决问题：<span class="green">552</span> 例
+                <button id="i_input" class="btn btn-success pull-right" ng-click="open('lg')">
+                    <span class="glyphicon glyphicon-log-in"></span>
+                    问题录入
+                </button>
+            </div>
+        </div>
+        <!--二级头部结束-->
+        <!--图表区域开始-->
+        <div class="row clearfix pd20">
+            <div class="pull-left panel panel-default i-chart-type">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        类型分布图
+                        <span class="glyphicon glyphicon-stats"></span>
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <highchart style="height:250px;width:350px;" title='chart1.title' series="chart1.series" options="chart1.options">
+                        
+                    </highchart>
+                </div>
+            </div>
+            <div class="pull-left panel panel-default i-chart-type">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        级别分布图
+                        <span class="glyphicon glyphicon-stats"></span>
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <highchart style="height:250px;width:350px;" title='chart2.title' series="chart2.series" options="chart2.options">
+                        
+                    </highchart>
+                </div>
+            </div>
+            <div class="pull-left panel panel-default i-chart-type">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        业务条形图（top10）
+                        <span class="glyphicon glyphicon-stats"></span>
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <highchart style="height:250px;width:350px;" title='chart3.title' series="chart3.series" options="chart3.options">
+                        
+                    </highchart>
+                </div>
+            </div>
+        </div>
+        <!--图表区域结束-->
+        <!--查询区域开始-->
+        <div class="row i-cx">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title clearfix" style="line-height:34px;">
+                        问题查询
+                        <span class="glyphicon glyphicon-stats"></span>
+                        <button class="btn btn-primary pull-right">
+                            <span class="glyphicon glyphicon-search"></span>
+                            查询
+                        </button>
+                    </h3>
+                </div>
+                <div class="panel-body i-cx-panel">
+                    <form class="form-horizontal clearfix">
+                        <div class="form-group pull-left">   
+                            <label class="control-label col-sm-5">所属业务：</label>
+                            <div class="col-sm-7">
+                                <input type="text" class="form-control" value="关云长">
+                            </div>
+                            <label class="control-label col-sm-5 mt10">发现时间：</label>
+                            <div class="col-sm-7 mt10">
+                                <input type="text" class="form-control" value="">
+                            </div>
+                            <label class="control-label col-sm-5 mt10">级别：</label>
+                            <div class="col-sm-7 mt10">
+                                <input type="text" class="form-control" value="一般">
+                            </div>
+                        </div>
+                        <div class="form-group pull-left ml5">   
+                            <label class="control-label col-sm-5">录入人：</label>
+                            <div class="col-sm-7">
+                                <input type="text" class="form-control" value="snail">
+                            </div>
+                            <label class="control-label col-sm-5 mt10">录入时间：</label>
+                            <div class="col-sm-7 mt10">
+                                <input type="text" class="form-control" value="">
+                            </div>
+                            <label class="control-label col-sm-5 mt10">问题描述：</label>
+                            <div class="col-sm-7 mt10">
+                                <input type="text" class="form-control" value="">
+                            </div>
+                        </div>
+                        <div class="form-group pull-left ml5">   
+                            <label class="control-label col-sm-5">状态：</label>
+                            <div class="col-sm-7">
+                                <input type="text" class="form-control" value="open">
+                            </div>
+                            <label class="control-label col-sm-5 mt10">类型：</label>
+                            <div class="col-sm-7 mt10">
+                                <input type="text" class="form-control" value="硬件">
+                            </div>
+                            <label class="control-label col-sm-5 mt10">标题：</label>
+                            <div class="col-sm-7 mt10">
+                                <input type="text" class="form-control" value="">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!--查询区域结束-->
+        <!--数据显示区域开始-->
+        <div class="row i-cx">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        数据显示
+                        <span class="glyphicon glyphicon-stats"></span>
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>所属业务</th>
+                                <th>标题</th>
+                                <th>录入时间</th>
+                                <th>发现时间</th>
+                                <th>录入人</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>关云长</td>
+                                <td>日志库空间不足</td>
+                                <td>2015/10/10 18:20:00</td>
+                                <td>2015/10/10 18:20:00</td>
+                                <td>张延礼</td>
+                                <td>open</td>
+                                <td><a href ng-click="open('lg')">跟进</a></td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>关云长</td>
+                                <td>日志库空间不足</td>
+                                <td>2015/10/10 18:20:00</td>
+                                <td>2015/10/10 18:20:00</td>
+                                <td>张延礼</td>
+                                <td>open</td>
+                                <td><a href ng-click="open('lg')">跟进</a></td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>关云长</td>
+                                <td>日志库空间不足</td>
+                                <td>2015/10/10 18:20:00</td>
+                                <td>2015/10/10 18:20:00</td>
+                                <td>张延礼</td>
+                                <td>open</td>
+                                <td><a href ng-click="open('lg')">跟进</a></td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>关云长</td>
+                                <td>日志库空间不足</td>
+                                <td>2015/10/10 18:20:00</td>
+                                <td>2015/10/10 18:20:00</td>
+                                <td>张延礼</td>
+                                <td>open</td>
+                                <td><a href ng-click="open('lg')">跟进</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <script type="text/ng-template" id="myModalContent.html">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <span class="glyphicon glyphicon-edit"></span>
+                    问题录入
+                </h3>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" name="issueInput">  
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">所属业务：</label>
+                        <div class="col-sm-6">
+                          <select class="form-control" ng-init="issue.selectedId = issue.selectedId || ''" ng-model="issue.selectedId">
+                                <option value=''>未分类</option>
+                                <option ng-repeat="product in products" value={[product.id]} ng-bind="product.name">未分类</option>
+                          </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="col-sm-2 control-label mt19">发现时间：<span class="red">*</span></label>
+                        <div class="col-sm-4 mt19">
+                            <p class="input-group">
+                              <input type="date" class="form-control" uib-datepicker-popup ng-model="dt" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" required style="position: initial;">
+                              <span class="input-group-btn">
+                                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                              </span>
+                            </p>
+                        </div>
+                        <div class="col-sm-2" style="margin-top:-15px;">
+                            <uib-timepicker ng-model="mytime" hour-step="hstep" minute-step="mstep" show-meridian="ismeridian"></uib-timepicker>
+                        </div>
+                        <span class="pass glyphicon glyphicon-ok" ng-show="issueInput.time.$dirty && issueInput.time.$valid"></span>
+                        <span class="inpass glyphicon glyphicon-remove" ng-show="issueInput.time.$dirty && issueInput.time.$invalid"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">状态：</label>
+                        <div class="col-sm-2">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="status" value="open" ng-model="issue.sclose" ng-checked="true">
+                                    open
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-sm-2">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="status" value="close" ng-model="issue.sclose">
+                                    close
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">级别：</label>
+                        <div class="col-sm-2">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="steps" value="serious" ng-model="issue.steps" ng-checked="true">
+                                    严重
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-sm-2">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="steps" value="general" ng-model="issue.steps">
+                                    一般
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-sm-2">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="steps" value="slight" ng-model="issue.steps">
+                                    轻微
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">类型：</label>
+                        <div class="col-sm-2">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="types" value="hardware" ng-model="issue.types" ng-checked="true">
+                                    硬件
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-sm-2">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="types" value="idc" ng-model="issue.types">
+                                    IDC环境
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-sm-2">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="types" value="system" ng-model="issue.types">
+                                    系统及软件
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-sm-2">
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="type" value="app" ng-model="issue.types">
+                                    应用程序
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">标题：<span class="red">*</span></label>
+                        <div class="col-sm-6">
+                            <input type="text" class="form-control" name="title" ng-model="issue.title" placeholder="限制50字符，必填" ng-maxlength="50" required>
+                        </div>
+                        <span class="pass glyphicon glyphicon-ok" ng-show="issueInput.title.$dirty && issueInput.title.$valid"></span>
+                        <span class="inpass glyphicon glyphicon-remove" ng-show="issueInput.title.$dirty && issueInput.title.$invalid"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">问题描述：<span class="red">*</span></label>
+                        <div class="col-sm-6">
+                            <textarea class="form-control h75" name="description" ng-model="issue.description" placeholder="限制1500字符，必填" ng-maxlength="1500" required></textarea>
+                        </div>
+                        <span class="pass glyphicon glyphicon-ok" ng-show="issueInput.description.$dirty && issueInput.description.$valid"></span>
+                        <span class="inpass glyphicon glyphicon-remove" ng-show="issueInput.description.$dirty && issueInput.description.$invalid"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">问题原因：</label>
+                        <div class="col-sm-6">
+                            <textarea class="form-control h75" name="reason" ng-model="issue.reason" placeholder="限制1500字符，状态为close时必填" ng-maxlength="1500" ng-required="issue.sclose == 'close'"></textarea>
+                        </div>
+                        <span class="pass glyphicon glyphicon-ok" ng-show="issueInput.reason.$dirty && issueInput.reason.$valid"></span>
+                        <span class="inpass glyphicon glyphicon-remove" ng-show="issueInput.reason.$dirty && issueInput.reason.$invalid"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">解决措施：</label>
+                        <div class="col-sm-6">
+                            <textarea class="form-control h75" name="result" ng-model="issue.result" placeholder="限制1500字符，状态为close时必填" ng-maxlength="1500" ng-required="issue.sclose == 'close'"></textarea>
+                        </div>
+                        <span class="pass glyphicon glyphicon-ok" ng-show="issueInput.result.$dirty && issueInput.result.$valid"></span>
+                        <span class="inpass glyphicon glyphicon-remove" ng-show="issueInput.result.$dirty && issueInput.result.$invalid"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="text-align:center;">
+                <button class="btn btn-primary mr82" type="button" ng-disabled="issueInput.$invalid" ng-click="ok()">
+                    <span class="glyphicon glyphicon-ok"></span>
+                    提交
+                </button>
+                <button class="btn btn-warning" type="button" ng-click="clear()">
+                    <span class="glyphicon glyphicon-repeat"></span>
+                    清空
+                </button>
+            </div>
+        </script>
+    </div>
+    <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="bower_components/angular/angular.min.js"></script>
+    <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+    <script src="scripts/highcharts/highcharts.js"></script>
+    <script src="scripts/highcharts/highcharts-ng.js"></script>
+    <script src="scripts/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+html,body {
+  font-family: Arial, 'Microsoft YaHei' !important;
+}
+
+body {
+  min-width: 1200px;
+  background-color: #fff;
+}
+
+ul {
+  list-style: none;
+}
+
+input:focus,select:focus,textarea:focus {
+  border-color:#ccc !important;
+  box-shadow:none !important;
+}
+
+button:focus,.btn:focus,a:focus {
+  border-color:none !important;
+  outline: none !important;
+}
+
+textarea {
+  resize:none !important;
+}
+
+.form-control[disabled], fieldset[disabled] .form-control {
+  cursor:default !important;
+}
+
+.red {
+  color:red;
+}
+
+.blue {
+  color:#0D81BD;
+}
+
+.green {
+  color:green;
+}
+
+.mr30 {
+  margin-right:30px;
+}
+
+.mt10 {
+  margin-top:10px;
+}
+
+.mt19 {
+  margin-top:19px;
+}
+
+.pd20 {
+  padding:2% 2% 1% 2%;
+}
+
+.ml5 {
+  margin-left:5% !important;
+}
+
+.h75 {
+  height:75px !important;
+}
+
+.mr82 {
+  margin-right:82px;
+}
+
+.header {
+  height:50px;
+  background: #000;
+  color:#fff;
+  text-align: center;
+  font-size: 21px;
+  line-height: 50px;
+}
+
+.i-logo {
+  height:40px;
+  width:45px;
+  margin-top: -10px;
+}
+
+.i-nav {
+  height:50px;
+  line-height: 50px;
+  font-size: 16px;
+  background: #F5F5F5;
+}
+
+.i-chart-type {
+  width:32%;
+  height:320px;
+  margin-right:2%;
+}
+
+.i-chart-type:nth-child(3) {
+  margin-right:0;
+}
+
+.i-cx {
+  padding:0 2%;
+}
+
+.i-cx-panel {
+  padding:2% 1% 1% 1%;
+}
+
+.i-cx-panel .form-group {
+  width:30%;
+}
+
+.i-cx-panel .form-group input.form-control {
+  margin-right:18%;
+}
+
+.i-cx-panel .form-group input.form-control:nth-child(3n) {
+  margin-right:0;
+}
+
+#i_input {
+  margin: 8px 21px 0 0;
+}
+
+.inpass {
+  color:#B02C2C;
+}
+
+.pass {
+  color:green;
+}
