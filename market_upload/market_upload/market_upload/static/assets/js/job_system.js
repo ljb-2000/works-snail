@@ -40,6 +40,7 @@ jQuery(document).ready(function($) {
             $('#' + file_id).find('.filename').prop('title', file.name);
             $('#' + file_id).append('<div class="load-msg mt10 clearfix">文件已上传至服务器，正在上传至FTP...<div class="pull-right"><span class="percent">0</span>%</div></div>')
 
+            console.log(12);
             showProgress(file_id, data.info_id, fileSize, fileName, productId);
         }
     });
