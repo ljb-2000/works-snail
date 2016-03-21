@@ -1,0 +1,21 @@
+# -- encoding=utf-8 --
+
+'''
+Created on 2015-5-22
+
+@author: wx
+'''
+
+from django.conf.urls import patterns, url
+from views import save, edit, delete, ajax_file_upload, ftp_upload, ajax_get_product_option, ajax_get_group_option, ajax_get_productinfo
+
+urlpatterns = patterns('ujobs.apps.usual.views',
+   url(r'^save/$', save, name='save'),
+   url(r'^edit/$', edit, name='edit'),
+   url(r'^delete/$', delete, name='delete'),
+   url(r'^ajax_file_upload/$', ajax_file_upload, name='ajax_file_upload'),
+   url(r'^ftp_upload/$', ftp_upload, name='ftp_upload'),
+   url(r'^ajax_get_product_option/$', ajax_get_product_option, name='ajax_get_product_option'),
+   url(r'^ajax_get_group_option/$', ajax_get_group_option, name='ajax_get_group_option'),
+   url(r'^ajax_get_productinfo/$', ajax_get_productinfo, name='ajax_get_productinfo'),
+)
