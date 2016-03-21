@@ -1,0 +1,13 @@
+<!--编辑备注弹框-->
+<div class="modal-header">
+  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+  <h4 class="modal-title" id="edit_tag_header">脚本备注</h4>
+</div>
+<div class="modal-body">
+      <p>请输入脚本备注：</p>
+      <textarea id='version_remarks_{{version.id}}' name="version_remarks_{{version.id}}" rows="5" style="width:515px;">{{version.remarks|default_if_none:''}}</textarea>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-primary" onclick="version_remarks_save({{version.id}})">确定</button>
+  <button type="button" class="btn btn-default model-close" data-dismiss="modal">取消</button>
+</div>

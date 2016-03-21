@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>login</title>
+        <link href="/static/assets/css/bootstrap.css" rel="stylesheet">
+        <link rel="stylesheet" href="/static/assets/css/login-web.css" />
+        <!-- jQuery文件。务必在bootstrap.min.js 之前引入 -->
+        <link href="/static/tool_js/jNotify/jNotify.jquery.css" rel="stylesheet">
+        <script type="text/javascript" src="/static/assets/js/jquery.js">
+        <script src="/statics/js/page.login.js"></script>
+        <script>
+            $(function(){
+                $('#myform').click(function()  {
+                    $('form[name=loginForm]').submit();
+                    return false;
+                });
+            })
+        </script>
+    </head>
+    <body>
+        <div class="head"></div>
+        <div class="bg">
+            <div id="carousel-bg" class="carousel slide" data-ride="carousel">
+                <div class="carousel-inner" role="listbox">
+                    <div class="item active">
+                        <img src="/static/assets/img/loginbg1.jpg" alt="1">
+                    </div>
+                </div>
+                
+            </div>
+            <div class="loginlogo"><img src="/static/assets/img/logo.png" alt="logo"/></div>
+            <div class="login vert">
+                <form action='/valid/' method='post' accept-charset="utf-8" name="loginForm">
+                    {% csrf_token %}
+                    <table class="login_table">
+                        <tr>
+                            <td colspan="2">
+                                <div class="inputBg">
+                                    <span>通行证号：</span>
+                                    <input class="np" id="account_name" name="account_name" value="{{account_name}}" />
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <div class="inputBg mTop10">
+                                    <span>动态密码：</span>
+                                    <input class="np" id="valid_code" name="valid_code" value="{{valid_code}}" />
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input type="submit" class="loginBt mTop10" value="验证" id="myform">
+                            </td>
+                            <td>
+                                <label id="error_msg" class="mTop15{% if not error_msg %} dis_none{% endif %}">{{error_msg}}</label>
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+        </div>
+        <div class="footer">
+        </div>
+    </body>
+</html>

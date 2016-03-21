@@ -1,0 +1,42 @@
+2015-11-05 09:23:17,398 [Thread-5072:10832] [logger:38] [DEBUG]- [user login] luozh login ok.
+2015-11-05 09:39:55,898 [Thread-5749:10328] [logger:38] [DEBUG]- [user login] luozh login ok.
+2015-11-05 09:46:38,957 [Thread-5809:11472] [logger:41] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\timing_manage.py", line 38, in timing_manage_list
+    logger.debug("current job status: {0}".format(scheduler.print_jobs()))
+  File "C:\Python27\lib\site-packages\apscheduler\schedulers\base.py", line 555, in print_jobs
+    jobs = store.get_all_jobs()
+  File "C:\Python27\lib\site-packages\apscheduler\jobstores\sqlalchemy.py", line 73, in get_all_jobs
+    jobs = self._get_jobs()
+  File "C:\Python27\lib\site-packages\apscheduler\jobstores\sqlalchemy.py", line 124, in _get_jobs
+    for row in self.engine.execute(selectable):
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1991, in execute
+    return connection.execute(statement, *multiparams, **params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 914, in execute
+    return meth(self, multiparams, params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\sql\elements.py", line 323, in _execute_on_connection
+    return connection._execute_clauseelement(self, multiparams, params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1010, in _execute_clauseelement
+    compiled_sql, distilled_params
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1146, in _execute_context
+    context)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1341, in _handle_dbapi_exception
+    exc_info
+  File "C:\Python27\lib\site-packages\sqlalchemy\util\compat.py", line 199, in raise_from_cause
+    reraise(type(exception), exception, tb=exc_tb)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1139, in _execute_context
+    context)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\default.py", line 450, in do_execute
+    cursor.execute(statement, parameters)
+  File "C:\Python27\lib\site-packages\MySQLdb\cursors.py", line 205, in execute
+    self.errorhandler(self, exc, value)
+  File "C:\Python27\lib\site-packages\MySQLdb\connections.py", line 36, in defaulterrorhandler
+    raise errorclass, errorvalue
+OperationalError: (_mysql_exceptions.OperationalError) (2006, 'MySQL server has gone away') [SQL: u'SELECT apscheduler_jobs.id, apscheduler_jobs.job_state \nFROM apscheduler_jobs ORDER BY apscheduler_jobs.next_run_time']
+
+2015-11-05 09:47:57,611 [Thread-5912:10048] [logger:38] [DEBUG]- current job status: None
+2015-11-05 10:08:37,108 [Thread-7213:10496] [logger:38] [DEBUG]- [user login] luozh login ok.
+2015-11-05 10:13:04,867 [Thread-7428:9880] [logger:38] [DEBUG]- current job status: None
+2015-11-05 10:14:28,828 [Thread-7447:12856] [logger:38] [DEBUG]- [user login] luozh login ok.
+2015-11-05 10:22:10,194 [Thread-8191:11468] [logger:38] [DEBUG]- [user login] luozh login ok.
+2015-11-05 10:26:58,755 [Thread-9094:12864] [logger:38] [DEBUG]- current job status: None
+2015-11-05 10:30:56,217 [Thread-9384:12892] [logger:38] [DEBUG]- current job status: None

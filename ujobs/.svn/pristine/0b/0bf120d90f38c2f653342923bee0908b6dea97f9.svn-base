@@ -1,0 +1,63 @@
+项目目录结构，参考 [blog](http://www.cnblogs.com/holbrook/archive/2012/02/25/2368231.html)
+
+## 目录结构说明 ##
+    {{project_name}}/  ---  项目名
+        {{project_name}}/  --- 项目名
+            apis/  ---  API接口
+            apps/  ---  小工程
+                {{app_ex}}/  ---  按功能分类的类别
+                    __init__.py
+                    actions.py  ---  模块处理方法
+                    admin.py  ---  后台模块方法
+                    adminx.py  ---  Xadmin后台模块方法
+                    forms.py  ---  表单方法
+                    models.py  ---  数据库对应方法
+                    test_forms.py  ---  对应form测试类
+                    test_models.py  ---  对应model测试类
+                    test_views.py  ---  对应view测试类
+                    urls.py  ---  子链接配置
+                    views.py  ---  前后台交互方法
+                __init__.py
+            bin/  ---  可执行文件
+                gen/  ---  生成报告的可执行方法
+                init/  ---  初始化文件，便于快速准备初始数据
+                __init__.py
+            enums/  ---  一些常量文件
+            file/  ---  程序生成的文件
+            locale/  ---  国际化文件
+            page/  ---  前台页面展示
+                __init__.py
+                index.py  ---  首页
+                login.py  ---  登录
+            plugins/
+                __init__.py  ---  初始化插件
+            res/  ---  资源文件，供 init 或 gen 使用
+                data/  ---  提供的资料
+                templates/  ---  生成报告用的模板
+            service/  ---  对应 model 的公共方法
+                __init__.py
+                _app_ex.py  ---  对应模块的一些基本增删改查方法，以“_”开头，防止和app名重复导致引用错误
+            static/  ---  静态文件，项目Debug为False时使用python manage.py collectstatic同步
+            statics/  ---  静态文件
+                css/  ---  样式文件
+                extend/  ---  扩展库
+                images/  ---  图片文件
+                js/  ---  JS文件
+                ui/  ---  便于样式切换
+                    style_base/  ---  基本样式
+                    style_{{ex}}/ ---  扩展样式
+            templates/  ---  模板文件
+            templatetags/  ---  tag目录
+            tests/  ---  项目级别测试文件
+            uploads/  ---  上传文件
+            utils/  ---  工具文件
+                __init__.py
+                decorator.py  ---  render和cache等方法
+            __init__.py
+            django-admin.py  ---  django-admin文件，Django项目i18n使用
+            releaseinfo.py  ---  配置信息
+            settings.py  ---  配置
+            urls.py  ---  链接配置
+            wsgi.py
+        doc/  ---  文档
+        manage.py

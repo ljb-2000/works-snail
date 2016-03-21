@@ -1,0 +1,72 @@
+<!--更新详情-->
+<form class="myform">
+	 <div class="control-group">
+	 	<table class="table table-bordered table-striped v-update-table">
+	 		<caption>更新列表（v2.1）</caption>
+			<thead>	
+				<tr>
+					<th>作业实例管理</th>
+					<th>作业脚本管理</th>
+					<th>定时调度管理</th>
+					<th>其他</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>添加作业实例<i class="font font-success"></i></td>
+					<td>新建作业脚本<i class="font font-success"></i></td>
+					<td>设定定时规则<i class="font font-success"></i></td>
+					<td>CMDB验证ip<i class="font font-success"></i></td>
+				</tr>
+				<tr>
+					<td>步骤增删排序<i class="font font-success"></i></td>
+					<td>编辑作业脚本<i class="font font-success"></i></td>
+					<td>修改定时规则<i class="font font-success"></i></td>
+					<td>步骤操作功能<i class="font font-success"></i></td>
+				</tr>
+				<tr>
+					<td>全程设定<i class="font font-success"></i></td>
+					<td>复制并新建作业脚本<i class="font font-success"></i></td>
+					<td>启动定时调度<i class="font font-success"></i></td>
+					<td>条件选择目标机器<i class="font font-success"></td>
+				</tr>
+				<tr>
+					<td>编辑作业实例<i class="font font-success"></i></td>
+					<td>查看作业脚本<i class="font font-success"></i></td>
+					<td>查看定时历史<i class="font font-success"></i></td>
+					<td>模块简化<i class="font font-success"></i></td>
+				</tr>
+				<tr>
+					<td>删除作业实例<i class="font font-success"></i></td>
+					<td>编辑脚本备注<i class="font font-success"></i></td>
+					<td></td>
+					<td>修复bug<i class="font font-success"></i></td>
+				</tr>
+				<tr>
+					<td>查看作业实例<i class="font font-success"></i></td>
+					<td>删除作业脚本<i class="font font-success"></i></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>执行作业实例<i class="font font-success"></i></td>
+					<td>同步作业脚本<i class="font font-success"></i></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>复制作业实例<i class="font font-success"></i></td>
+					<td>替换模板 / 实例步骤版本<i class="font font-success"></i></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>查询作业实例<i class="font font-success"></i></td>
+					<td>查询作业脚本<i class="font font-success"></td>
+					<td></td>
+					<td></td>
+				</tr>
+			</tbody>
+	 	</table>
+	 </div>
+</form>

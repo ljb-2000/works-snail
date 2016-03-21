@@ -1,0 +1,585 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 6/5/15
+# Usage:
+# --------------------------------
+
+from django.shortcuts import render
+
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+import logging
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json, traceback, datetime
+from models import UploadRecord,FileInfo
+
+from releaseinfo import DETAIL_KEY_PREFIX, IP_KEY_PREFIX, REL_FILE_UPLAOD_FOLDER,FILE_SERVER_HOST, MINIONS_UP_SET_KEY
+from utils.redisclient import rc
+from utils.utils import save_upload_file,get_ip_from_request,handle_step_push_file,get_master_addrs,send_single_api_request,fileserver_file_exists,handle_job
+from utils.decorator import login_required
+from service import _template, _job, _history
+from enums import enum_template, enum_history
+from apps.jobs.models import JobFileInfo, Job
+from apps.history.models import HistoryFileInfo, RunningResult
+import time
+from settings import MAX_UPLOAD_SIZE
+from utils.utils import fileserver_get_file
+
+logger = logging.getLogger('logger_files')
+
+TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+@login_required
+@csrf_exempt
+def send_check(request):
+    '''
+        check params before real send files.
+    '''
+    sdicts = {}
+
+    data = request.POST
+    ips_json = data.get('send_file_ips_hide',"")
+    job_name = data.get("send_file_job_name","")
+    location_type = data.get("send_file_location","")
+    speed = data.get("send_file_speed","")
+    target_path = os.path.normpath(str(data.get("send_file_target_path",""))).replace("\\","/")
+    user_name = request.user
+    record_local_ids_data = data.get("send_file_record_ids","")
+    send_file_target_account = data.get("send_file_target_account",None) # job执行账户
+    src_paths = set()
+
+    send_file_remote_json = data.get("send_file_remote_files_list",{})
+    run_once = data.get("send_file_run_once",False)
+    try:
+        Job.objects.get(name=job_name)
+        return HttpResponse(json.dumps({
+            "status":500,
+            "result":{
+                "msg": u"作业名称已存在"
+            }
+        }))
+    except Job.DoesNotExist:
+        pass
+
+    try:
+        if send_file_remote_json:
+            send_file_remote_json = json.loads(send_file_remote_json)
+            send_file_remote_json = send_file_remote_json.get("remote",[])
+    except:
+        return HttpResponse(json.dumps({
+            "status":500,
+            "result":{
+                "msg": u"远程文件列表格式错误"
+            }
+        }))
+
+
+    # add all minion item to ip_set.
+    ip_set = set()
+    if ips_json:
+        ips_dict=json.loads(ips_json)
+        for item in ips_dict.keys():
+            if item == 'total' or item == 'num' or item == 'distinct_ip_dict':
+                continue
+            ip_set.add(item)
+    if len(ip_set)==0:
+        return HttpResponse(json.dumps({
+            "status":500,
+            "result":{
+                "msg": u"可操作目标机器不能为空"
+            }
+        }))
+
+    # local ip list.
+    # local_ips = salt.utils.network.ip_addrs()
+    local_ips = get_master_addrs()
+    record_local_ids = []
+
+    # minion-ip map
+    minion_id_map = {}
+
+    # add local file record ids.
+    if record_local_ids_data:
+        record_local_ids_data = record_local_ids_data.strip(' ')
+        record_local_ids = record_local_ids_data.split(' ')
+
+    # verify file input.
+    if not send_file_remote_json and not record_local_ids:
+        return HttpResponse(json.dumps({
+            "status":500,
+            "result":{
+                "msg": u"无待分发文件!"
+            }
+        }))
+
+    check_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+    sdicts['status'] = 200
+    sdicts['check_id'] = check_id
+    return HttpResponse(json.dumps(sdicts))
+
+@login_required
+@csrf_exempt
+def send_file(request,check_id=0):
+    '''
+        handle send file.
+    '''
+    status = 200
+    data = request.POST
+    ips_json = data.get('send_file_ips_hide',"")
+    job_name = data.get("send_file_job_name","")
+    speed = data.get("send_file_speed","")
+    target_path = os.path.normpath(str(data.get("send_file_target_path",""))).replace("\\","/")
+    user = request.user
+    record_local_ids_data = data.get("send_file_record_ids","")
+#    send_file_target_account = data.get("send_file_target_account",None) # job执行账户
+    send_file_target_account = None
+    src_paths = set()
+
+    # final return result.
+    minion_result = {}
+
+    send_file_remote_json = data.get("send_file_remote_files_list",{})
+    run_once = data.get("send_file_run_once",False)
+    try:
+        job = Job.objects.get(name=job_name)
+        if job.name !=job_name:
+            return HttpResponse(json.dumps({
+                "status":500,
+                "result":{
+                    "msg": u"作业名称已存在"
+                }
+            }))
+    except Job.DoesNotExist:
+        pass
+
+    if run_once:
+        template = _template.get_or_create_template_by_params(name=u"一次性分发模板")[0]
+        template.template_type = enum_template.TEMPLATE_TYPE100
+        template.save()
+    else:
+        template = _template.get_or_create_template_by_params(name=job_name)[0]
+        template.template_type = enum_template.TEMPLATE_TYPE3
+
+    template_step = _template.get_or_create_templateStep_by_params(template=template)[0]
+    template_step.step_type = enum_template.STEP_TYPE_PUSH_FILE
+    template_step.order = 1
+    template_step.save()
+
+    job = _job.get_or_create_job_by_params(name=job_name,template=template,create_user=user)[0]
+    job.remarks = ""
+    job.account = send_file_target_account
+    job.save()
+
+    job_step = _job.get_or_create_jobStep_by_params(job=job,template_step=template_step,name=u'一次性分发')[0]
+    job_step.step_type = enum_template.STEP_TYPE_PUSH_FILE
+    job_step.order = 1
+    job_step.account = send_file_target_account
+
+    job_step_push_file = _job.get_or_create_jobStepPushFile_by_params(step=job_step,limit=speed, push_to=str(data.get("send_file_target_path","")))[0]
+    job_step_push_file.save()
+
+    try:
+        #保存文件列表信息.
+        if send_file_remote_json:
+            send_file_remote_json = json.loads(send_file_remote_json)
+            send_file_remote_json = send_file_remote_json.get("remote",[])
+            for item in send_file_remote_json:
+                path = item.get("name","").strip()
+                remote_ip = item.get("ip","").strip()
+#                remote_account = item.get("account","").strip()
+                remote_account = None
+                JobFileInfo.objects.create(step=job_step,remote_ip=remote_ip,push_account=remote_account,remote_path=path,location_type=enum_template.UPLOAD_TYPE_REMOTE)
+
+        if record_local_ids_data:
+            record_local_ids_data = record_local_ids_data.strip(' ')
+            record_local_ids = record_local_ids_data.split(' ')
+            for id in record_local_ids:
+                id = str(id).strip()
+                if not id:
+                    continue
+                record = UploadRecord.objects.get(pk=id)
+                src_paths.add((record.pk,record.file_name))
+                logger.debug("## record id check ok: %s"%id)
+                JobFileInfo.objects.create(
+                    step=job_step,
+                    remote_ip = record.src_ip,
+                    push_account = None,
+                    location_type = enum_template.UPLOAD_TYPE_LOCAL,
+                    remote_path = record.file_name,
+                    record = record
+                )
+
+        ip_set = set()
+        if ips_json:
+            ips_dict=json.loads(ips_json)
+            for (item, minion_info) in ips_dict.items():
+                if item == 'total' or item == 'num':
+                    continue
+                
+                ip_str = minion_info[3]
+                ip_list = ip_str.split('<br>')
+                minion_ip = ip_list[0]
+                ip_set.add(minion_ip)
+
+        # 设置作业的目标配置.
+        job_step.target = json.dumps(list(ip_set))
+        job.target = job_step.target
+
+        job_step.save()
+        job.save()
+
+        result = handle_job(job,user)
+        logger.debug("send_file_result:%s"%(result))
+
+        return HttpResponse(json.dumps(result))
+    except:
+        error = traceback.format_exc()
+        logger.error(error)
+        print error
+        return HttpResponse(json.dumps({
+            'status': 500,
+            'result':{
+                'msg': u'分发文件失败'
+            }
+        }))
+
+@login_required
+@csrf_exempt
+def upload_file(request):
+    '''
+        handle upload file === old way, new way using fileserver to save tile.
+    '''
+
+    logger.debug('### start save upload file...')
+    ufile = request.FILES.get('upField')
+    store_id = 0
+    status = 200
+    data = {}
+    username = request.user
+    try:
+        # import requests
+        # files = {'file':ufile}
+        # r = requests.post("http://192.168.19.1:8081/",files=files)
+        # print "========= send file response: ",r.text
+        origin_file_name = ufile.name
+        src_ip = get_ip_from_request(request)
+        send_file_hash = request.POST.get("send_file_hash","")
+        try:
+            size = ufile.size
+        except:
+            logger.warning("# ufile.size get failed!")
+            size = 0
+        logger.debug("# hash: %s"%(send_file_hash))
+        logger.debug("# filename: %s"%(origin_file_name))
+        logger.debug("# size: %s"%(size))
+        if size>MAX_UPLOAD_SIZE * 1024 * 1024:
+            up_size = size/1024.0/1024.0
+            logger.debug("file size too large, size:%sM"%(up_size))
+            return HttpResponse(json.dumps({
+                'status':500,
+                'result':{
+                    'msg': u'上传文件不能大于%sM, 实际大小:%.2fM'%(MAX_UPLOAD_SIZE,up_size)
+                }
+            }))
+
+        record = None
+        if send_file_hash:
+            try:
+                file_info =FileInfo.objects.get(md5sum=send_file_hash)
+                full_path = REL_FILE_UPLAOD_FOLDER + file_info.path
+                ## file missing.
+                # if not os.path.isfile(full_path):
+                # check if remote file exists.
+                if not fileserver_file_exists(file_info.md5sum):
+                    logger.debug("file exist in fileserver, info id:%s"%file_info.pk)
+                else:
+                    record = UploadRecord.objects.create(
+                        user_name=username,
+                        fileinfo=file_info,
+                        file_name=origin_file_name,
+                        src_ip=src_ip,
+                        location_type = enum_template.UPLOAD_TYPE_LOCAL,
+                        remote_path = origin_file_name,
+                    )
+            except FileInfo.DoesNotExist:
+                logger.debug("md5 not found.")
+            except:
+                return HttpResponse(json.dumps({
+                    'status':500,
+                    'result':{
+                        'msg': u'处理上传文件hash出错!'
+                    }
+                }))
+        else:
+            logger.warning("# upload hash not found.")
+        if not record:
+            logger.debug("start create new file info...")
+            filename = datetime.datetime.now().strftime("%Y%m%d%H%M%S") +'_'+ origin_file_name
+            tmp_path = "/tmp/"+ filename
+
+            upload_file = open(tmp_path,'wb+')
+            for chunk in ufile.chunks():
+                upload_file.write(chunk)
+
+            logger.debug('save ok, file name:%s, target:%s'%(origin_file_name,tmp_path))
+            upload_file.close()
+            # check size
+            size = os.path.getsize(tmp_path)
+            if size>MAX_UPLOAD_SIZE * 1024 * 1024:
+                up_size = size/1024.0/1024.0
+                logger.debug("file size too large, size:%sM"%(up_size))
+                os.remove(tmp_path)
+                return HttpResponse(json.dumps({
+                    'status':500,
+                    'result':{
+                        'msg': u'上传文件不能大于%sM, 实际大小:%.2fM'%(MAX_UPLOAD_SIZE,up_size)
+                    }
+                }))
+            record = save_upload_file(tmp_path,origin_file_name,username,src_ip=src_ip,remote_path=origin_file_name)
+            logger.debug('### new file saved,path:%s'%(record.fileinfo.path))
+        if record:
+            store_id = record.pk
+        else:
+            status = 500
+            data.update({'msg':'file save failed'})
+        data.update({'record_id':store_id})
+        logger.debug("file info upload success!")
+    except:
+        status = 500
+        logger.error("# error save file.")
+        logger.error(traceback.format_exc())
+        data.update({'msg':u'文件信息获取失败,请关闭标签页重试'})
+    result = {
+        'status':status,
+        'result':data
+    }
+    return HttpResponse(json.dumps(result))
+
+@login_required
+@csrf_exempt
+def file_exists(request):
+    '''
+         check if remote file exists.
+    '''
+    data = request.POST
+    ip = data.get("ip","")
+    path = data.get("path","")
+    result = {}
+    code = 500
+    if ip == "" or path == "":
+        result.update({'msg':'ip and path cant be empty.'})
+    else:
+        logger.debug("## start to check,ip:%s,path:%s"%(ip,path))
+        ip = ip.strip()
+        path = path.strip()
+        mimion_id = rc.get(IP_KEY_PREFIX+ip)
+        # res = client.cmd(mimion_id,"file.file_exists",[path])
+        _,res = send_single_api_request(mimion_id,"file.file_exists",[path])
+        logger.debug("## check result:%s"%res)
+        result.update({
+            'exists':res.get(mimion_id,False)
+        })
+        code = 200
+        logger.debug("## end path check.")
+    return HttpResponse(json.dumps({
+        "status":code,
+        "result":result
+    }))
+
+@login_required
+@csrf_exempt
+def file_info_exists(request):
+    '''
+         check if file info existeds on master.
+    '''
+    data = request.POST
+    code = 500
+    existed = False
+    result = {}
+    md5sum = data.get("md5sum","")
+    file_name = data.get("file_name","")
+    user_name = request.user
+    logger.debug("request%s"%data)
+    if not md5sum or not file_name or not user_name:
+        return HttpResponse(json.dumps({
+            "status":500,
+            "result":{
+                'msg':u"信息获取失败,请关闭页面重试",
+            }
+        }))
+    src_ip = get_ip_from_request(request)
+    try:
+        file_info = FileInfo.objects.get(md5sum=md5sum)
+        full_path = REL_FILE_UPLAOD_FOLDER + file_info.path
+        # check if file is missing.
+        # if os.path.exists(full_path):
+        if fileserver_file_exists(md5sum):
+            existed = True
+            code = 200
+            record=UploadRecord.objects.create(
+                user_name=user_name,
+                fileinfo=file_info,
+                file_name=file_name,
+                src_ip=src_ip,
+                location_type = enum_template.UPLOAD_TYPE_LOCAL,
+                remote_path = file_name,
+            )
+            result.update({
+                'record_id': record.pk,
+            })
+            logger.debug("file info found and path valid, record id:%s"%(record.pk))
+        else:
+            code = 200
+            result.update({'msg':'store file missing.'})
+            logger.debug("file missing,store path:%s"%(full_path))
+    except FileInfo.DoesNotExist:
+        code = 200
+        logger.debug('file info not found.')
+        pass
+    except:
+        logger.error(traceback.format_exc())
+        result.update({
+            "msg":u'未知错误'
+        })
+    result.update({
+        "existed": existed
+    })
+    logger.debug("## check result, status:%s,result:%s"%(code,result))
+    return HttpResponse(json.dumps({
+        "status":code,
+        "result":result
+    }))
+
+@login_required
+@csrf_exempt
+def ajax_show_page_detail(request,history_step_id):
+    """
+        更新分发详情页面状态,result.
+    """
+    code = 200
+    history_step = _history.get_historyStep_by_params(pk=history_step_id)
+    history = history_step.history
+    current_status = history_step.get_result_display()
+
+    total_ips = history_step.total_ips
+    abnormal_ips = history_step.abnormal_ips
+    fail_ips = history_step.fail_ips
+    success_ips = history_step.success_ips
+
+    total_ips = json.loads(total_ips) if total_ips else []
+    abnormal_ips = json.loads(abnormal_ips) if abnormal_ips else []
+    fail_ips = json.loads(fail_ips) if fail_ips else []
+    success_ips = json.loads(success_ips) if success_ips else []
+    logs = RunningResult.objects.filter(step=history_step,progress__gt=0).order_by('-id')
+    log = logs[0] if logs.count()>0 else None
+    fail_abnormal_ips = fail_ips + abnormal_ips
+    executing_ips = list(set(total_ips).difference(set(fail_ips),set(success_ips)))
+    result = {
+        "executing_ips":executing_ips,
+        "success_ips": success_ips,
+        "status":current_status,
+        "fail_ips": fail_ips,
+        "start_time": history.start_time.strftime("%Y-%m-%d %H:%M:%S") if history.start_time else "",
+        "finish_time": history.end_time.strftime("%Y-%m-%d %H:%M:%S") if history.end_time else "",
+        "abnormal_ips": abnormal_ips,
+        "total_ips": total_ips,
+        "total_time": history.delta_time if history.delta_time else "",
+        "progress": log.progress if log else 100 if history_step.end_time else 0,
+        "step_time": history_step.delta_time or "",
+        "job_msg": history.get_status_display(),
+        "step_msg":history_step.get_result_display(),
+        "fail_abnormal_ips":fail_abnormal_ips,
+    }
+    # print result
+    return HttpResponse(json.dumps({
+        "status":code,
+        "result":result
+    }))
+
+@login_required
+@csrf_exempt
+def ajax_show_ip_detail(request,history_step_id,ip):
+    """
+        处理每个IP的log显示
+    """
+    code = 200
+    try:
+        history_step = _history.get_historyStep_by_params(pk=history_step_id)
+        logs = RunningResult.objects.filter(step=history_step,progress__gte=0,ip__in=['*',ip]).order_by('-id')
+        res = []
+        for log in logs:
+            res.append("["+log.res_time.strftime(TIME_FORMAT)+"]  "+"  [  "+log.ip+"  ]  "+log.content)
+        log_content = "\n".join(res)
+        time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+        result = {
+            "log_content":log_content,
+            "time_taken":time_taken,
+        }
+    except Exception,e:
+        code = 500
+        result = {
+            'msg': e.message,
+        }
+        logger.error(traceback.format_exc())
+    return HttpResponse(json.dumps({
+        "status":code,
+        "result":result
+    }))
+
+@login_required
+@csrf_exempt
+def ajax_show_exec_type_detail(request,history_step_id,exec_type):
+    """
+        根据类型显示结果.
+    """
+    code = 200
+    try:
+        if exec_type not in ['success','fail',"executing","waiting"]:
+            raise Exception('参数值非法')
+        history_step = _history.get_historyStep_by_params(pk=history_step_id)
+        if exec_type == "success":
+            ips = json.loads(history_step.success_ips) if history_step.success_ips else []
+        elif exec_type in ['executing','waiting']:
+            return HttpResponse(json.dumps({
+                "status":code,
+                "result":{
+                    "log_content":"",
+                }
+            }))
+        else:
+            abnormal_ips = json.loads(history_step.abnormal_ips) if history_step.abnormal_ips else []
+            fail_ips = json.loads(history_step.fail_ips) if history_step.fail_ips else []
+            ips = abnormal_ips + fail_ips
+        logs = RunningResult.objects.filter(step=history_step,progress__gte=0,ip__in=ips).order_by('-id')
+        res = []
+        add_prefix = False #history_step.jobstep.step_type == enum_template.STEP_TYPE_SCRIPT
+        total = logs.count()
+        for counter in xrange(total):
+            log = logs[counter]
+            if add_prefix:
+                res.append("[ No.%s ]  [" % (total - counter) + log.res_time.strftime(
+                    TIME_FORMAT) + "]  " + "  [  " + log.ip + "  ]  " + log.content)
+            else:
+                res.append("[" + log.res_time.strftime(TIME_FORMAT) + "]  " + "  [  " + log.ip + "  ]  " + log.content)
+        log_content = "\n".join(res)
+        time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+        result = {
+            "log_content":log_content,
+            "time_taken":time_taken,
+        }
+    except Exception,e:
+        code = 500
+        result = {
+            'msg': e.message,
+        }
+        logger.error(traceback.format_exc())
+    return HttpResponse(json.dumps({
+        "status":code,
+        "result":result
+    }))

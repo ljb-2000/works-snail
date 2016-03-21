@@ -1,0 +1,107 @@
+2016-01-05 10:19:28,592 [Thread-7:8312] [logger:46] [DEBUG]- [account valid] 15051641890 valid ...
+2016-01-05 10:19:40,964 [Thread-12:10040] [logger:46] [DEBUG]- [account valid] 15051641890 valid ...
+2016-01-05 10:19:45,707 [Thread-20:8352] [logger:39] [DEBUG]- [user login] luozh login ok.
+2016-01-05 10:19:54,217 [Thread-26:7980] [logger:46] [DEBUG]- [account valid] 15051641890 valid ...
+2016-01-05 10:20:04,713 [Thread-27:5332] [logger:46] [DEBUG]- [account valid] 15051641890 valid ...
+2016-01-05 10:20:33,217 [Thread-39:7144] [logger:39] [DEBUG]- [user login] luozh login ok.
+2016-01-05 10:21:27,901 [Thread-6:6004] [logger:46] [DEBUG]- [account valid] 15051641890 valid ...
+2016-01-05 10:21:29,611 [Thread-14:5748] [logger:39] [DEBUG]- [user login] luozh login ok.
+2016-01-05 10:30:09,279 [Thread-9:6896] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 10:32:59,717 [Thread-97:6536] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 10:34:05,664 [Thread-180:7672] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 10:39:31,581 [Thread-240:8084] [logger:38] [DEBUG]- current job status: None
+2016-01-05 11:09:33,884 [Thread-361:9284] [logger:38] [DEBUG]- current job status: None
+2016-01-05 11:19:55,298 [Thread-461:8872] [logger:38] [DEBUG]- current job status: None
+2016-01-05 11:22:48,029 [Thread-703:6656] [logger:38] [DEBUG]- current job status: None
+2016-01-05 11:23:17,108 [Thread-711:9788] [logger:38] [DEBUG]- current job status: None
+2016-01-05 11:39:10,355 [Thread-1315:1052] [logger:38] [DEBUG]- current job status: None
+2016-01-05 11:43:39,582 [Thread-1788:5208] [logger:38] [DEBUG]- current job status: None
+2016-01-05 11:44:03,980 [Thread-1793:8736] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 11:49:13,288 [Thread-2095:9940] [logger:38] [DEBUG]- current job status: None
+2016-01-05 11:49:23,145 [Thread-2102:5160] [logger:38] [DEBUG]- current job status: None
+2016-01-05 11:51:30,503 [Thread-2125:4160] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 11:51:49,203 [Thread-2183:4752] [logger:38] [DEBUG]- current job status: None
+2016-01-05 12:30:53,869 [Thread-2355:8740] [logger:38] [DEBUG]- current job status: None
+2016-01-05 13:25:23,107 [Thread-2388:8808] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 13:26:35,421 [Thread-2470:9332] [logger:38] [DEBUG]- current job status: None
+2016-01-05 13:27:31,658 [Thread-2485:10096] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20160105132644>, 'template_step': <TemplateStep: 执行脚本>}）
+2016-01-05 13:27:31,690 [Thread-2485:10096] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20160105132644>, 'template_step': <TemplateStep: 拉取文件>}）
+2016-01-05 13:28:20,187 [Thread-2500:6868] [logger:1186] [DEBUG]- start check fail, job_id: 2, step_id:7
+2016-01-05 13:28:22,086 [Thread-2501:8704] [logger:1186] [DEBUG]- start check fail, job_id: 2, step_id:7
+2016-01-05 13:28:23,713 [Thread-2502:9676] [logger:1186] [DEBUG]- start check fail, job_id: 2, step_id:7
+2016-01-05 13:28:28,500 [Thread-2503:9508] [logger:978] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\jobs\views.py", line 948, in job_view_v2
+    raise Exception,msg
+Exception: form验证不通过
+
+2016-01-05 13:41:17,048 [Thread-2571:5916] [logger:38] [DEBUG]- current job status: None
+2016-01-05 13:43:29,181 [Thread-2630:768] [logger:38] [DEBUG]- current job status: None
+2016-01-05 13:46:02,335 [Thread-2712:9276] [logger:38] [DEBUG]- current job status: None
+2016-01-05 13:47:45,961 [Thread-2777:9936] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:20:44,088 [Thread-3358:6452] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:23:04,698 [Thread-3497:9608] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:26:30,753 [Thread-3568:5512] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:27:20,506 [Thread-3575:9956] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:28:03,440 [Thread-3698:5408] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:31:19,776 [Thread-3945:1392] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:31:25,109 [Thread-3994:1532] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:32:48,213 [Thread-4223:5816] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:35:37,877 [Thread-4331:4848] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:36:35,888 [Thread-4412:4596] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:40:59,246 [Thread-4518:3700] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:45:13,269 [Thread-4702:8516] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:48:57,371 [Thread-4967:4864] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:53:14,470 [Thread-5037:9680] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:57:28,901 [Thread-5245:5668] [logger:38] [DEBUG]- current job status: None
+2016-01-05 14:59:18,266 [Thread-5322:7044] [logger:38] [DEBUG]- current job status: None
+2016-01-05 15:03:46,986 [Thread-5603:7744] [logger:38] [DEBUG]- current job status: None
+2016-01-05 15:07:44,098 [Thread-5868:6404] [logger:38] [DEBUG]- current job status: None
+2016-01-05 15:08:30,964 [Thread-5882:7224] [logger:38] [DEBUG]- current job status: None
+2016-01-05 15:16:06,213 [Thread-6109:840] [logger:38] [DEBUG]- current job status: None
+2016-01-05 15:16:25,239 [Thread-6166:9388] [logger:38] [DEBUG]- current job status: None
+2016-01-05 15:52:20,392 [Thread-6186:6396] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 15:52:35,176 [Thread-6243:1052] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:06:53,334 [Thread-6352:10008] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:28:26,471 [Thread-7100:7148] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:31:07,743 [Thread-7209:6848] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:34:34,141 [Thread-7351:1504] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:41:19,371 [Thread-7563:2516] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:42:16,657 [Thread-7625:4136] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:43:37,107 [Thread-7708:6864] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:46:38,915 [Thread-7886:5732] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:49:20,487 [Thread-7951:7300] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:51:14,576 [Thread-8008:10076] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:55:33,776 [Thread-8132:8096] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:57:39,052 [Thread-8198:7972] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 16:57:59,496 [Thread-8255:9360] [logger:38] [DEBUG]- current job status: None
+2016-01-05 16:59:02,719 [Thread-8273:1476] [logger_files:408] [DEBUG]- request<QueryDict: {u'file_name': [u'improve.xml'], u'md5sum': [u'b6f970a5f84eb3c106dd3e06fa410e8f'], u'size': [u'412']}>
+2016-01-05 16:59:02,723 [Thread-8273:1476] [logger_files:443] [DEBUG]- file info not found.
+2016-01-05 16:59:02,723 [Thread-8273:1476] [logger_files:453] [DEBUG]- ## check result, status:200,result:{'existed': False}
+2016-01-05 17:02:48,200 [Thread-8452:6420] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 17:03:04,418 [Thread-8512:6700] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:06:27,381 [Thread-8633:5636] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:09:35,285 [Thread-8792:8936] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:17:03,671 [Thread-8980:8084] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:23:51,469 [Thread-9231:5804] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:25:33,887 [Thread-9304:5924] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:26:29,535 [Thread-9357:7460] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:35:25,871 [Thread-9713:5824] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:39:30,999 [Thread-9910:1780] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:42:47,934 [Thread-10068:5196] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:45:05,964 [Thread-10186:5232] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:46:44,059 [Thread-10260:6268] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:48:44,878 [Thread-10392:8188] [logger:38] [DEBUG]- current job status: None
+2016-01-05 17:58:53,749 [Thread-10412:7844] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 18:09:27,927 [Thread-10694:6700] [logger:38] [DEBUG]- current job status: None
+2016-01-05 18:10:23,177 [Thread-10718:7404] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 18:11:45,032 [Thread-10845:8980] [logger:38] [DEBUG]- current job status: None
+2016-01-05 18:33:10,362 [Thread-10985:7144] [logger:38] [DEBUG]- current job status: None
+2016-01-05 18:35:53,128 [Thread-11089:1620] [logger:38] [DEBUG]- current job status: None
+2016-01-05 18:51:45,269 [Thread-11159:1768] [logger:38] [DEBUG]- current job status: None
+2016-01-05 18:53:50,627 [Thread-11241:1952] [logger:38] [DEBUG]- current job status: None
+2016-01-05 18:57:39,282 [Thread-11333:2112] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 18:57:44,401 [Thread-11377:8960] [logger:38] [DEBUG]- current job status: None
+2016-01-05 18:59:14,316 [Thread-11481:5340] [logger:38] [DEBUG]- current job status: None
+2016-01-05 18:59:59,497 [Thread-11499:792] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-05 19:00:11,046 [Thread-11598:8368] [logger:38] [DEBUG]- current job status: None
+2016-01-05 19:04:33,813 [Thread-11608:1516] [logger:40] [DEBUG]- [user login] luozh login ok.

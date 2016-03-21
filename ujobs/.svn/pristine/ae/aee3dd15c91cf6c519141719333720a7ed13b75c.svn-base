@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+# -- encoding=utf-8 --
+
+'''
+@author: wx
+'''
+
+import os, sys
+reload(sys)
+sys.setdefaultencoding( "utf-8" )
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+import json
+from django.views.decorators.csrf import csrf_exempt
+import datetime
+from service import _account
+from apps.accounts.forms import AccountForm
+
+@login_required
+@csrf_exempt
+def script(request):
+    user = request.user
+    sdicts = {}
+    method = request.method
+
+    now = datetime.datetime.now()
+    name = 'script-%s'%datetime.datetime.strftime(now,'%Y%m%d%H%M%S')
+    accounts = _account.get_accounts_by_params(is_delete=False,create_user=user)
+    
+    accountForm = AccountForm()
+    
+    template_file = "script/contentDiv.html"
+    html = render_to_string(template_file, locals())
+    sdicts['html'] = html
+    
+    if method == 'POST':
+        pass
+            
+    return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^script/$', script, name='script'),
+)

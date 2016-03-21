@@ -1,0 +1,214 @@
+{% extends "base.html"%}
+
+{% block logo_url %}/overview/{% endblock %}
+
+{% block userinfo %}
+<div class="nav-collapse">
+  	<ul class="nav pull-right">
+        <li>
+          	<span id="new_hand_step" class="j-badge badge" data-toggle="modal" data-target="#startJobs">
+                <i class="icon-hand-right icon-white"></i>
+                新手引导
+            </span>
+		 	<p class="navbar-text">
+ 	 	     	<i class="icomoon local-user"></i>
+			  	当前用户：					
+			</p>
+		</li>
+        <li class="dropdown">
+            <a class="dropdown-toggle user-now" data-toggle="dropdown" href="#">{{user.username}}<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+				<li>
+                    <a class="ujobs-out" href="/logout/">退出</a> 
+                </li>
+			</ul>
+        </li>
+    </ul>
+    <ul class="nav nav-pills nav-menu">
+  		<li {%if prefix == 'index'%}class="active"{%endif%}>
+            <a class="titlelistone nav-cur" href="/overview/">
+                <i class="icomoon work-tools"></i>
+                作业管理
+            </a>
+        </li>
+  		<!-- <li class="popovers" style="margin-left:5px;" {%if prefix == 'info'%}class="active"{%endif%} data-toggle="popover" data-placement="right" data-content="暂未开放，敬请期待！" data-trigger='hover'>
+           <a class="titlelisttwo">
+               <i class="icomoon user-center"></i>
+               个人中心
+           </a>
+        </li> -->   
+   	</ul>
+</div>
+
+<!-- modal -->
+<div class="modal hide fade" id="startJobs" data-show="true" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	{% include 'step_model.html' %}
+</div>
+ {% endblock %}
+ 
+{% block content %}
+   <div class="row-fluid bggray">
+        <div class="span2">
+            <div class="hide-menu-box">  
+                <span id="nav-hide-menu" data-url="{{ fileserver_url }}">
+                    <i class="icon-align-justify"></i>
+                </span>
+            </div>
+		    {% include "job_menus.html" %}
+        </div>
+        <div class="span10" id="contentDiv">
+
+        	<div id="tabs" role="tabpanel">
+				<div class="c"></div>
+				<ul class="nav nav-tabs" role="tablist" id="myTab">
+					<li id="li_help1" class="active" role="presentation" style="  position: relative;">
+                        <i onclick="close_tab(this)" class="icon-remove mytab-close"></i>
+                        <a style="padding-right: 24px;" href="#help1" aria-controls="help1" role="tab" data-toggle="tab">
+                            <label class="tab-ellipsis" style="display:inline-block;">首页</label>
+                        </a>
+                    </li>
+				</ul>
+				<span class="tab-arrow hide"><i class="icon-arrow-down"></i></span>
+				<div id="menu-context">
+       			 	<ul>
+           			 	<li><a class="close-tab1" href="javascript:void(0)">关闭此标签页</a></li>
+        				<li><a class="close-tab2" href="javascript:void(0)">关闭其他标签页</a></li>
+        				<li><a class="close-tab3" href="javascript:void(0)">关闭所有标签页</a></li>
+    				</ul>
+				</div>
+				<div class="tab-content tab-main">
+					<div id='loading-panel' style='position:absolute;width:100%;height:100%;background: #fff;top:68px;z-index:-999;opacity:0;'><img class='loading-img' src='/static/assets/img/loading3.gif'></div>
+					<div role="tabpanel" class="tab-pane last-panel"><img src='/static/assets/img/snail3.png'></div>
+					<div role="tabpanel" class="tab-pane active" id="help1">
+						 <div class="control-group">
+						 	<div class="pannel-box ml23">
+							    <h2 class="ujobs-h2">什么是Ujobs</h2>
+							    <p>Ujobs是基于ESB设计思路研发的全业务开放式运维操作平台。</p>
+							    <p>旨在为运维提供一个可以批量控制和操作分布在世界各地的大规模主机的通道。</p>
+							    <p>用以提升运维团队整体操作执行效率与质量，解放运维人员双手。</p>
+							    <p>在Ujobs平台上，运维人员可自由定制和编排操作任务，实现各类运维场景的一键式自动化作业。</p>				
+							</div>
+							<ul class="pannel-box" style="list-style-type:disc;">
+							    <h2 class="ujobs-h2">Ujobs解决哪些问题</h2>
+							    <li>如何远程管理控制业务机器?</li>
+							    <li>如何集中地并发地批量操作机器?</li>
+							    <li>如何在分布各IDC的机器上批量执行脚本?</li>
+							    <li>如何向大规模分布的机器上分发文件?</li>				
+							    <li>如何从大规模分布的机器上拉取文件?</li>				
+							    <li>如何根据运维需求任意编排任务并执行?</li>				
+							    <li>如何跨平台，如何固化并复用运维任务?</li>				
+							</ul>
+							<div class="flash-box">
+						      	<span class="fonts showone">ujobs</span>
+								<span class="fonts showtwo">为<span class="f90">作业</span>而生~</span>
+						    </div>
+						    <img class="sm-bg" src="/static/assets/img/yan.png">
+							<img class="sf-bg" src="/static/assets/img/cf.png">
+						 </div>
+					</div>
+				</div>
+			</div>
+        </div>
+    </div>
+    <!-- <div style="text-align: center;clear:both; width: 100%;">
+      	<p>
+      	{% if footer_menu %}
+			{% for m in footer_menu %}
+				<a href="{{m.url}}">{{m.name}}</a>
+			{% endfor %}
+			{% else %}
+	      	<a href="javascript:void(0);">关于我们</a>&nbsp;┊&nbsp;<a href="javascript:void(0);">联系我们</a>&nbsp;┊&nbsp;<a href="javascript:void(0);">在线咨询</a>&nbsp;┊&nbsp;<a href="javascript:void(0);">企业服务</a>&nbsp;┊&nbsp;<a href="javascript:void(0);">友情链接</a>
+		{% endif %}
+      	</p>
+        <p class="foot">&copy;2015 苏州游戏蜗牛</p>
+    </div> -->
+{% endblock%}
+
+{% block js%}
+{% include "import_js.html" %}
+<script src="/static/tool_js/contentDiv.js" type="text/javascript"></script>
+<script src="/static/tool_js/My97DatePicker/WdatePicker.js" type="text/javascript"></script>
+<script type="text/javascript">
+$(function (){
+
+    // tab收缩效果
+    $(".tab-arrow").click(function () {
+    	var tab_height=$("#myTab").css("height");
+
+    	if(tab_height=="47px") {
+    		$("#myTab").css("height","auto");
+    		$(this).find("i").removeClass("icon-arrow-down").addClass("icon-arrow-up");
+    	}
+    	else{
+    		$("#myTab").css("height","47px");
+    		$(this).find("i").removeClass("icon-arrow-up").addClass("icon-arrow-down");
+    	}    
+    	
+    });
+    
+    var strMenuKey="nav-header";
+
+	// 本地存储导航展开收起信息
+	var storeDisplay=function() {
+		var arrDisplay=[];
+
+		$(".nav-header").each(function (index) {
+			arrDisplay[index]=$(this).hasClass("cur") ? 1 : 0;
+		});
+
+		// 存储，IE6~IE7 cookie 其他浏览器HTML5本地存储
+		if (window.sessionStorage) {
+			sessionStorage.setItem(strMenuKey,arrDisplay);
+		}
+		else {
+			Cookie.write(strMenuKey,arrDisplay);
+		}
+	};
+
+	//左侧导航栏效果
+	$(".nav-header").bind("click", function () {
+		if ($(this).hasClass("cur")) {
+			$(this).removeClass("cur").next().slideUp();
+			$(this).find(".icomoon").removeClass("arrow-up").addClass("arrow-down");
+		}
+		else {
+			$(this).addClass("cur").next().slideDown();
+			$(this).find(".icomoon").removeClass("arrow-down").addClass("arrow-up");
+			
+		}
+
+		// 存储
+		storeDisplay();
+	});
+
+	$(".menu-lis li").bind("click",function () {
+		$(".menu-lis li").removeClass("active");
+		$(this).addClass("active");
+		$(this).parent().prev().children().css("color","#A7B1C2").parent().siblings(".nav-header").children().css("color","#A7B1C2");
+		
+	});
+
+	// 检测触发是否收起
+	var strStoreDate=window.sessionStorage ? sessionStorage.getItem(strMenuKey) : Cookie.read(strMenuKey);
+	
+    if (strStoreDate!=null) {
+		var str=strStoreDate.split(',');
+
+		for(var i=0;i<str.length;i++) {
+			if(str[i]==="1"){
+				$(".nav-header").eq(i).trigger("click");
+			}
+		}
+	}
+});
+	
+//浏览器支持检测
+window.onload = function() { 
+	$(".sm-bg").animate({opacity:1},5000);
+
+	if (!window.applicationCache) {
+        jNotify("您的浏览器太旧了，不支持html5，部分功能会受影响，建议升级:)");
+    }
+}
+</script>
+{% endblock%}

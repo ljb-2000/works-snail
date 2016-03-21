@@ -1,0 +1,95 @@
+<!-- 定时执行历史 -->
+<div class="row-fluid">
+	<form class="myform form-inline form-search" id="schedule_history_form">{% csrf_token %}
+		<fieldset>
+		    <legend style="font-size:14px"><span class="caret-arrow-up"></span>查询条件</legend>
+			<div class="controls">
+				<label>作业名称：</label>
+				<input id="schedule_history_name" name="schedule_history_name" type="text" style="width:150px;">
+				<label>启动人：</label>
+  				<input id="schedule_history_executor" name="schedule_history_executor" type="text" style="width:150px;">
+			</div>
+		</fieldset>
+		<fieldset>
+		    <legend style="font-size:14px"><span class="caret-arrow-down"></span>更多条件</legend>
+		    <div class="controls hide">
+		    	<label>任务描述：</label>
+  				<input id="schedule_history_note" name="schedule_history_note" type="text" style="width:150px;">
+				<label>启动结果：</label>
+				<select id="schedule_history_result_type" name="schedule_history_result_type" style="width:164px;">
+  					<option value="" selected>全部</option>
+  					<option value="0">失败</option>
+  					<option value="1">启动作业类型</option>
+  					<option value="2">定时任务触发</option>
+  					<option value="3">前台开始处理</option>
+  					<option value="4">生成作业</option>
+  					<option value="4">作业通过验证</option>
+  				</select>
+  				<label>启动时间：</label>
+				<input id="schedule_history_stime" name="schedule_history_stime" type="text" style="width:150px;" onkeydown="return false;" onClick="WdatePicker()">
+				<label style="width:70px;text-align: center">至</label>
+				<input id="schedule_history_etime" name="schedule_history_etime" type="text" style="width:150px;" onkeydown="return false;" onClick="WdatePicker()">
+  			</div>
+		</fieldset>
+		<br>
+		<div class="controls pull-right">
+			<button type="button" class="btn btn-info" onclick="schedule_history_filter()">
+          <i class="icon-search icon-white"></i>
+          查询
+      </button>
+			<button type="button" class="btn btn-warning reset">
+          <i class="icon-repeat icon-white"></i>
+          重置
+      </button>
+		</div>
+		<table id="timing_history_table" class="table table table-striped table-bordered table-hover">
+			<thead>
+				<tr>
+					<th>作业实例</th>
+					<th>任务描述</th>
+					<th>定时表达式</th>
+					<th>启动结果</th>
+					<th>启动信息</th>
+					<th>启动人</th>
+					<th>触发时间</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</form>
+</div>
+<script>
+    var timing_history_table;
+    
+    $(function () {
+        timing_history_table = $('#timing_history_table').dataTable({
+            "sDom": 'lfrtip',
+            "bLengthChange": false,
+            "iDisplayLength": 10,
+            "aoColumnDefs": [{"bSortable": false, "aTargets": [1,2,3,4]}],
+            "aaSorting": [[6, "desc"]],
+            "bProcessing": false,
+            "bServerSide": true,
+            "sPaginationType": "full_numbers",
+            "sAjaxSource": "{{ajax_url}}",
+            "bFilter": false,
+            "bInfo": true,
+            "oLanguage": {
+                "sUrl": '/static/tool_js/data_table/cn/jquery.dataTable.cn.txt'
+            }
+        });
+    });
+
+    // 定时执行历史过滤
+    function schedule_history_filter() {
+        var name = $("#schedule_history_name").val();
+        var creator = $("#schedule_history_creator").val();
+        var result_type = $("#schedule_history_result_type").val();
+        var note = $("#schedule_history_note").val();
+        var stime = $("#schedule_history_stime").val();
+        var etime = $("#schedule_history_etime").val();
+
+        timing_history_table.fnReloadAjax('/timing_manage/history_list/?p=0&name=' + name + '&creator=' + creator + '&result_type=' + result_type + '&stime=' + stime + '&etime=' + etime + '&note=' + note);
+    }
+</script>

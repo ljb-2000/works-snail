@@ -1,0 +1,30 @@
+<!-- 编辑作业（文本步骤）--> 
+<div class="row-fluid edit-text-wrap">
+	<form id="edit_job_step_form_{{ step.id }}" class="form-horizontal">{% csrf_token %}
+		<div class="control-group">
+			<label class="control-label muted">步骤名称：<span class="red">*</span></label>
+			<div class="controls">
+				<input id="step_name" class="edit-text-name" name="step_name" type="text" placeholder="请输入步骤名称" value='{{ step.name }}' disabled>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">文本描述：<span class="red">*</span></label>
+			<div class="controls">
+				<textarea id="step_description" name="step_description" class="txtstyle edit-text-content" placeholder="请输入文本描述" disabled>{{ step.describe }}</textarea>
+			</div>		  
+		</div>
+		<br>
+		<div class="control-group">
+			<div class="controls">
+				<button class="btn btn-primary" data-type="text" data-msg="job" onclick="handle_edit_template_step({{ step.id }},{{ step.job.id }},true,this,false);return false;">
+					<i class="icon-ok icon-white"></i>
+					保存步骤
+				</button>
+				<button class="btn btn-success" data-msg="job" onclick="handle_edit_template_step({{ step.id }},{{ step.job.id }},false,this,false);return false;">
+					<i class="icon-share-alt icon-white"></i>
+					返回
+				</button>
+			</div>
+		</div>
+	</form>
+</div>

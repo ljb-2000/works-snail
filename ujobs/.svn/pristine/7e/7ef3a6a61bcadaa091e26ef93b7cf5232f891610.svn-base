@@ -1,0 +1,132 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json
+from django.core.paginator import Paginator
+from apps.accounts.forms import AccountForm
+from service import _account
+import datetime
+from utils.ctranslate import LazyEncoder
+from django.db.transaction import commit_on_success
+import hashlib
+
+@login_required
+@csrf_exempt
+@render_to('account/contentDiv.html')
+def account_index(request):
+    table_fields = [u'账户名称', u'开发商', u'账户别名', u'创建时间', u'最后修改时间', u'最后修改人', u'操作']
+    ajax_url = u'/account/list/' 
+    return locals()
+
+@login_required
+@csrf_exempt
+def account_list(request):
+    name = request.GET.get('name', None)
+    name_abbr = request.GET.get('name_abbr', None)
+    update_user = request.GET.get('update_user', None)
+    created_from = request.GET.get('created_from', None)
+    created_to = request.GET.get('created_to', None)
+    updated_from = request.GET.get('updated_from', None)
+    updated_to = request.GET.get('updated_to', None)
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = ['name', 'create_user__username', 'name_abbr', 'created', 'updated', 'update_user__username', None]
+    order_item = order_list[iSortCol_0]
+
+    user = request.user
+    accounts = _account.get_accounts_by_params(is_delete=False,create_user=user)
+#    if sSearch:
+#        pass
+    #查询
+    if name:
+        accounts = accounts.filter(name__icontains = name)
+    if name_abbr:
+        accounts = accounts.filter(name_abbr__icontains = name_abbr)
+    one_day = datetime.timedelta(days=1)
+    if update_user:
+        accounts = accounts.filter(update_user__username__icontains = update_user)
+    if created_from:
+        accounts = accounts.filter(created__gte = created_from)
+    if created_to:
+        created_to = datetime.datetime.strptime(created_to,'%Y-%m-%d')
+        accounts = accounts.filter(created__lte = (created_to+one_day))
+    if updated_from:
+        accounts = accounts.filter(updated__gte = updated_from)
+    if updated_to:
+        updated_to = datetime.datetime.strptime(updated_to,'%Y-%m-%d')
+        accounts = accounts.filter(updated__lte = (updated_to+one_day))
+    
+    #排序
+    if order_item:
+        if sSortDir_0 == "desc":
+            order_item = '-%s' % order_item
+        accounts = accounts.order_by(order_item)
+    else:
+        accounts = accounts.order_by('id')
+    
+    #第一个参数表示需要分页的对象，可为list、tuple、QuerySet，只要它有count()或者__len__()函数
+    #第二个参数为每页显示记录数
+    p = Paginator(accounts, iDisplayLength)
+    total = p.count #总数
+    page_range = p.page_range #页数list
+    page = p.page(page_range[iDisplayStart / iDisplayLength])
+    object_list = page.object_list
+    
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+    for obj in object_list:
+        #封装数组，按照列数填入对应的值
+#        check_html = u"<input type='checkbox' name='sonCkb' value='%s' id='sonCkb'/>" % obj.id
+        change_html = '<a style="color: blue;" href="javascript:void(0)" onclick="javascript:account_edit(\'%s\',\'%s\');">%s</a>' % (obj.id, obj.name, obj.name)
+        delete_url = u'/account/del/%d/' % obj.id
+        delete_html = '<a style="color: blue;" href="javascript:void(0)" onclick="javascript:account_del($(\'#account_form\'),\'%s\',\'POST\');">%s</a>' % (delete_url, u'删除账户',)
+        created = datetime.datetime.strftime(obj.created,'%Y-%m-%d %H:%M:%S')
+        updated = datetime.datetime.strftime(obj.updated,'%Y-%m-%d %H:%M:%S')
+        data = [change_html, obj.create_user.username, obj.name_abbr, created, updated, obj.update_user.username, delete_html]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def account_add(request):
+    user = request.user
+    sdicts = {'result':0}
+    method = request.method
+    template_file = "account/add.html"
+    if method == 'POST':
+        accountForm = AccountForm(request.POST)
+        if accountForm.is_valid():
+            account=accountForm.save(commit=False) 
+            account.password=hashlib.sha1(accountForm.cleaned_data['password']).hexdigest() 
+            account.create_user = user
+            account.update_user = user
+            account.save() 
+            accountForm.save_m2m() 
+            sdicts['result'] = 1
+        html = render_to_string(template_file, locals())
+        sdicts['html'] = html
+        return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+    else:
+        accountForm = AccountForm()
+        return render_to_response(template_file, locals())
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^account/$', account_index),
+    url(r'^account/list/$', account_list),
+    url(r'^account/add/$', account_add, name='account_add'),
+)

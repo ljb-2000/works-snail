@@ -1,0 +1,62 @@
+<!-- 脚本详细 -->
+<div class="row-fluid script-detail-wrap">
+	<form class="form-horizontal myform">
+		<div class="control-group">
+			<label class="control-label muted">版本号：</label>
+			<div class="controls">
+				<label class="control-label" style="text-align:left;">{{version.name}}</label>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">脚本描述：</label>
+			<div class="controls">
+				<textarea rows="4" class="txtstyle" placeholder="请输入...">{{version.script.describe|default_if_none:''}}</textarea>
+			</div>
+		</div>
+        <div class="control-group">
+            <label class="control-label muted">备注：</label>
+            <div class="controls">
+                <label class="control-label" style="text-align:left;">{{version.remarks|default_if_none:''}}</label>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label muted">脚本类型：</label>
+            <div class="controls">
+                <label style="display: inline;margin-left: 5px;" for="script_detail_type1_{{check_id}}"><input class="script-detail-code" style="vertical-align:middle; margin-top:0;" type="radio" name="script_detail_type_{{version.id}}" id="script_detail_type1_{{version.id}}" value="1" disabled {% if script.script_type == 1 %}checked{% endif %}> shell</label>
+                <label style="display: inline;margin-left: 5px;" for="script_detail_type2_{{check_id}}"><input class="script-detail-code" style="vertical-align:middle; margin-top:0;" type="radio" name="script_detail_type_{{version.id}}" id="script_detail_type2_{{version.id}}" value="2" disabled {% if script.script_type == 2 %}checked{% endif %}> bat</label>
+                <label style="display: inline;margin-left: 5px;" for="script_detail_type3_{{check_id}}"><input class="script-detail-code" style="vertical-align:middle; margin-top:0;" type="radio" name="script_detail_type_{{version.id}}" id="script_detail_type3_{{version.id}}" value="3" disabled {% if script.script_type == 3 %}checked{% endif %}> python</label>
+            </div>
+        </div>
+        
+		<div class="control-group">
+			<label class="control-label muted">脚本内容：<span class="red">*</span></label>
+			<div class="controls">
+				<p><select id="script_details_select" style="width: 200px;">
+				    <option>default</option>
+				    <option>3024-night</option>
+				    <option selected>erlang-dark</option>
+				</select></p>
+				
+				<textarea id="script_details_code">{{file_content}}</textarea>
+				<textarea id="script_details_code2" class="hide">
+#!/usr/bin/env python
+# -*- coding: utf8 -*-
+</textarea>
+			</div>		
+		</div>
+	</form>
+</div>
+<script>
+	// codeMirror
+	var script_details=CodeMirror.fromTextArea($("#script_details_code")[0], {
+        lineNumbers: true,
+        mode:"shell",
+        lineWrapping:true,
+	});
+	
+	codeMirror(script_details,$("#script_details_code"),$('#script_details_select'),$("#script_details_code2"),$(".script-detail-code"),'script_detail_type1_{{version.id}}','script_detail_type2_{{version.id}}');
+    
+	// 按钮样式
+	icheck($('.script-detail-wrap input:radio,.script-detail-wrap input:checkbox'));
+</script>

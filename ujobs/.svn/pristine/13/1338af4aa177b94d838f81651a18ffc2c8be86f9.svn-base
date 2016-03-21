@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛盾登陆</title>
+<link rel="stylesheet" type="text/css" href="/static/assets/css/login.css">
+</head>
+<body>
+    <div class="wrapper">
+        <div class="login-box">
+            <div class="logo">
+                <img src="/static/assets/img/login_logo.png">
+            </div>
+            <form class="login-form" method="POST" action="/valid/">{% csrf_token %}
+                <input id="account_name" name="account_name" class="username" type="text" value='' placeholder="通行证账号:">
+                <input id="valid_code" name="valid_code" class="password" type="text" value='' placeholder="通行证口令:">
+                <button id="login_btn" class="login-btn" type="submit">验证</button>
+                <textarea id="VerifyId" name="VerifyId" class="guid" style="display:none;">{{guid}}</textarea>
+            </form>
+            <div class="massage">
+                {{error_msg}}
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/static/assets/js/jquery-2.1.4.min.js"></script>     
+</body>
+</html>

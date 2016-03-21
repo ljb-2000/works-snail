@@ -1,0 +1,230 @@
+<!-- 导航信息 -->
+<ul id="menu_ul" class="nav nav-list bs-docs-sidenav">
+    <li class="nav-header">
+        <span class="clearfix">
+            <span class="bar-side">一次性操作</span>
+            <i class="icomoon arrow-down pull-right"></i>
+        </span>
+    </li>
+  	<div class="menu-lis hide">
+	        {% if user.has_perm_restart %}
+        <li id="menu_li_restart">
+            <a class="icomoon arrow-restart tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="批量重启"> 
+                <span class="bar-side">批量重启</span>
+            </a>
+            <i></i>
+        </li>
+        {% else %}
+        <li class="popovers" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-restart" href="javascript:void(0);"> 
+                <span class="bar-side">批量重启</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+        {% if user.has_perm_modify_pwd %}
+        <li id="menu_li_modify_pwd">
+            <a class="icomoon arrow-pwd tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="批量改密"> 
+                <span class="bar-side">批量改密</span>
+            </a>
+            <i></i>
+        </li>
+        {% else %}
+        <li class="popovers" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-pwd" href="javascript:void(0);"> 
+                <span class="bar-side">批量改密</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+        {% if user.has_perm_script %}
+        <li id="menu_li_script">
+            <a class="icomoon arrow-script tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="执行脚本"> 
+                <span class="bar-side">执行脚本</span>
+            </a>
+            <i></i>
+        </li>
+        {% else %}
+        <li class="popovers" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-script" href="javascript:void(0);"> 
+                <span class="bar-side">执行脚本</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+        {% if user.has_perm_send_file %}
+        <li id="menu_li_send_file">
+            <a class="icomoon arrow-file tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="分发文件"> 
+                <span class="bar-side">分发文件</span>
+            </a>
+            <i></i>
+        </li>
+        {% else %}
+        <li class="popovers" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-file" href="javascript:void(0);"> 
+                <span class="bar-side">分发文件</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+    </div>
+    <li class="nav-header">
+        <span class="clearfix"> 
+            <span class="bar-side">作业管理</span>
+            <i class="icomoon arrow-down pull-right"></i>
+        </span>
+    </li>
+    <div class="menu-lis hide">
+        {% if user.has_perm_md_manage %}
+        <li class="hide" id="menu_li_md_manage">
+            <a class="icomoon arrow-model tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="作业模板管理"> 
+                <span class="bar-side">作业模板管理</span>
+            </a>
+            <i></i>
+        </li>
+        {% else %}
+        <li class="popovers hide" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-model" href="javascript:void(0);"> 
+                <span class="bar-side">作业模板管理</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+        {% if user.has_perm_example_manage %}
+        <li class="hide" id="menu_li_example_manage">
+            <a class="icomoon arrow-examples tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="作业实例管理"> 
+                <span class="bar-side">作业实例管理</span>
+            </a>
+            <i></i>
+        </li>
+        {% else %}
+        <li class="popovers hide" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-examples" href="javascript:void(0);"> 
+                <span class="bar-side">作业实例管理</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+        {% if user.has_perm_example_manage %}
+        <li id="menu_li_example_manage">
+            <a class="icomoon arrow-examples tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="作业实例管理"> 
+                <span class="bar-side">作业实例管理</span>
+            </a>
+            <i></i>
+        </li>
+        {% else %}
+        <li class="popovers" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-examples" href="javascript:void(0);"> 
+                <span class="bar-side">作业实例管理</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+        {% if user.has_perm_script_manage %}
+        <li id="menu_li_script_manage">
+            <a class="icomoon arrow-wscripts tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="作业脚本管理"> 
+                <span class="bar-side">作业脚本管理</span>
+            </a>
+            <i></i>
+        </li>
+  	    {% else %}
+  	    <li class="popovers" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-wscripts" href="javascript:void(0);"> 
+                <span class="bar-side">作业脚本管理</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+        {% if user.has_perm_timing_manage %}
+  	    <li id="menu_li_timing_manage">
+            <a class="icomoon arrow-time tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="定时调度管理"> 
+                <span class="bar-side">定时调度管理</span>
+            </a>
+            <i></i>
+        </li>
+        {% else %}
+        <li class="popovers" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-time" href="javascript:void(0);"> 
+                <span class="bar-side">定时调度管理</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+        {% if user.has_perm_account %}
+        <li id="menu_li_account">
+            <a class="icomoon arrow-user tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="执行账户管理"> 
+                <span class="bar-side">执行账户管理</span>
+            </a>
+            <i></i>
+        </li>
+   	    {% else %}
+   	    <li class="popovers" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-user" href="javascript:void(0);"> 
+                <span class="bar-side">执行账户管理</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+    </div> 
+    <li class="nav-header">
+        <span class="clearfix">  
+            <span class="bar-side">作业执行历史</span>
+            <i class="icomoon arrow-down pull-right"></i>
+        </span>
+    </li>
+	    <div class="menu-lis hide">
+	        {% if user.has_perm_history %}
+	        <li id="menu_li_history">
+            <a class="icomoon arrow-history tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="作业执行历史"> 
+                <span class="bar-side">作业执行历史</span>
+            </a>
+            <i></i>
+        </li>
+	        {% else %}
+	        <li class="popovers" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-history" href="javascript:void(0);"> 
+                <span class="bar-side">作业执行历史</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+	    </div>
+    <li class="nav-header">
+        <span class="clearfix">  
+            <span class="bar-side">Agent状态管理</span>
+            <i class="icomoon arrow-down pull-right"></i>
+        </span>
+    </li>
+  	<div class="menu-lis hide"> 
+  	    {% if user.has_perm_agent %}
+  	    <li id="menu_li_agent">
+            <a class="icomoon arrow-agent tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="查看agent状态"> 
+                <span class="bar-side">查看agent状态</span>
+            </a>
+            <i></i>
+        </li>
+  	    {% else %}
+  	    <li class="popovers" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-agent" href="javascript:void(0);"> 
+                <span class="bar-side">查看agent状态</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+        {% if user.has_perm_view_status %}
+  	    <li id="menu_li_view_status">
+            <a class="icomoon arrow-state tips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" data-original-title="查看系统状态"> 
+                <span class="bar-side">查看系统状态</span>
+            </a>
+            <i></i>
+        </li>
+ 	    {% else %}
+ 	    <li class="popovers" data-toggle="popover" data-placement="right" data-content="无权操作！" data-trigger="hover">
+            <a class="no-permission icomoon arrow-state" href="javascript:void(0);"> 
+                <span class="bar-side">查看系统状态</span>
+            </a>
+            <i></i>
+        </li>
+        {% endif %}
+ 	</div>
+</ul>

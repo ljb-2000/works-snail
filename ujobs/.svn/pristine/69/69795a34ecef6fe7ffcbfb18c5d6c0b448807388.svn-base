@@ -1,0 +1,166 @@
+<!--新建作业脚本-->
+<div class="row-fluid new-script-wrap">
+	<form action="javascript:void(0);" method="post" class="form-horizontal v2-script-icheck">{% csrf_token %}
+		<div class="control-group">
+			<label class="control-label muted">脚本名称：<span class="red">*</span></label>
+			<div class="controls">
+				<input type="text" id="new_script_name_{{check_id}}" name="new_script_name_{{check_id}}">
+			</div>			  
+		</div>
+	   <div class="control-group">
+			<label class="control-label muted">版本：</label>
+			<div class="controls">
+				<label class="control-label" id="new_script_version_{{check_id}}" name="new_script_version_{{check_id}}">{{check_id}}_{{user.username}}</label>
+			</div>			  
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">功能描述：</label>
+			<div class="controls">
+				<textarea id="new_script_describe_{{check_id}}" name="new_script_describe_{{check_id}}" rows="4" class="txtstyle" placeholder="请输入..."></textarea>
+			</div>
+		</div>
+	   <div class="control-group">
+			<label class="control-label muted">脚本内容：<span class="red">*</span></label>
+			<div class="controls">
+				<label style="display: inline;margin-left: 5px;"><input class="handscript" style="vertical-align:middle; margin-top:0;" type="radio" name="stype" checked="checked"> 手工录入 </label>
+				<label style="display: inline;margin-left: 5px;"><input class="localscript" style="vertical-align:middle; margin-top:0;" type="radio" name="stype"> 本地脚本 </label>
+			</div>
+	   </div>
+	   <div class="local-find control-group hide">
+			<div class="controls">
+				<input type='text' name='v2_textfield_{{check_id}}' id='v2_textfield_{{check_id}}' class="v2_textfield" onfocus=this.blur() placeholder="请上传本地文件" /> &nbsp;<button id='v2_find_{{check_id}}' type='button' value='浏览...' class='btn btn-default'><i class="icon-folder-open"></i>浏览...</button>&nbsp;<button id='script_upload_btn_{{check_id}}' type='button' value='导入' class='btn btn-default'><i class="icon-arrow-up"></i>导入</button>
+				<input style="opacity:0;filter:alpha(opacity:0);margin-left:-999%" id="v2_script_fileToUpload_{{check_id}}" class="v2_script_fileToUpload" name="v2_script_fileToUpload_{{check_id}}" type="file" size="28" />
+			</div>
+	   </div>
+	   <div class="control-group">
+			<label class="control-label muted">脚本类型：</label>
+			<div class="controls">
+				<label style="display: inline;margin-left: 5px;" for="v2_script_once_type1_{{check_id}}"><input class="v2-ck-code" style="vertical-align:middle; margin-top:0;" type="radio" name="v2_script_once_type_{{check_id}}" id="v2_script_once_type1_{{check_id}}" value="1" checked> shell</label>
+				<label style="display: inline;margin-left: 5px;" for="v2_script_once_type2_{{check_id}}"><input class="v2-ck-code" style="vertical-align:middle; margin-top:0;" type="radio" name="v2_script_once_type_{{check_id}}" id="v2_script_once_type2_{{check_id}}" value="2"> bat</label>
+				<label style="display: inline;margin-left: 5px;" for="v2_script_once_type3_{{check_id}}"><input class="v2-ck-code" style="vertical-align:middle; margin-top:0;" type="radio" name="v2_script_once_type_{{check_id}}" id="v2_script_once_type3_{{check_id}}" value="3"> python</label>
+			</div>
+	   </div>
+	   
+		<div class="control-group">
+			<label class="control-label">&nbsp;</label>
+			<div class="controls">
+				<p><select style="width: 200px;" id='v2_select_{{check_id}}' name="select">
+				    <option>default</option>
+				    <option>3024-night</option>
+				    <option selected>erlang-dark</option>
+				</select></p>
+				
+				<textarea id="v2_script_once_code_{{check_id}}" name="v2_script_once_code">
+#!/bin/sh
+</textarea>
+<textarea id="v2_code2_{{check_id}}" class="hide">
+#!/usr/bin/env python
+# -*- coding: utf8 -*-
+</textarea>
+			</div>			  
+		
+		</div>
+		<br>
+		<div class="control-group">
+			<div class="controls">
+				<button class="btn btn-primary" style="width:120px;" onclick="script_manage_add({{check_id}})"><i class="icon-ok icon-white"></i>保存</button>
+			</div>
+		</div>
+	</form>
+</div>
+<script>
+	//codeMirror
+	var v2_editor_{{check_id}}=CodeMirror.fromTextArea($("#v2_script_once_code_{{check_id}}")[0], {
+        lineNumbers: true,
+        mode:"shell",
+        lineWrapping:true,
+	});
+	codeMirror(v2_editor_{{check_id}},$("#v2_script_once_code_{{check_id}}"),$('#v2_select_{{check_id}}'),$("#v2_code2_{{check_id}}"),$(".v2-ck-code"),'v2_script_once_type1_{{check_id}}','v2_script_once_type2_{{check_id}}');
+	//按钮样式
+	icheck($('.v2-script-icheck input:radio,.v2-script-icheck input:checkbox'));
+	
+	//文件上传
+	$(document).on("click","#v2_find_{{check_id}}",function(){
+		flie_upload2($("#v2_script_fileToUpload_{{check_id}}"),$("#v2_textfield_{{check_id}}"));
+	});
+
+	//脚本导入
+    $(document).off("click","#script_upload_btn_{{check_id}}").on("click","#script_upload_btn_{{check_id}}",function(){
+    	var uploadfilename = $("#v2_script_fileToUpload_{{check_id}}").val();
+			if (uploadfilename){
+				if(0){
+				//if(!uploadfilename.toLowerCase().endWith(".py")&&!uploadfilename.toLowerCase().endWith(".sh")&&!uploadfilename.toLowerCase().endWith(".bat")&&!uploadfilename.toLowerCase().endWith(".txt")){
+					jNotify('文件格式不对，请选择sh/bat/py/txt文件');
+					$("#v2_textfield_{{check_id}}").val($("#v2_script_fileToUpload_{{check_id}}").val()); 
+					return false;
+				}else{
+					$.ajaxFileUpload ({
+						type: 'POST',
+						url :'/script/ajax_script_upload/',
+						secureuri :false,
+						data : {'fileToUpload':'v2_script_fileToUpload_{{check_id}}'},
+						fileElementId :'v2_script_fileToUpload_{{check_id}}',
+						dataType : 'json',
+						success : function (data, status){
+							if(data.result==1){
+	    						v2_editor_{{check_id}}.setValue(data.content);
+	    						$("#v2_textfield_{{check_id}}").val($("#v2_script_fileToUpload_{{check_id}}").val()); 
+					       	 	return true;
+					       	}
+							jError('上传失败！');
+							$("#v2_textfield_{{check_id}}").val($("#v2_script_fileToUpload_{{check_id}}").val()); 
+						},
+						error: function (data, status, e){
+							jNotify('上传失败，请将文件转换为utf-8格式编码！');
+							$("#v2_textfield_{{check_id}}").val($("#v2_script_fileToUpload_{{check_id}}").val()); 
+						}
+					});
+				}
+			}else{
+				jNotify('请选择上传文件！');
+			}
+    });
+    
+    //新建作业脚本
+    function script_manage_add(check_id){
+        var new_script_name = $('#new_script_name_'+check_id).val();
+        var new_script_describe = $('#new_script_describe_'+check_id).val();
+        var new_script_type = $("input[name='v2_script_once_type_{{check_id}}']:checked").val();
+        var new_file_content = v2_editor_{{check_id}}.getValue();
+        
+        if(!new_script_name){
+            jNotify('请输入脚本名称');
+            return false;
+        }
+        
+        $.ajax({
+            type: 'POST',
+            url: '/script/script_add/',
+            dataType: 'json',
+            data: {
+                   'check_id':check_id,
+                   'new_script_name':new_script_name,
+                   'new_script_describe':new_script_describe,
+                   'new_script_type':new_script_type,
+                   'new_file_content':new_file_content,
+                   
+                  },
+            success: function(data){
+                if(data.status==500){
+                    jError('新建作业脚本失败!');
+                }else{
+                    var tabArr='script_view_'+data.script_id;
+                    var valueArr='查看脚本';
+                    var dataArr=data.html;
+                    tab_href(tabArr,valueArr,dataArr);
+                    jSuccess('新建作业脚本成功!');
+                    $('#li_script_add_info_'+check_id).find("i").trigger("click");
+                    refresh_script_list();
+                }
+            },
+            error:function(){
+                jError('保存脚本失败!');
+            }
+        });
+    };
+</script>

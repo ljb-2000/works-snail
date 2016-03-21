@@ -1,0 +1,846 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+#--------------------------------
+# Author: shenjh@snail.com
+# Date: 2015-08-04
+# Usage:
+#--------------------------------
+
+import os, sys, hashlib
+from django.db.models import Q
+
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json
+from django.core.paginator import Paginator
+from service import _template, _account, _script, _file, _job
+import datetime
+from enums import enum_template,enum_account
+from apps.accounts.models import Perm
+from utils.ctranslate import LazyEncoder
+from apps.template.forms import AddTemplateForm,EditTemplateForm
+from apps.accounts.forms import AccountForm
+import traceback,logging
+from utils.redisclient import rc
+from releaseinfo import IP_KEY_PREFIX, MINIONS_UP_SET_KEY,DETAIL_KEY_PREFIX,FILE_SERVER_HOST
+from utils.utils import get_input_ips,build_hidden_ip_dict
+from settings import MEDIA_ROOT,MAX_UPLOAD_SIZE
+from apps.usual.views import ajax_get_cmdb_product_returns
+
+logger = logging.getLogger('logger')
+
+@login_required
+@csrf_exempt
+def template_view(request,template_id):
+    """
+        show template view.
+    """
+    user = request.user
+    sdicts = {'result': 0}
+    template = _template.get_template_by_params(id=template_id)
+    
+    job_list = _job.get_jobs_by_params(template=template)
+    
+    template_file = "md_manage/md_view.html"
+
+    ajax_url = u'/job/job_list/'+template_id+'/'
+    html = render_to_string(template_file, locals())
+    sdicts['html'] = html
+    sdicts['template_name'] = template.name
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def template_add(request):
+    user = request.user
+    status = 500
+    data = {}
+    method = request.method
+    template_file = "md_manage/new_md.html"
+    check_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    try:
+        if method == 'POST':
+            templateForm = AddTemplateForm(request.POST,user=request.user)
+            check_id = request.POST.get("check_id","") or check_id
+            if templateForm.is_valid():
+                user = request.user
+                template = templateForm.save(commit=False)
+                template.create_user = user
+                template.update_user = user
+                template.work_type = request.POST.get("work_type","")
+                template.mode = enum_template.TEMPLATE_MODE_AUTO
+                template.save()
+                status = 200
+                data.update({"template_id":template.id})
+            else:
+                html = render_to_string(template_file, locals())
+                data.update({"html":html})
+        else:
+#            cmdb_product_list,is_timeout = ajax_get_cmdb_product_returns(request)
+            templateForm = AddTemplateForm()
+            return render_to_response(template_file, locals())
+    except:
+        error = traceback.format_exc()
+        logger.error(error)
+        data.update({"msg":u'保存出錯'})
+    return HttpResponse(json.dumps({
+        "status":status,
+        "result":data
+    }))
+
+@login_required
+@csrf_exempt
+def template_delete(request, template_id):
+    """
+        delete template by template_id
+    """
+    user = request.user
+    template = _template.get_template_by_params(id=template_id)
+    status = 500
+    data = {}
+    msg = ""
+    try:
+        jobs = _job.get_jobs_by_params(template=template,is_delete=False)
+        if jobs:
+            msg = u"删除失败: 当前模板存在关联的作业实例"
+        else:
+            template.is_delete = True
+            template.update_user = user
+            template.save()
+            status=200
+            msg = u"模板删除成功"
+    except:
+        msg = u"模板删除失败" if not msg else msg
+        error = traceback.format_exc()
+        print error
+    data['msg']=msg
+    return HttpResponse(json.dumps({
+        'status':status,
+        'result':data
+    }, cls=LazyEncoder))
+
+
+@login_required
+@csrf_exempt
+def template_edit(request,template_id):
+    """
+        show detail of the template after clicked the button.
+    """
+    user = request.user
+    status = 500
+    data = {}
+    try:
+        method = request.method
+        template_file = "md_manage/edit_md.html"
+        check_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        template = _template.get_template_by_params(id=template_id)
+        ajax_url = "/md_manage/template_step/list/{0}/".format(template.pk)
+        accounts = _account.get_accounts_by_params(is_delete=False)
+        accountForm = AccountForm()
+        target_ips = json.loads(template.target) if template.target else []
+        hide_ip_dict = build_hidden_ip_dict(target_ips)
+        hide_ip_json = json.dumps(hide_ip_dict)
+
+        if method == 'POST':
+            templateForm = EditTemplateForm(request.POST,instance=template,user=request.user)
+            check_id=request.POST.get("check_id",check_id)
+            work_type=request.POST.get("work_type","")
+            data.update({"template_id":template.id,"check_id":check_id})
+            if templateForm.is_valid():
+                user = request.user
+                template = templateForm.save(commit=False)
+                template.update_user = user
+                template.work_type = work_type
+                template.save()
+                status = 200
+            else:
+                html = render_to_string(template_file, locals())
+                data.update({"html":html})
+            data.update({"template_name":template.name})
+            return HttpResponse(json.dumps({
+                "status":status,
+                "result":data,
+            }, cls=LazyEncoder))
+        else:
+            account_id = template.account.id if template.account else 0
+            template_name = template.name
+            templateForm = EditTemplateForm(instance=template,user=request.user)
+            work_type = template.work_type
+            html = render_to_string(template_file, locals())
+            status=200
+            data.update({"html":html,"template_name":template_name,"work_type":work_type})
+    except:
+        error = traceback.format_exc()
+        logger.error(error)
+        print error
+        data['msg'] = u"服务器错误"
+    return HttpResponse(json.dumps({
+        "status":status,
+        "result":data
+    }, cls=LazyEncoder))
+
+
+@login_required
+@csrf_exempt
+def template_sort(request, template_id):
+    """
+        re-order template steps.
+    """
+    user = request.user
+    template = _template.get_template_by_params(id=template_id)
+    status = 500
+    data = {}
+    msg = ""
+    try:
+        step_id_list = request.POST.get("step_id_list","")
+        order = 1
+        for step_id in step_id_list.split(","):
+            step = _template.get_templateStep_by_params(id=step_id)
+            if not step:
+                msg = "template step not exist: {0}".format(step_id)
+                raise Exception(msg)
+            step.order = order
+            step.save()
+            order += 1
+        status = 200
+        
+        change_template_sync_status(template)
+    except:
+        msg = u"模板步骤移动失败" if not msg else msg
+        error = traceback.format_exc()
+        print error
+    data['msg']=msg
+    return HttpResponse(json.dumps({
+        'status':status,
+        'result':data
+    }, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def full_settings_save(request, template_id):
+    """
+        save full settings of template.
+
+    """
+    user = request.user
+    status = 500
+    data = {}
+    try:
+        mode = request.POST.get("mode", None)
+        account_id = request.POST.get("template_account", None)
+
+        if mode == None or account_id == None:
+            msg = u"invalid argument"
+        else:
+            account = _account.get_account_by_params(id=int(account_id))
+            template = _template.get_template_by_params(id=template_id)
+
+            ips_json = request.POST.get('full_settings_ips_hide',"")
+            ip_set = get_input_ips(ips_json)
+            template.target = json.dumps(list(ip_set))
+
+            template.mode = mode
+            template.account = account
+            template.save()
+            msg = "save success"
+            status = 200
+    except Exception as e:
+        msg = "ops, error "
+        print traceback.format_exc()
+    data.update({
+        "msg": msg
+    })
+    return HttpResponse(json.dumps({
+        "status": status,
+        "result": data
+    }, cls=LazyEncoder))
+
+
+@login_required
+@csrf_exempt
+def template_step_list(request,template_id):
+    """
+        show template step list of given template.
+    """
+    data = request.GET
+
+    iDisplayLength = int(data.get('iDisplayLength'))
+    iDisplayStart = int(data.get('iDisplayStart'))
+    sEcho = int(data.get('sEcho'))
+    iSortCol_0 = int(data.get('iSortCol_0',0))
+    sSortDir_0 = data.get('sSortDir_0')
+    order_list = [None,None,None, None]
+    order_item = order_list[iSortCol_0]
+
+    template_steps = _template.get_templateSteps_by_params(template__id=template_id,is_delete=False)
+    template_steps = template_steps.order_by('order')
+    sdicts = {}
+    sdicts["aaData"] = []
+    if iDisplayLength>-1:
+        p = Paginator(template_steps, iDisplayLength)
+        total = p.count #总数
+        page_range = p.page_range #页数list
+        sdicts["sEcho"] = sEcho
+        sdicts["iTotalRecords"] = total
+        sdicts["iTotalDisplayRecords"] = total
+
+        page = p.page(page_range[iDisplayStart / iDisplayLength])
+        object_list = page.object_list
+    else:
+        object_list = template_steps
+
+    for obj in object_list:
+        if obj.step_type == enum_template.STEP_TYPE_SCRIPT:
+            sub_step = _template.get_templateStepScript_by_params(step=obj)
+        elif obj.step_type == enum_template.STEP_TYPE_PULL_FILE:
+            sub_step = _template.get_templateStepPullFile_by_params(step=obj)
+        elif obj.step_type == enum_template.STEP_TYPE_PUSH_FILE:
+            sub_step = _template.get_templateStepPushFile_by_params(step=obj)
+        elif obj.step_type == enum_template.STEP_TYPE_TEXT:
+            sub_step = _template.get_templateStepText_by_params(step=obj)
+        else:
+            raise Exception("================ invalid step:"+obj.step_type)
+        template_step_name = u'<a href="javascript:void(0)" onclick="template_step_edit(\'%s\',\'%s\');">%s</a>' % (obj.id,"script" if obj.step_type == enum_template.STEP_TYPE_SCRIPT else "", obj.name)
+        operation = u"""<div class='btn-group'><a class='dropdown-toggle' data-toggle='dropdown' href='#'>增加步骤</a><ul class='dropdown-menu add-step-list'><li value='1'><a>执行脚本</a></li><li value='2'><a>分发文件</a></li><li value='3'><a>拉取文件</a></li><li value='4'><a>文本步骤</a></li></ul></div>&nbsp;&nbsp;<a href='javascript:void(0)' class='remove-step' step_id="{0}">删除</a>""".format(obj.id)
+        data = [u"第%s步"%(obj.order), template_step_name, obj.get_step_type_display(),operation]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+
+@login_required
+@csrf_exempt
+def template_step_list_v2(request,template_id):
+    """
+        show template step list of given template.
+    """
+    data = request.GET
+
+    iDisplayLength = int(data.get('iDisplayLength'))
+    iDisplayStart = int(data.get('iDisplayStart'))
+    sEcho = int(data.get('sEcho'))
+    iSortCol_0 = int(data.get('iSortCol_0',0))
+    sSortDir_0 = data.get('sSortDir_0')
+    order_list = [None,None,None, None]
+    order_item = order_list[iSortCol_0]
+
+    template_steps = _template.get_templateSteps_by_params(template__id=template_id,is_delete=False)
+    template_steps = template_steps.order_by('order')
+    sdicts = {}
+    sdicts["aaData"] = []
+    if iDisplayLength>-1:
+        p = Paginator(template_steps, iDisplayLength)
+        total = p.count #总数
+        page_range = p.page_range #页数list
+        sdicts["sEcho"] = sEcho
+        sdicts["iTotalRecords"] = total
+        sdicts["iTotalDisplayRecords"] = total
+
+        page = p.page(page_range[iDisplayStart / iDisplayLength])
+        object_list = page.object_list
+    else:
+        object_list = template_steps
+
+    for obj in object_list:
+        if obj.is_checked:
+            checkbox = '<input value="%s" class="jobview-checked-it-%s" type="checkbox" checked>'%(obj.id,obj.template.id)
+        else:
+            checkbox = '<input value="%s" class="jobview-checked-it-%s" type="checkbox">'%(obj.id,obj.template.id)
+        if obj.step_type == enum_template.STEP_TYPE_SCRIPT:
+            sub_step = _template.get_templateStepScript_by_params(step=obj)
+        elif obj.step_type == enum_template.STEP_TYPE_PULL_FILE:
+            sub_step = _template.get_templateStepPullFile_by_params(step=obj)
+        elif obj.step_type == enum_template.STEP_TYPE_PUSH_FILE:
+            sub_step = _template.get_templateStepPushFile_by_params(step=obj)
+        elif obj.step_type == enum_template.STEP_TYPE_TEXT:
+            sub_step = _template.get_templateStepText_by_params(step=obj)
+        else:
+            raise Exception("================ invalid step:"+obj.step_type)
+        template_step_name = u'<a href="javascript:void(0)" onclick="template_step_edit_v2(\'%s\',\'%s\');">%s</a>' % (obj.id,"script" if obj.step_type == enum_template.STEP_TYPE_SCRIPT else "", obj.name)
+        operation = u"""<div class='btn-group'><a class='dropdown-toggle' data-toggle='dropdown' href='#'>增加步骤</a><ul class='dropdown-menu add-step-list'><li value='1'><a>执行脚本</a></li><li value='2'><a>分发文件</a></li><li value='3'><a>拉取文件</a></li><li value='4'><a>文本步骤</a></li></ul></div>&nbsp;&nbsp;<a href='javascript:void(0)' class='remove-step' step_id="{0}">删除</a>""".format(obj.id)
+        data = [checkbox, u"第%s步"%(obj.order), template_step_name, obj.get_step_type_display(),operation]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def template_step_add(request):
+    """
+        add template step to template.
+    """
+    req = request.POST
+    user = request.user
+    status = 500
+    data = {}
+    msg = ""
+    template_id = req.get("template_id","")
+    type_value = req.get("type_value","")
+    index = req.get("index","")
+    try:
+        template = _template.get_template_by_params(id=template_id)
+        if not template:
+            msg = u"模板不存在"
+            raise
+        # if template.create_user!=user:
+        #     msg = u"您没有操作该模板的权限"
+        #     raise
+        ########## add new step #########
+        new_order = int(index) +1
+        type_value = int(type_value)
+        old_steps = _template.get_templateSteps_by_params(template=template,order__gte=new_order,is_delete=False)
+        for step in old_steps:
+            step.order += 1
+            step.save()
+        step_type = int(type_value)-1
+        new_step = _template.TemplateStep.objects.create(template=template,step_type=type_value,order=new_order,name=enum_template.STEP_TYPE_CHOICES[step_type][1])
+        if type_value == enum_template.STEP_TYPE_SCRIPT:
+            sub_new_step = _template.TemplateStepScript.objects.create(step=new_step)
+        elif type_value == enum_template.STEP_TYPE_PULL_FILE:
+            sub_new_step = _template.TemplateStepPullFile.objects.create(step=new_step)
+        elif type_value == enum_template.STEP_TYPE_PUSH_FILE:
+            sub_new_step = _template.TemplateStepPushFile.objects.create(step=new_step)
+        elif type_value == enum_template.STEP_TYPE_TEXT:
+            sub_new_step = _template.TemplateStepText.objects.create(step=new_step)
+        status=200
+        data.update({"step_id":new_step.id,"sub_step_id":sub_new_step.id})
+        
+        change_template_sync_status(template)
+    except Exception,e:
+        data['msg'] = msg if msg else u"步骤添加失败"
+        error = traceback.format_exc()
+        logger.error(error)
+        print error
+    return HttpResponse(json.dumps({
+            "status":status,
+            "result":data
+    }, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def template_step_delete(request, template_step_id):
+    """
+        check and delete template_step by id.
+    """
+    user = request.user
+    status = 500
+    data = {}
+    msg = ""
+
+    try:
+        template_step = _template.get_templateStep_by_params(id=template_step_id,is_delete=False)
+        if not template_step:
+            msg = u"template step not exist."
+            raise Exception(msg)
+        elif template_step.template.create_user!=user:
+            msg = u"authorize fail, template not belong to you."
+            raise Exception(msg)
+        template_step.is_delete = True
+        template_step.save()
+        old_steps = _template.get_templateSteps_by_params(template=template_step.template,is_delete=False,order__gt=template_step.order)
+        for step in old_steps:
+            step.order -= 1
+            step.save()
+        status=200
+        data['msg'] = u"模板步骤删除成功"
+        
+        change_template_sync_status(template_step.template)
+    except:
+        data['msg'] = msg if msg else u"模板步骤删除失败"
+        error = traceback.format_exc()
+        print error
+    return HttpResponse(json.dumps({
+        'status':status,
+        'result':data
+    }, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def template_step_edit(request,template_step_id):
+    """
+        edit template step.
+    """
+    req = request.POST
+    user = request.user
+    status = 500
+    data = {}
+    msg = ""
+    try:
+        step = _template.get_templateStep_by_params(id=template_step_id)
+        if not step:
+            msg = u"步骤不存在"
+            raise Exception,msg
+        # if step.template.create_user!=user:
+        #     msg = u"您不是该步骤的所有者"
+        #     raise Exception,msg
+
+        type_value = step.step_type
+        template_file = ""
+        if type_value == enum_template.STEP_TYPE_SCRIPT:
+            template_file = "md_manage/edit_script.html"
+            sub_step = _template.get_templateStepScript_by_params(step=step)
+            perms = Perm.objects.filter(to_user=user, is_delete=False, ptype=enum_account.PERM_PTYPE_SCRIPT)
+            scripts = _script.Script.objects.filter(Q(create_user=user)|Q(pk__in=[perm.object_id for perm in perms]),
+                                                    is_delete=False,is_once=False)
+            version = sub_step.version
+            script = version.script if version and version.script in scripts else None
+            versions = _script.get_versions_by_params(script=script,is_delete=False) if script else None
+            accounts = _account.get_accounts_by_params(is_delete=False)
+            accountForm = AccountForm(auto_id="step_script_%s")
+            account_id = step.account.id if step.account else 0
+
+        elif type_value == enum_template.STEP_TYPE_PULL_FILE:
+            template_file = "md_manage/edit_pull_file.html"
+            sub_step = _template.get_templateStepPullFile_by_params(step=step)
+            file_paths = [] if not sub_step.file_paths else json.loads(sub_step.file_paths)
+
+        elif type_value == enum_template.STEP_TYPE_PUSH_FILE:
+            template_file = "md_manage/edit_send_file.html"
+            sub_step = _template.get_templateStepPushFile_by_params(step=step)
+            file_infos = _template.get_templateFileInfos_by_params(step=step)
+            local_uploads = file_infos.filter(location_type=enum_template.UPLOAD_TYPE_LOCAL).values('record')
+            remote_uploads = file_infos.filter(location_type=enum_template.UPLOAD_TYPE_REMOTE)
+            local_ids = "" if not local_uploads else " ".join(str(item.get('record')) for item in local_uploads)+" "
+            remote_uploads_str = ""
+            if remote_uploads.count()>0:
+                remote_dict = {}
+                remote_dict['remote'] = [{"name":item.remote_path,"ip":item.remote_ip} for item in remote_uploads]
+                remote_uploads_str = json.dumps(remote_dict)
+            user = request.user
+            max_upload_size = MAX_UPLOAD_SIZE
+            fileserver_url = FILE_SERVER_HOST
+
+        elif type_value == enum_template.STEP_TYPE_TEXT:
+            template_file = "md_manage/edit_text.html"
+            sub_step = _template.get_templateStepText_by_params(step=step)
+
+        if type_value in [enum_template.STEP_TYPE_PULL_FILE,enum_template.STEP_TYPE_PUSH_FILE,enum_template.STEP_TYPE_SCRIPT]:
+            target_ips = json.loads(step.target) if step.target else []
+            hide_ip_dict = build_hidden_ip_dict(target_ips)
+            hide_ip_json = json.dumps(hide_ip_dict)
+
+        status=200
+        data['html'] = render_to_string(template_file,locals())
+        data['name'] = step.name
+    except Exception,e:
+        data['msg'] = msg if msg else u"步骤信息获取失败"
+        error = traceback.format_exc()
+        logger.error(error)
+        print error
+    return HttpResponse(json.dumps({
+            "status":status,
+            "result":data
+    }, cls=LazyEncoder))
+    
+@login_required
+@csrf_exempt
+def template_step_edit_v2(request,template_step_id):
+    """
+        edit template step.
+    """
+    req = request.POST
+    user = request.user
+    status = 500
+    data = {}
+    msg = ""
+    try:
+        step = _template.get_templateStep_by_params(id=template_step_id)
+        if not step:
+            msg = u"步骤不存在"
+            raise Exception,msg
+        # if step.template.create_user!=user:
+        #     msg = u"您不是该步骤的所有者"
+        #     raise Exception,msg
+
+        type_value = step.step_type
+        template_file = ""
+        if type_value == enum_template.STEP_TYPE_SCRIPT:
+            template_file = "job_manage/edit_script.html"
+            sub_step = _template.get_templateStepScript_by_params(step=step)
+            perms = _account.get_perms_by_params(to_user=user, is_delete=False, ptype=enum_account.PERM_PTYPE_SCRIPT)
+            scripts = _script.Script.objects.filter(Q(create_user=user)|Q(pk__in=[perm.object_id for perm in perms]),
+                                                    is_delete=False,is_once=False)
+            version = sub_step.version
+            script = version.script if version and version.script in scripts else None
+            versions = _script.get_versions_by_params(script=script,is_delete=False) if script else None
+            
+            scrip_id_list = [script.id for script in scripts]
+            user_set = set()
+            user_set.add(user)
+            accounts_perm = _account.get_perms_by_params(object_id__in=scrip_id_list, is_delete=False)
+            for account_perm in accounts_perm:
+                user_set.add(account_perm.create_user)
+                user_set.add(account_perm.to_user)
+            accounts = _account.get_accounts_by_params(is_delete=False,create_user__in=list(user_set))
+            
+            accountForm = AccountForm(auto_id="step_script_%s")
+            account_id = step.account.id if step.account else 0
+
+        elif type_value == enum_template.STEP_TYPE_PULL_FILE:
+            template_file = "job_manage/edit_pull_file.html"
+            sub_step = _template.get_templateStepPullFile_by_params(step=step)
+            file_paths = [] if not sub_step.file_paths else json.loads(sub_step.file_paths)
+
+        elif type_value == enum_template.STEP_TYPE_PUSH_FILE:
+            template_file = "job_manage/edit_send_file.html"
+            sub_step = _template.get_templateStepPushFile_by_params(step=step)
+            file_infos = _template.get_templateFileInfos_by_params(step=step)
+            local_uploads = file_infos.filter(location_type=enum_template.UPLOAD_TYPE_LOCAL).values('record')
+            remote_uploads = file_infos.filter(location_type=enum_template.UPLOAD_TYPE_REMOTE)
+            local_ids = "" if not local_uploads else " ".join(str(item.get('record')) for item in local_uploads)+" "
+            remote_uploads_str = ""
+            if remote_uploads.count()>0:
+                remote_dict = {}
+                remote_dict['remote'] = [{"name":item.remote_path,"ip":item.remote_ip} for item in remote_uploads]
+                remote_uploads_str = json.dumps(remote_dict)
+            user = request.user
+            max_upload_size = MAX_UPLOAD_SIZE
+            fileserver_url = FILE_SERVER_HOST
+
+        elif type_value == enum_template.STEP_TYPE_TEXT:
+            template_file = "job_manage/edit_text.html"
+            sub_step = _template.get_templateStepText_by_params(step=step)
+
+        if type_value in [enum_template.STEP_TYPE_PULL_FILE,enum_template.STEP_TYPE_PUSH_FILE,enum_template.STEP_TYPE_SCRIPT]:
+            target_ips = json.loads(step.target) if step.target else []
+            hide_ip_dict = build_hidden_ip_dict(target_ips)
+            hide_ip_json = json.dumps(hide_ip_dict)
+
+        status=200
+        data['html'] = render_to_string(template_file,locals())
+        data['name'] = step.name
+    except Exception,e:
+        data['msg'] = msg if msg else u"步骤信息获取失败"
+        error = traceback.format_exc()
+        logger.error(error)
+        print error
+    return HttpResponse(json.dumps({
+            "status":status,
+            "result":data
+    }, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def template_step_save(request,template_step_id):
+    """
+        save template step.
+    """
+
+    req = request.POST
+    user = request.user
+    status = 500
+    data = {}
+    msg = ""
+    logger.debug("start template step save...")
+    try:
+        step = _template.get_templateStep_by_params(id=template_step_id)
+        if not step:
+            msg = u"步骤不存在"
+            raise
+        # if step.template.create_user!=user:
+        #     msg = u"您不是该步骤的所有者"
+        #     raise
+
+        type_value = step.step_type
+        sub_step = None
+        if type_value == enum_template.STEP_TYPE_SCRIPT:
+            sub_step = _template.get_templateStepScript_by_params(step=step)
+            version_id = req.get("step_version","")
+            parameter = req.get("parameter","")
+            timeout = req.get("timeout",0)
+            if version_id and version_id:
+                version = _script.get_version_by_params(id=version_id)
+                sub_step.version = version
+            sub_step.parameter = "" if not parameter else parameter
+            sub_step.timeout = 0 if not timeout else timeout
+
+        elif type_value == enum_template.STEP_TYPE_PULL_FILE:
+            sub_step = _template.get_templateStepPullFile_by_params(step=step)
+            target_path = req.get("pull_file_target_path","")
+            pull_to_ip = req.get("pull_to_ip","")
+            src_paths = req.get("edit_pullfile_hide","")
+            path_list = list(set(src_paths.split(",")))
+            path_list = sorted(path_list)
+            sub_step.pull_to = target_path
+            sub_step.pull_to_ip = pull_to_ip
+            sub_step.file_paths = json.dumps(path_list)
+
+        elif type_value == enum_template.STEP_TYPE_PUSH_FILE:
+            sub_step = _template.get_templateStepPushFile_by_params(step=step)
+            send_file_target_path = req.get("send_file_target_path","")
+            record_local_ids_data = req.get("edit_sendfile_record","")
+            send_file_remote_json = req.get("send_file_remote_files_list",{})
+
+            sub_step.push_to = send_file_target_path
+            file_info_ids = set()
+            ### add remote file info.
+            if send_file_remote_json:
+                send_file_remote_json = json.loads(send_file_remote_json)
+                send_file_remote_json = send_file_remote_json.get("remote",[])
+                if send_file_remote_json:
+                    for item in send_file_remote_json:
+                        path = item.get("name","").strip()
+                        remote_ip = item.get("ip","").strip()
+#                        remote_account = item.get("account_id","").strip()
+                        file_info,_ = _template.get_or_create_templateFileInfo_by_params(step=step,
+                                                             remote_ip=remote_ip, remote_path=path,
+                                                             location_type=enum_template.UPLOAD_TYPE_REMOTE,
+                                                             push_account=None)
+                        file_info_ids.add(file_info.id)
+
+            # add local file record ids.
+            if record_local_ids_data:
+                record_local_ids_data = record_local_ids_data.strip(' ')
+                record_local_ids = record_local_ids_data.split(' ')
+                for record_id in record_local_ids:
+                    record = _file.get_uploadRecord_by_params(pk=record_id)
+                    file_info,_ = _template.get_or_create_templateFileInfo_by_params(step=step,
+                                                               remote_ip=record.src_ip, remote_path=record.remote_path,
+                                                               location_type=enum_template.UPLOAD_TYPE_LOCAL)
+                    file_info.record = record
+                    file_info.save()
+                    print "==== id: ",file_info.id
+                    file_info_ids.add(file_info.id)
+
+            #### delete old pushfileinfo records.
+            _template.get_templateFileInfos_by_params(step=step).exclude(pk__in=file_info_ids).delete()
+
+
+        elif type_value == enum_template.STEP_TYPE_TEXT:
+            sub_step = _template.get_templateStepText_by_params(step=step)
+            sub_step.describe = req.get("step_description","")
+
+        if type_value in [enum_template.STEP_TYPE_PULL_FILE,enum_template.STEP_TYPE_PUSH_FILE,enum_template.STEP_TYPE_SCRIPT]:
+            if req.get("dst_use_own",""):
+                ips_json = req.get('target_ips_hide',"")
+                ip_set = get_input_ips(ips_json)
+                step.target = json.dumps(list(ip_set))
+                step.is_setting = 1
+                if type_value == enum_template.STEP_TYPE_SCRIPT:
+                    account_id = req.get("template_account","")
+                    if account_id:
+                        account = _account.get_account_by_params(id=int(account_id))
+                        step.account = account
+            else:
+                step.target = ""
+                step.is_setting = 0
+        step.name = req.get("step_name",step.name)
+        step.describe = req.get("step_description","")
+        step.save()
+        sub_step.save()
+        status=200
+        data['msg'] = u"步骤保存成功"
+        
+        change_template_sync_status(step.template)
+    except Exception,e:
+        data['msg'] = msg if msg else u"步骤保存失败"
+        error = traceback.format_exc()
+        logger.error(error)
+        print error
+    return HttpResponse(json.dumps({
+            "status":status,
+            "result":data
+    }, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def get_script_versions(request,script_id):
+    """
+        get all versions for given script.
+    """
+    user = request.user
+    status = 500
+    data = {}
+    try:
+        script = _script.get_script_by_params(pk=script_id,is_delete=False,is_once=False)
+        if not script:
+            msg = u'未找到该id对应脚本'
+        else:
+            versions = _script.get_versions_by_params(script=script,is_delete=False)
+            vers_info = {}
+            [vers_info.update({ver.id:ver.name}) for ver in versions]
+            msg = u'操作成功'
+            status = 200
+            data.update({"versions":vers_info})
+    except Exception,e:
+        msg = u"未知错误"
+        error = traceback.format_exc()
+        print error
+        logger.error(error)
+    data.update({'msg':msg})
+    return HttpResponse(json.dumps({
+        'status': status,
+        'result': data
+    }, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def get_version_content(request, version_id):
+    """
+        获取脚本详情.
+    """
+
+    version = _script.get_version_by_params(id=version_id)
+    describe = version.script.describe
+    status = 500
+    data = {'describe':describe}
+    try:
+        file_path = os.path.join(MEDIA_ROOT,'scripts','%s'%version.sfile)
+        f = open(file_path)
+        try:
+            file_content = f.read()
+            data.update({"content":file_content})
+            status=200
+        except Exception,e:
+            print e
+        finally:
+            f.close()
+    except:
+        data['msg'] = u"脚本内容获取失败"
+        error = traceback.format_exc()
+        print error
+    return HttpResponse(json.dumps({
+        'status':status,
+        'result':data
+    }, cls=LazyEncoder))
+
+
+@login_required
+@csrf_exempt
+def get_script_list(request):
+    """
+        获取脚本列表
+    """
+
+    status = 500
+    data = {}
+    user = request.user
+    try:
+        scripts = _script.get_scripts_by_params(create_user=user, is_once=False, is_delete=False)
+        perms = Perm.objects.filter(to_user=user, is_delete=False, ptype=enum_account.PERM_PTYPE_SCRIPT)
+        auth_scripts = _script.get_scripts_by_params(
+            pk__in=[perm.object_id for perm in perms]) if perms.count() > 0 else []
+        res = [{"s_id": script.id, "s_name": script.name} for script in scripts]
+        res.extend([{"s_id": script.id, "s_name": script.name} for script in auth_scripts])
+        data.update({
+            'scripts': res
+        })
+        status = 200
+    except:
+        data['msg'] = u"脚本列表获取失败"
+        error = traceback.format_exc()
+        print error
+    return HttpResponse(json.dumps({
+        'status':status,
+        'result':data
+    }, cls=LazyEncoder))
+
+def change_template_sync_status(template):
+    jobs = _job.get_jobs_by_params(template=template)
+    for job in jobs:
+        job.is_sync = False
+        job.save()

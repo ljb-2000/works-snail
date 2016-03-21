@@ -1,0 +1,16 @@
+<!--文本步骤设置项-->
+<legend style="font-size:14px"><span class="caret-arrow-up"></span>步骤设置</legend>
+<form class="form-horizontal">{% csrf_token %}
+	<div class="control-group">
+		<label class="control-label muted">步骤名称：<span class="red">*</span></label>
+		<div class="controls">
+			<input type="text" disabled value="{{ history_step_text.step.name }}">
+		</div>
+	</div>
+	<div class="control-group">
+		<label class="control-label muted">文本描述：<span class="red">*</span></label>
+		<div class="controls">
+			<textarea placeholder="请输入文本描述" style="width:420px;height:70px;" disabled>{{ history_step_text.describe }}</textarea>
+		</div>
+	</div>
+</form>

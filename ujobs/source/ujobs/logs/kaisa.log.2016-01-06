@@ -1,0 +1,136 @@
+2016-01-06 08:55:41,464 [Thread-11671:11000] [logger:41] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\timing_manage.py", line 38, in timing_manage_list
+    logger.debug("current job status: {0}".format(scheduler.print_jobs()))
+  File "C:\Python27\lib\site-packages\apscheduler\schedulers\base.py", line 555, in print_jobs
+    jobs = store.get_all_jobs()
+  File "C:\Python27\lib\site-packages\apscheduler\jobstores\sqlalchemy.py", line 73, in get_all_jobs
+    jobs = self._get_jobs()
+  File "C:\Python27\lib\site-packages\apscheduler\jobstores\sqlalchemy.py", line 124, in _get_jobs
+    for row in self.engine.execute(selectable):
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1991, in execute
+    return connection.execute(statement, *multiparams, **params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 914, in execute
+    return meth(self, multiparams, params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\sql\elements.py", line 323, in _execute_on_connection
+    return connection._execute_clauseelement(self, multiparams, params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1010, in _execute_clauseelement
+    compiled_sql, distilled_params
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1146, in _execute_context
+    context)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1341, in _handle_dbapi_exception
+    exc_info
+  File "C:\Python27\lib\site-packages\sqlalchemy\util\compat.py", line 199, in raise_from_cause
+    reraise(type(exception), exception, tb=exc_tb)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1139, in _execute_context
+    context)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\default.py", line 450, in do_execute
+    cursor.execute(statement, parameters)
+  File "C:\Python27\lib\site-packages\MySQLdb\cursors.py", line 205, in execute
+    self.errorhandler(self, exc, value)
+  File "C:\Python27\lib\site-packages\MySQLdb\connections.py", line 36, in defaulterrorhandler
+    raise errorclass, errorvalue
+OperationalError: (_mysql_exceptions.OperationalError) (2006, 'MySQL server has gone away') [SQL: u'SELECT apscheduler_jobs.id, apscheduler_jobs.job_state \nFROM apscheduler_jobs ORDER BY apscheduler_jobs.next_run_time']
+
+2016-01-06 08:56:37,648 [Thread-11735:6388] [logger:38] [DEBUG]- current job status: None
+2016-01-06 08:58:18,714 [Thread-11824:10848] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-06 08:58:39,651 [Thread-11933:10228] [logger:38] [DEBUG]- current job status: None
+2016-01-06 09:42:00,878 [Thread-11965:10932] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-06 09:42:55,111 [Thread-12028:8644] [logger:38] [DEBUG]- current job status: None
+2016-01-06 10:47:25,563 [Thread-12053:13672] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-06 11:02:08,117 [Thread-12115:15800] [logger:38] [DEBUG]- current job status: None
+2016-01-06 11:31:22,364 [Thread-12198:16172] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-06 11:31:24,842 [Thread-12201:13548] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-06 11:31:29,634 [Thread-12210:7772] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-06 11:31:53,142 [Thread-12221:15464] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-06 12:02:51,980 [Thread-12491:18768] [logger:38] [DEBUG]- current job status: None
+2016-01-06 13:28:37,816 [Thread-12960:19024] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-06 13:28:49,490 [Thread-12986:15124] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-06 13:28:49,769 [Thread-12988:18912] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-06 13:44:21,022 [Thread-14271:20916] [logger:38] [DEBUG]- current job status: None
+2016-01-06 13:46:33,536 [Thread-14370:20744] [logger:38] [DEBUG]- current job status: None
+2016-01-06 13:48:20,766 [Thread-14398:18924] [logger:38] [DEBUG]- current job status: None
+2016-01-06 13:52:39,375 [Thread-14505:20992] [logger:38] [DEBUG]- current job status: None
+2016-01-06 14:00:46,296 [Thread-14582:21444] [logger:38] [DEBUG]- current job status: None
+2016-01-06 14:00:57,500 [Thread-14587:20852] [logger_files:408] [DEBUG]- request<QueryDict: {u'file_name': [u'duilib license.txt'], u'md5sum': [u'3693bf3e542ce8bfd2a5d3594012c280'], u'size': [u'1417']}>
+2016-01-06 14:00:57,502 [Thread-14587:20852] [logger_files:443] [DEBUG]- file info not found.
+2016-01-06 14:00:57,502 [Thread-14587:20852] [logger_files:453] [DEBUG]- ## check result, status:200,result:{'existed': False}
+2016-01-06 14:02:00,075 [Thread-14594:20112] [logger:42] [ERROR]- Script对象不存在（{'create_user': <SimpleLazyObject: <User: luozh>>, 'name': u'1212', 'is_delete': False}）
+2016-01-06 14:02:47,848 [Thread-14652:21020] [logger:38] [DEBUG]- current job status: None
+2016-01-06 14:03:30,088 [Thread-14848:20728] [logger:38] [DEBUG]- current job status: None
+2016-01-06 14:04:51,855 [Thread-14916:19612] [logger:38] [DEBUG]- current job status: None
+2016-01-06 14:06:00,756 [Thread-14931:19716] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-06 14:06:18,701 [Thread-14987:18636] [logger:38] [DEBUG]- current job status: None
+2016-01-06 14:07:38,451 [Thread-15028:20504] [logger:38] [DEBUG]- current job status: None
+2016-01-06 14:49:12,503 [Thread-15340:21468] [logger:38] [DEBUG]- current job status: None
+2016-01-06 14:51:28,615 [Thread-15436:7452] [logger:38] [DEBUG]- current job status: None
+2016-01-06 14:52:07,891 [Thread-15485:20036] [logger:38] [DEBUG]- current job status: None
+2016-01-06 14:52:48,996 [Thread-15664:20684] [logger:38] [DEBUG]- current job status: None
+2016-01-06 15:08:14,513 [Thread-16240:8524] [logger:38] [DEBUG]- current job status: None
+2016-01-06 15:17:02,178 [Thread-16584:20836] [logger:38] [DEBUG]- current job status: None
+2016-01-06 15:17:13,426 [Thread-16632:6660] [logger:38] [DEBUG]- current job status: None
+2016-01-06 15:19:53,707 [Thread-16741:20656] [logger:38] [DEBUG]- current job status: None
+2016-01-06 15:20:31,098 [Thread-16844:21012] [logger:38] [DEBUG]- current job status: None
+2016-01-06 15:22:05,936 [Thread-16940:20756] [logger:38] [DEBUG]- current job status: None
+2016-01-06 15:40:40,943 [Thread-17377:21352] [logger:38] [DEBUG]- current job status: None
+2016-01-06 15:43:11,272 [Thread-17512:20920] [logger:38] [DEBUG]- current job status: None
+2016-01-06 15:48:57,028 [Thread-18163:20008] [logger:38] [DEBUG]- current job status: None
+2016-01-06 15:49:06,427 [Thread-18249:18684] [logger:38] [DEBUG]- current job status: None
+2016-01-06 15:49:47,283 [Thread-18430:1448] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:04:54,795 [Thread-19875:21900] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-06 16:09:44,255 [Thread-20482:22476] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:11:03,334 [Thread-20572:22112] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:11:54,743 [Thread-20689:18908] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:13:17,923 [Thread-20823:21752] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:19:06,694 [Thread-21132:22220] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:20:33,542 [Thread-21240:21076] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:22:51,558 [Thread-21411:20008] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:42:00,720 [Thread-22140:21556] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:50:06,924 [Thread-22493:21700] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:50:19,775 [Thread-22544:7452] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:51:21,502 [Thread-22597:21812] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:51:49,461 [Thread-22649:22484] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:52:18,967 [Thread-22769:23020] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:54:00,118 [Thread-22871:21988] [logger:38] [DEBUG]- current job status: None
+2016-01-06 16:54:10,243 [Thread-22929:23324] [logger:38] [DEBUG]- current job status: None
+2016-01-06 17:17:43,431 [Thread-23491:22820] [logger:38] [DEBUG]- current job status: None
+2016-01-06 17:37:53,232 [Thread-24501:22852] [logger:38] [DEBUG]- current job status: None
+2016-01-06 17:38:55,207 [Thread-24560:22612] [logger:38] [DEBUG]- current job status: None
+2016-01-06 17:42:14,533 [Thread-24765:21556] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:01:06,144 [Thread-142:21868] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:02:15,676 [Thread-196:22632] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:06:44,993 [Thread-483:21284] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:07:22,197 [Thread-536:23092] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:07:42,615 [Thread-584:21172] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:08:52,614 [Thread-659:22616] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:10:20,171 [Thread-896:18040] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:10:39,726 [Thread-915:23332] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20160106181035>, 'template_step': <TemplateStep: 拉取文件>}）
+2016-01-06 18:10:39,749 [Thread-915:23332] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20160106181035>, 'template_step': <TemplateStep: 分发文件>}）
+2016-01-06 18:10:39,769 [Thread-915:23332] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20160106181035>, 'template_step': <TemplateStep: 执行脚本>}）
+2016-01-06 18:10:39,786 [Thread-915:23332] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20160106181035>, 'template_step': <TemplateStep: 执行脚本>}）
+2016-01-06 18:10:39,808 [Thread-915:23332] [logger:1186] [DEBUG]- start check fail, job_id: 3, step_id:11
+2016-01-06 18:14:33,204 [Thread-969:22356] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:16:06,430 [Thread-1026:24068] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20160105132644>, 'template_step': <TemplateStep: 执行脚本>}）
+2016-01-06 18:16:06,444 [Thread-1026:24068] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20160105132644>, 'template_step': <TemplateStep: 分发文件>}）
+2016-01-06 18:17:42,687 [Thread-1126:23148] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:17:58,915 [Thread-1189:19860] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:20:17,868 [Thread-1241:23880] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:23:52,884 [Thread-1311:24048] [logger:38] [DEBUG]- current job status: None
+2016-01-06 18:49:59,040 [Thread-1348:24556] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-06 18:51:18,888 [Thread-1399:6328] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-06 18:51:50,601 [Thread-1450:23864] [logger:40] [DEBUG]- [user login] luozh login ok.

@@ -1,0 +1,174 @@
+<!-- 编辑作业（拉取文件）--> 
+<div class="row-fluid edit-pullfile-wrap">
+	<form  id="edit_template_step_form_{{ step.id }}" class="form-horizontal">{% csrf_token %}
+		<div class="control-group">
+			<label class="control-label muted">步骤名称：<span class="red">*</span></label>
+			<div class="controls">
+				<input  id="step_name" class="edit-pullfile-name" name="step_name" type="text" placeholder="请输入步骤名称" value='{{ step.name }}'>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">步骤描述：<span class="red">*</span></label>
+			<div class="controls">
+				<textarea id="step_description" class="txtstyle edit-pullfile-desc" name="step_description" placeholder="请输入步骤描述">{{ step.describe }}</textarea>
+			</div>		  
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">待拉取文件：<span class="red">*</span></label>
+			<div class="controls">
+				<textarea class="txtstyle edit-pullfile-filelists" rows="2" placeholder="请输入文件名，多个文件请以 ‘回车’ 分隔"></textarea>
+                <textarea id="edit_pullfile_hide" class="edit-pullfile-file-hide" name="edit_pullfile_hide" style="display: none;"></textarea>
+				<a class="tooltips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" title="" data-original-title="只能为具体的文件，不能为目录"><i class="icon-question-sign"></i></a>
+				<button type="button" class="edit-pullfile-addfile btn btn-default">
+					<i class="icon-plus"></i>
+					添加待拉取文件
+				</button>
+			</div>
+		</div>
+		<div class="controls">
+            <b></b>
+            <ul class="edit-pullfile-list file-style">
+                {% for foo in file_paths %}
+                    <li class="clearfix list2">拉取文件：<i class="file-road">{{ foo }}</i><i class="ipconfig"></i><i class="server-account"></i><span onclick="del_file(this)">删除</span></li>
+                {% endfor %}
+            </ul>
+        </div>
+		<div class="control-group">
+			<label class="control-label muted">拉取至 IP：<span class="red">*</span></label>
+			<div class="controls">
+				<input id="pull_to_ip" class="edit-pullfile-ip" name="pull_to_ip" type="text" placeholder="请输入IP地址" value="{{ sub_step.pull_to_ip }}">
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">路径：<span class="red">*</span></label>
+			<div class="controls">
+				<input type="text" id="pull_file_target_path" class="edit-pullfile-path" name="pull_file_target_path" placeholder="请填要拉取到的路径,如包含[TARGET_IP]时会替换为拉取机器IP" value="{{ sub_step.pull_to }}"/>
+				<a class="tooltips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" title="" data-original-title="只允许为目录；如果该路径不存在，系统将自动创建该路径；linux下格式为/tmp；windows路径格式为c:\temp;如包含[TARGET_IP]时会替换为拉取机器IP"><i class="icon-question-sign"></i></a>
+			</div>
+		</div>
+		<div class="control-group">
+			<div class="controls">
+				<input  id="dst_use_own" name="dst_use_own" class="check-toggle4" style="margin-top: 8px;" type="checkbox" {% if step.is_setting > 0 %}checked="checked"{% endif %}>
+				<label style="display:inline-block;">本步骤使用如下目标机器取代全程目标机器</label>
+			</div>			  
+		</div>
+		<div class="control-group check-toggle-box4 {% if not step.is_setting %}hide{% endif %}">
+			<label class="control-label muted">目标机器：</label>
+			<div class="controls">
+				<textarea rows="5" class="txtstyle edit-pullfile-ip-area" placeholder="请输入机器IP，操作多个机器以“回车”换行"></textarea>
+				<textarea id="target_ips_hide" name="target_ips_hide" class="edit-pullfile-ip-hide" style="display: none;">{{ hide_ip_json }}</textarea>
+				
+				<button type="button" class="btn btn-default add-btn-status ip-add-btn2" data-msg="pullfile" data-loading-text="ip检测中,请稍后..." autocomplete="off">
+					<i class="icon-plus"></i>
+					IP添加
+				</button>
+				<button type="button" class="select-servers btn btn-default" data-msg="edit-pullfile-wrap" data-toggle="modal" data-target="#selectServer4" data-loading-text="ip验证中,请稍后..." autocomplete="off">
+					<i class="icon-th-list"></i>
+					选择目标机器 
+				</button>
+			</div>  
+			<div class="controls edit-pullfile-ip-wrap">
+				<b>{% if target_ips|length > 0 %}涉及服务器[{{ target_ips|length }}]台，仅[{{ hide_ip_dict.num }}]台支持操作{% endif %}</b>
+				<ul class="edit-pullfile-ip-result ip-style" data-msg="pullfile">
+                    {% for key,value in hide_ip_dict.items %}
+                        {% if key != 'num' and key != 'total' %}
+                            <li class="clearfix">
+                                <i class="ipconfig" id="{{ key }}">{{ value.3 }}</i>
+                                <i class="os">{{ value.2 }}</i>
+                                <i class="status1">agent{% if value.0 == 1 %}
+                                    正常{% elif value.0 == -1 %}异常{% elif value.0 == -99 %}不存在
+                                {% endif %} </i>
+                                <i class="status2">{% if value.0 != 1 %}不{% endif %}支持操作</i>
+                                <span>删除</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+				</ul>
+			</div>
+		</div>
+		<br>
+		<div class="control-group">
+			<div class="controls">
+				<button class="btn btn-primary edit-pullfile-save" data-type="pullfile" onclick="handle_edit_template_step_v2({{ step.id }},{{ step.template.id }},true,this,true);return false;">
+					<i class="icon-ok icon-white"></i>
+					保存步骤
+				</button>
+				<button class="btn btn-success" onclick="handle_edit_template_step_v2({{ step.id }},{{ step.template.id }},false,this,false);return false;">
+					<i class="icon-share-alt icon-white"></i>
+					返回
+				</button>
+			</div>
+		</div>
+	</form>
+</div>
+
+<!-- modal one -->
+<div class="set-model modal hide fade" id="selectServer4" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria  -hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="selectServerLabel4">选择目标服务器</h4>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+		  <li class="active"><a href="#md_text_view4" data-toggle="tab">配置中心  - CMDB</a></li>
+		  <li class="fliter-tab"><a href="#md_fliter4" data-toggle="tab">条件选择</a></li>
+		</ul>
+		<div class="tab-content">
+			<div class="tab-pane active" id="md_text_view4">
+				<div class="ujobs-cmdb-tree">
+					
+				</div>
+				<div class="modal-footer">
+					<button class="add-servers-ip btn btn-primary" data-msg="pullfile" data-dismiss="modal">添加选中</button>
+					<button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+			    </div>
+			</div>
+			<div class="tab-pane" id="md_fliter4">
+				<form class="form-horizontal fliter-select">
+					<div class="control-group">
+						<label class="control-label">产品：<span class="red">*</span></label>
+						<div class="controls">
+			                <select class="product-fliter">
+			                </select>
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">set：</label>
+						<div class="controls">
+			                <input class="set-fliter" type="text" value="">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">module：</label>
+						<div class="controls">
+			                <input class="module-fliter" type="text" value="">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">已选set：<span class="red">*</span></label>
+						<div class="controls">
+			                <input class="set-value" type="text" value="" disabled>
+			                <button class="clear-fliter btn btn-default" data-msg="set" onclick="return false">清空</button>
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">已选module：<span class="red">*</span></label>
+						<div class="controls">
+			                <input class="module-value" type="text" value="" disabled>
+			                <button class="clear-fliter btn btn-default" onclick="return false">清空</button>
+						</div>
+					</div>
+				</form>
+				<div class="modal-footer">
+					<button class="add-fliter btn btn-primary" data-msg="pullfile" data-dismiss="modal">添加</button>
+					<button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+		     	</div>
+			</div>
+		</div>
+      </div>
+</div>
+<script>
+	// 按钮样式
+	icheck($(".edit-pullfile-wrap input:checkbox"));
+	$(".tooltips").tooltip();
+</script>

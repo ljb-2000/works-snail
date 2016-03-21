@@ -1,0 +1,308 @@
+<!-- 编辑作业（脚本）-->  
+<div class="row-fluid edit-script-wrap">
+	<form id="edit_template_step_form_{{ step.id }}" class="form-horizontal">{% csrf_token %}
+		<div class="control-group">
+			<label class="control-label muted">步骤名称：<span class="red">*</span></label>
+			<div class="controls">
+				<input  id="step_name" class="edit-script-name" name="step_name" type="text" placeholder="请输入步骤名称" value='{{ step.name }}'>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">步骤描述：<span class="red">*</span></label>
+			<div class="controls">
+				<textarea id="step_description" name="step_description" class="txtstyle edit-script-desc" placeholder="请输入步骤描述">{{ step.describe }}</textarea>
+			</div>		  
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">步骤脚本：<span class="red">*</span></label>
+			<div class="controls">
+				<select id="step_script" class="edit-script-option" name="step_script" style="width:140px;">
+                    <option value="">请选择步骤脚本</option>
+					{% if scripts and scripts|length > 0 %}
+                        {% for script in scripts %}
+                            <option value="{{ script.id }}" {% if version and version.script == script %}selected{% endif %} >{{ script.name }}</option>
+                        {% endfor %}
+					{% endif %}
+				</select>
+				<select id="step_version" class="edit-script-version" name="step_version" style="width:290px;">
+                    <option value="">请选择版本</option>
+                    {% if versions and versions|length > 0 %}
+                        {% for ver in versions %}
+                            <option value="{{ ver.id }}" {% if ver and version.id == ver.id %}selected{% endif %}>{{ ver.name }}</option>
+                        {% endfor %}
+                    {% endif %}
+				</select>
+				<button type="button" class="btn btn-default" onclick="template_step_script_view({{ step.id }});return false;">
+                    <i class="icon-list"></i>
+                    查看
+                </button>
+				<button type="button" class="btn btn-default" onclick="show_script_add();return false;">
+                    <i class="icon-plus"></i>
+                    新建
+                </button>
+				<button type="button" class="btn btn-default" onclick="template_step_refresh_script_list({{ step.id }});return false;">
+                    <i class="icon-refresh"></i>
+                    刷新
+                </button>
+			</div>			  
+		</div>
+		<div class="control-group">
+			<div class="controls">
+				<input class="check-toggle" data-msg="box" style="margin-top: 8px;" type="checkbox" checked="checked">
+				<label style="display:inline-block;">查看脚本详细信息</label>
+			</div>			  
+		</div>
+		<div class="control-group check-toggle-box">
+			<label class="control-label muted">脚本描述：</label>
+			<div class="controls">
+				<textarea id="edit_script_describe_{{ step.id }}" class="txtstyle" placeholder="请选择一个步骤脚本" disabled></textarea>
+			</div>		  
+		</div>
+		<div class="control-group check-toggle-box">
+			<label class="control-label muted">脚本内容：</label>
+			<div class="controls">
+				<p><select id="edit_script_select_{{ step.id }}" style="width: 200px;" disabled="disabled">
+				    <option>default</option>
+				    <option>3024-night</option>
+				    <option selected>erlang-dark</option>
+				</select></p>
+				
+				<textarea id="edit_script_code_{{ step.id }}"></textarea>
+			</div>			  
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">超时时间（秒）：</label>
+			<div class="controls">
+				<input id="timeout" name="timeout" class="ujobs_timeout form-control" value="{{ sub_step.timeout }}" style="width:420px;" type="number" min="0" max="259200" onkeydown="return doit()" placeholder="最长等待执行秒数，超时则系统返回失败">
+			</div>			  
+		</div>
+	
+		<div class="control-group">
+			<label class="control-label muted">入口参数：</label>
+			<div class="controls">
+				<input id="parameter" name="parameter" value="{{ sub_step.parameter }}" type="text" class="form-control" placeholder="该参数用于脚本的输入参数，以空格相隔，无则不填">
+				<a class="tooltips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" title="" data-original-title="脚本入口参数支持时间宏变量[DATEFMT:%Y-%m-%d]，时间格式遵循strftime的格式，宏变量将以ujobs开始执行任务的时间替换"><i class="icon-question-sign"></i></a>
+			</div>			  
+		</div>
+		<div class="control-group">
+			<div class="controls">
+				<input id="dst_use_own" name="dst_use_own"  class="check-toggle" data-msg="box2" style="margin-top: 8px;" type="checkbox" {% if target_ips|length > 0 %}checked="checked"{% endif %}>
+				<label style="display:inline-block;">本步骤使用如下目标机器取代全程目标机器</label>
+			</div>			  
+		</div>
+		<div class="control-group check-toggle-box2 {% if not step.is_setting %}hide{% endif %}">
+			<label class="control-label muted">目标机器：</label>
+			<div class="controls">
+				<textarea rows="5" class="txtstyle edit-script-ip-area" placeholder="请输入机器IP，操作多个机器以“回车”换行"></textarea>
+				<textarea  id="target_ips_hide" name="target_ips_hide" class="edit-script-ip-hide" style="display: none;">{{ hide_ip_json }}</textarea>
+				
+				<button type="button" class="btn btn-default add-btn-status ip-add-btn" data-msg="script" data-loading-text="ip检测中,请稍后..." autocomplete="off">
+                    <i class="icon-plus"></i>
+                    IP添加
+                </button>
+				<button type="button" class="select-servers btn btn-default" data-msg="edit-script-wrap" data-toggle="modal" data-target="#selectServer3" data-loading-text="ip验证中,请稍后..." autocomplete="off">
+                    <i class="icon-th-list"></i>
+                    选择目标机器
+                </button>
+			</div>  
+			<div class="controls edit-script-ip-wrap">
+				<b>{% if target_ips|length > 0 %}涉及服务器[{{ target_ips|length }}]台，仅[{{ hide_ip_dict.num }}]台支持操作{% endif %}</b>
+				<ul class="edit-script-ip-result ip-style" data-msg="script">
+                    {% for key,value in hide_ip_dict.items %}
+                        {% if key != 'num' and key != 'total' %}
+                            <li class="clearfix">
+                                <i class="ipconfig">{{ key }}</i>
+                                <i class="status1">agent{% if value.0 == 1 %}
+                                    正常{% elif value.0 == -1 %}异常{% elif value.0 == -99 %}不存在
+                                {% endif %} </i>
+                                <i class="status2">{% if value.0 != 1 %}不{% endif %}支持操作</i>
+                                <span>删除</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+				</ul>
+			</div>
+		</div>
+		<div class="control-group check-toggle-box2 {% if not step.is_setting %}hide{% endif %}">
+			<label class="control-label muted">执行账户：<span class="red">*</span></label>
+			<div class="controls">
+				<select id="template_account" name="template_account" class="reg-val account-msg" style="width: 434px;">
+                    {% for account in accounts %}
+                        <option value="{{account.id}}" {% if account_id == account.id%}selected{% endif %}>{{account.name}}&nbsp;&nbsp;账号:{{account.name_abbr}}</option>
+                    {% endfor %}
+				</select>
+                <button type="button" class="btn btn-default reg-user" data-toggle="modal" data-target="#myModal_templatestep_{{ step.pk }}">
+                    <i class="icon-plus"></i>
+                    登记账户
+                </button>
+				<button type="button" class="btn btn-default reg-user" onclick="refresh_accounts(this);return false;">
+                    <i class="icon-refresh"></i>
+                    刷新
+                </button>
+			</div>			  
+		</div>	
+		<br>
+		<div class="control-group">
+			<div class="controls">
+				<button class="btn btn-primary edit-script-save" data-type="script" onclick="handle_edit_template_step({{ step.id }},{{ step.template.id }},true,this,false);return false;">
+                    <i class="icon-ok icon-white"></i>
+                    保存步骤
+                </button>
+				<button class="btn btn-success" onclick="handle_edit_template_step({{ step.id }},{{ step.template.id }},false,this,false);return false;">
+                    <i class="icon-share-alt icon-white"></i>
+                    返回
+                </button>
+			</div>
+		</div>
+	</form>
+</div>
+
+<!-- add account modal -->
+<div class="modal fade" id="myModal_templatestep_{{ step.pk }}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="width:640px;">
+	{% include 'account/account_modal.html' %}
+</div>
+
+<!-- modal one -->
+<div class="set-model modal hide fade" id="selectServer3" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria  -hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="selectServerLabel3">选择目标服务器</h4>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+		  <li class="active"><a href="#md_text_view3" data-toggle="tab">配置中心  - CMDB</a></li>
+		  <li class="fliter-tab"><a href="#md_fliter3" data-toggle="tab">条件选择</a></li>
+		</ul>
+		<div class="tab-content">
+			<div class="tab-pane active" id="md_text_view3">
+				<div class="ujobs-cmdb-tree">
+					
+				</div>
+				<div class="modal-footer">
+					<button class="add-servers-ip btn btn-primary" data-msg="script" data-dismiss="modal">添加选中</button>
+					<button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+			    </div>
+			</div>
+			<div class="tab-pane" id="md_fliter3">
+				<form class="form-horizontal fliter-select">
+					<div class="control-group">
+						<label class="control-label">产品：<span class="red">*</span></label>
+						<div class="controls">
+			                <select class="product-fliter">
+			                </select>
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">set：</label>
+						<div class="controls">
+			                <input class="set-fliter" type="text" value="">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">module：</label>
+						<div class="controls">
+			                <input class="module-fliter" type="text" value="">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">已选set：<span class="red">*</span></label>
+						<div class="controls">
+			                <input class="set-value" type="text" value="" disabled>
+			                <button class="clear-fliter btn btn-default" data-msg="set" onclick="return false">清空</button>
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">已选module：<span class="red">*</span></label>
+						<div class="controls">
+			                <input class="module-value" type="text" value="" disabled>
+			                <button class="clear-fliter btn btn-default" onclick="return false">清空</button>
+						</div>
+					</div>
+				</form>
+				<div class="modal-footer">
+					<button class="add-fliter btn btn-primary" data-msg="script" data-dismiss="modal">添加</button>
+					<button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+		     	</div>
+			</div>
+		</div>
+      </div>
+</div>
+<script>
+		var edit_script_{{ step.id }}=CodeMirror.fromTextArea($("#edit_script_code_{{ step.id }}")[0], {
+	        lineNumbers: true,
+	        mode:"shell",
+	        lineWrapping:true,
+		});
+		
+		// 选择主题
+		$("#edit_script_select_{{ step.id }}").change(function(){
+		    var theme = $(this).val();
+		    edit_script_{{ step.id }}.setOption("theme", theme);
+		 });
+	
+		$("#edit_script_select_{{ step.id }}").trigger("change");
+		
+		icheck($(".edit-script-wrap input:checkbox"));
+		$(".tooltips").tooltip();
+		
+        $(document).ready(function () {
+            var select_version = $("#edit_template_step_form_{{ step.id }} #step_version");
+
+            $("#edit_template_step_form_{{ step.id }} #step_script").bind('change', function () {
+                edit_script_{{ step.id }}.setValue("");
+                var script_id = $(this).val();
+
+                if (script_id == "") {
+                    select_version.html('<option value="" selected>请选择版本</option>');
+                } else {
+                    $.ajax({
+                        type: 'GET',
+                        url: '/md_manage/get_script_versions/' + script_id + '/',
+                        dataType: 'json',
+                        success: function (data) {
+                            if (data.status == 200) {
+                                select_version.html('<option value="" selected>请选择版本</option>');
+                                $.each(data.result.versions, function (ver_id, ver_name) {
+                                    select_version.append('<option value="' + ver_id + '" >' + ver_name + '</option>');
+                                });
+                            } else {
+                                jError(data.result.msg);
+                            }
+                        },
+                        error: function () {
+                            jError('获取脚本版本信息出错');
+                        }
+                    });
+                }
+            })
+
+            select_version.change(function () {
+                var ver_id = select_version.val();
+                
+                if(ver_id==""){
+                    edit_script_{{ step.id }}.setValue("");
+                }else{
+                    $.ajax({
+                        type: 'GET',
+                        url: '/md_manage/get_version_content/' + ver_id + '/',
+                        dataType: 'json',
+                        success: function (data) {
+                            if (data.status == 200) {
+                                edit_script_{{ step.id }}.setValue(data.result.content);
+                                $('#edit_script_describe_{{ step.id }}').val(data.result.describe);
+                            } else {
+                                jError(data.result.msg);
+                            }
+                        },
+                        error: function () {
+                            jError('获取脚本内容出错');
+                        }
+                    });
+                }
+            });
+            if(select_version.val()!=""){
+                select_version.trigger('change');
+            }
+        });
+
+</script>

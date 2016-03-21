@@ -1,0 +1,245 @@
+<!--分发文件-->
+<div class="row-fluid edit-fileonce-wrap">
+	<form id="send_file_form" action="javascript:void(0);" method="post" class="form-horizontal edit-fileonce-form send-file-icheck" enctype="multipart/form-data">{% csrf_token %}
+		<div class="control-group">
+			<label class="control-label">作业名称：<span class="red">*</span></label>
+			<div class="controls">
+                <input id="send_file_job_name" name="send_file_job_name" type="text" value="{{name}}"/>
+                <input id="send_file_run_once" name="send_file_run_once" type="hidden" value="1"/>
+			</div>
+		</div>
+
+	   <div class="control-group">
+			<label class="control-label">源文件：<span class="red">*</span></label>
+			<div class="controls">
+				<label style="display: inline;margin-left: 5px;" for="send_file_location_local" ><input style="vertical-align:middle; margin-top:0;" type="radio" name="send_file_location" id="send_file_location_local" checked="checked" value="local"> 本地文件 </label>
+					<label style="display: inline;margin-left: 5px;" for="send_file_location_remote" ><input style="vertical-align:middle; margin-top:0;" type="radio" name="send_file_location" id="send_file_location_remote" value="remote"> 远程文件 </label>
+                <label style="display: inline;margin-left: 35px;"><a href="{{ fileserver_url }}index/" target="_blank">如本地上传出错,请点击此处添加证书信任</a></label>
+                <textarea id="send_file_record_ids" class="edit_fileonce_record" name="send_file_record_ids" style="display: none;"></textarea>
+            </div>
+	   </div>
+	   <div id="local-doc" class="control-group">
+			<div class="controls">
+				<input type='text' name='docfield' id='docfield' class="edit-fileonce-docfield" onfocus=this.blur() placeholder="请上传小于{{ max_upload_size }}M的本地文件" /> &nbsp;<button id='find2' type='button' value='浏览...' class='edit-fileonce-find p-filefind btn btn-default' data-msg="fileonce" data-loading-text="文件解析中,请稍后..." autocomplete="off"><i class="icon-folder-open"></i>浏览...</button>&nbsp;<button id="file-upload2" type='button' value='导入' class='edit-sendfile-upload btn btn-default' data-msg="fileonce" data-size="{{max_upload_size}}" data-loading-text="文件上传中,请稍后..." autocomplete="off"><i class="icon-arrow-up"></i>导入</button>
+				<input type="file" id="upField" class="edit-fileonce-upField p-upField" data-msg="fileonce" style="opacity:0;filter:alpha(opacity:0);margin-left:-999%"  name="upField"  size="28" />
+            </div>
+           <input type="hidden" id="send_file_hash" class="edit-fileonce-hash" name="send_file_hash" value=""/>
+           <input type="hidden" id="send_file_username" name="send_file_username" value="{{ user.username }}"/>
+	   </div>
+		<div id="far-doc" class="ml75 hide">
+			<div class="control-group">
+				<label class="control-label">IP：</label>
+				<div class="controls">
+					<input id="send_file_remote_server_ip" class="edit-fileonce-ipserver" name="send_file_remote_server_ip" style="width:345px;" type="text" placeholder="请输入IP地址" value="">
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label">文件列表：</label>
+				<div class="controls">
+					<textarea id="send_file_remote_files" class="edit-fileonce-filelists" name="send_file_remote_files" rows="2" style="width: 345px;font-size:14px;" placeholder="请输入文件名，多个文件请以 ‘回车’ 分隔"></textarea>
+                    <textarea id="send_file_remote_files_list" class="edit-fileonce-hidelists" name="send_file_remote_files_list" style="display: none;"></textarea>
+					<a class="tooltips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" title="" data-original-title="只能为具体的文件，不能为目录"><i class="icon-question-sign"></i></a>
+					<button id="add_send_file" type="button" class="p-addfile btn btn-default" data-msg="fileonce" data-loading-text="文件添加中,请稍后..." autocomplete="off"><i class="icon-plus"></i>添加待分发文件</button>
+				</div>
+			</div>
+			<div class="control-group hide">
+				<label class="control-label">常用账户：</label>
+				<div class="controls">
+				<select style="width: 359px;" class="edit-fileonce-account">
+                    <option selected></option>
+				</select>
+				</div>
+			</div>
+		</div>
+		<div class="controls hide">
+					<b></b>
+					<ul id="file-show2" class="edit-fileonce-ip file-style">
+					</ul>
+			</div>
+			<div class="control-group">
+			<label class="control-label">分发至：<span class="red">*</span></label>
+			<div class="controls">
+				<input type="text" id="send_file_target_path" name="send_file_target_path" placeholder="请填写分发的路径"/>
+				<a class="tooltips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" title="" data-original-title="只允许为目录；如果该路径不存在，系统将自动创建该路径；linux下格式为/tmp；windows路径格式为c:\temp."><i class="icon-question-sign"></i></a>
+			</div>
+		</div>
+
+		<div class="control-group hide">
+			<label class="control-label">限速：<span class="red">*</span></label>
+			<div class="controls">
+				<input id="send_file_speed" name="send_file_speed" type="text" value="10000" />
+				<a href="javascript:void(0);" data-toggle="tooltip" title="涉及windows专区或微小分布IDC时建议限速(0表示不限速)"><i class="icon-question-sign"></i></a>
+			</div>
+		</div>
+
+		<div class="control-group">
+			<label class="control-label">目标机器：<span class="red">*</span></label>
+			<div class="controls">
+				<textarea id="ip-area2" rows="5" class="txtstyle edit-fileonce-ip-area" placeholder="请输入机器IP，操作多个机器以“回车”换行;请不要混输linux和windows机器."></textarea>
+                <textarea id="send_file_ips_hide" class="edit-fileonce-ip-hide" name="send_file_ips_hide" style="display: none;"></textarea>
+                <button type="button" class="btn btn-default add-btn-status ip-add-btn2" data-msg="fileonce" data-loading-text="ip检测中,请稍后..." autocomplete="off"><i class="icon-plus"></i>IP添加</button>
+				<button id="server_modal" type="button" class="select-servers btn btn-default" data-msg="edit-fileonce-wrap" data-toggle="modal" data-target="#serverModal" data-loading-text="ip验证中,请稍后..." autocomplete="off"><i class="icon-th-list"></i>选择目标机器 </button>
+			</div>
+			<div class="controls scroll-wrap2 edit-fileonce-ip-wrap hide">
+				<b></b>
+					<ul id="ip-show2" class="ip-style edit-fileonce-ip-result" data-msg="fileonce">
+					</ul>
+				</div>
+		</div>
+
+		<div class="control-group hide">
+			<label class="control-label">执行账户：<span class="red">*</span></label>
+			<div class="controls">
+			<select class="reg-val" style="width: 434px;" id="send_file_target_account" name="send_file_target_account">
+                {% for account in accounts %}
+                    <option value="{{account.id}}">{{account.name}}&nbsp;&nbsp;账号:{{account.name_abbr}}</option>
+                {% endfor %}
+			</select>
+                <button type="button" class="btn btn-default reg-user" data-toggle="modal" data-target="#file_model_user_register"><i class="icon-plus"></i>登记账户</button>
+			</div>
+		</div>
+
+	   <div class="control-group">
+			<div class="controls">
+				<button type="button" class="btn btn-primary edit-fileonce-save" id="send_file_btn_start" data-loading-text="参数检查中,请稍后..." autocomplete="off"><i class="icon-ok icon-white"></i>开始传输</button>
+			</div>
+	   </div>
+	</form>
+</div><!--/row-->
+<!--modal one-->
+<div class="modal set-model hide fade" id="serverModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">选择目标服务器</h4>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+		  <li class="active"><a href="#APP" data-toggle="tab">配置中心  - CMDB</a></li>
+		  <li class="fliter-tab"><a href="#fliter" data-toggle="tab">条件选择</a></li>
+		</ul>
+		<div class="tab-content">
+			<div class="tab-pane active" id="APP">
+				<div class="ujobs-cmdb-tree">
+
+				</div>
+				<div class="modal-footer">
+					<button class="add-servers-ip btn btn-primary" data-msg="fileonce" data-dismiss="modal">添加</button>
+					<button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+		     	</div>
+			</div>
+			<div class="tab-pane" id="fliter">
+				<form class="form-horizontal fliter-select">
+					<div class="control-group">
+						<label class="control-label">产品：<span class="red">*</span></label>
+						<div class="controls">
+			                <select class="product-fliter">
+			                </select>
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">set：</label>
+						<div class="controls">
+			                <input class="set-fliter" type="text" value="">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">module：</label>
+						<div class="controls">
+			                <input class="module-fliter" type="text" value="">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">已选set：<span class="red">*</span></label>
+						<div class="controls">
+			                <input class="set-value" type="text" value="" disabled>
+			                <button class="clear-fliter btn btn-default" data-msg="set" onclick="return false">清空</button>
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">已选module：<span class="red">*</span></label>
+						<div class="controls">
+			                <input class="module-value" type="text" value="" disabled>
+			                <button class="clear-fliter btn btn-default" onclick="return false">清空</button>
+						</div>
+					</div>
+				</form>
+				<div class="modal-footer">
+					<button class="add-fliter btn btn-primary" data-msg="fileonce" data-dismiss="modal">添加</button>
+					<button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+		     	</div>
+			</div>
+		</div>
+      </div>
+</div>
+
+<script src="/static/tool_js/spark-md5.js" type="text/javascript"></script>
+<script type="text/javascript">
+	//上传文件功能
+	$(function () {
+		//开始传输
+        $(document).off("click",'#send_file_btn_start').on("click",'#send_file_btn_start', function(){
+			if(!$("#send_file_job_name").val() || !$("#send_file_target_path").val() || !$("#send_file_speed").val() || $("#file-show2 li").length==0) {
+				jNotify('有未填写的输入项，请检查！');
+                return false;
+			}
+			var ip_area_file_hide = $('#send_file_ips_hide').val();
+			//判断是否全部支持操作
+	        var check=check_ip_support(ip_area_file_hide);
+            if(check==false) {
+            	return false;
+            }
+
+		    //检查机器类型及路径
+		    var system=$(".os");
+		    var path=$("#send_file_target_path");
+		    var check_os=check_system(system,path);
+		    if(check_os==false){
+		    	return false;
+		    }
+
+        	$("#send_file_btn_start").button('loading');
+            post_str = $("#send_file_form").serialize()+"&fileInput="+$("input[name='upField']").val();
+        	$("#send_file_form input,#send_file_form button,#send_file_form textarea").prop("disabled",true);
+            $.ajax({
+                type: 'POST',
+                url: '/files/send_check/',
+                dataType: 'json',
+                data: post_str,
+                success: function(data){
+                    if(data.status==200){
+{#                      show_result(data.history_id);#}
+                        $.ajax({
+                            type: 'POST',
+                            url: '/files/transfer/'+data.check_id+'/',
+                            dataType: 'json',
+                            data: post_str,
+                            success: function(data){
+                                if(data.status==200){
+                                    show_result(data.result.history_id);
+                                    jSuccess("作业下发成功, 正在分发中...",{autoHide : true});
+                                }else{
+                                    jError(data.result.msg);
+                                }
+                            }
+                        });
+                    }else{
+                        jError(data.result.msg);
+                    }
+                },
+                error:function(){
+                    jError("作业下发失败!");
+                },
+                complete:function(){
+                    $("#send_file_btn_start").button('complete').html("<i class='icon-ok icon-white''></i>开始传输");
+                    $("#send_file_form input,#send_file_form button,#send_file_form textarea").prop("disabled",false);
+                }
+
+            });
+        });
+
+         $(".tooltips").tooltip();
+
+         //按钮样式
+         icheck($('.send-file-icheck input:radio'));
+    });
+   </script>

@@ -1,0 +1,156 @@
+<!-- 同步脚本 -->
+<div class="row-fluid">
+	<form class="form-horizontal myform" id="version_sync_form_{{ version.id }}">{% csrf_token %}  
+		<fieldset>
+			<legend style="font-size:14px;margin-bottom:0;"><span class="caret-arrow-up"></span>脚本基本信息</legend>
+			<div class="control-group">
+				<label class="control-label muted">脚本名称：</label>
+				<span class="control-label" style="text-align:left;">{{script.name}}</span>
+				<label class="control-label muted">脚本描述：</label>
+                <span class="control-label" style="text-align:left;">{{script.describe|default_if_none:''}}</span>
+			</div>
+			<div class="control-group">
+				<label class="control-label muted">版本名称：</label>
+                <span class="control-label" style="text-align:left;">{{version.name}}</span>
+                <label class="control-label muted">版本备注：</label>
+                <span class="control-label" style="text-align:left;">{{version.remarks|default_if_none:''}}</span>
+			</div>
+		</fieldset>
+		<fieldset>
+			<legend style="font-size:14px;margin-bottom:0;"><span class="caret-arrow-up"></span>查询条件</legend>
+			<div class="control-group">
+				<label class="control-label muted">作业模板名：</label>
+				<input id="version_sync_template_name_{{version.id}}" class="md-search-txt" style="width:150px;" type="text" placeholder="请输入...">
+			</div>
+		</fieldset>
+		<br>
+		<br>
+		<div class="control-group">
+			<button onclick="version_template_sync({{version.id}});return false;" class="btn btn-info"><i class="icon-retweet icon-white"></i>替换步骤版本</button>
+			<span style="margin-left: 34px;">点击按钮后替换作业的步骤脚本版本</span>
+			<div class="pull-right">
+				<button class="btn btn-info" onclick="version_template_sync_filter();return false;"><i class="icon-search icon-white"></i>查询</button>
+				<button id="update_script_reset" class="btn btn-warning"><i class="icon-repeat icon-white"></i>重置</button>
+			</div>
+		</div>
+		<table class="table table-bordered table-hover table-striped" id="update_script_table_{{version.id}}">
+			<thead>
+				<tr>
+					<th width=2%><input class="update_checked_all_{{version.id}}" type="checkbox" value=""></th>
+					<th>作业实例名称</th>
+					<th>开发商</th>
+					<th>步骤名称</th>
+					<th>脚本名称</th>
+					<th>脚本版本</th>
+					<th>版本备注</th>
+				</tr>
+			</thead>
+			<tbody>
+			    <tr></tr>
+			</tbody>
+		</table>
+	</form>
+</div>
+
+<!-- modal one -->
+<div class="updata-script-model modal hide fade" id="select_example_step_{{version.id}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      
+</div>
+<script>
+var oTable_version_template_sync_{{version.id}} = null;
+
+$(document).ready(function () {
+	 oTable_version_template_sync_{{version.id}} = $('#update_script_table_{{version.id}}').dataTable({
+		 "sDom": 'lfrtip',
+		 "bLengthChange":false,
+		 "iDisplayLength":10,
+		 "aoColumnDefs": [{ "bSortable": false, "aTargets": [0] }],
+	     "bProcessing": false,
+	     "bServerSide": true,
+	     "bPaginate": true,
+	     "bAutoWidth": false,
+         "bInfo": true,
+	     "sPaginationType": "full_numbers",
+	     "sAjaxSource": "{{template_ajax_url}}",
+	     "bFilter": false,
+		 "oLanguage":{
+		 	  "sUrl":'/static/tool_js/data_table/cn/jquery.dataTable.cn.txt'
+	      }
+     });
+     
+     $('.updata-script-model-table').dataTable({
+         "sDom": 'lfrtip',
+         "bLengthChange":false,
+         "iDisplayLength":10,
+         "aoColumnDefs": [{ "bSortable": false, "aTargets": [0] }],
+         "bProcessing": false,
+         "bServerSide": false,
+         "bPaginate": false,
+         "bAutoWidth":false,
+         "bInfo": false,
+         "sPaginationType": "full_numbers",
+         "bFilter":false,
+         "oLanguage":{
+              "sUrl":'/static/tool_js/data_table/cn/jquery.dataTable.cn.txt'
+          }
+     }); 
+     
+    // 全选全不选
+    var update_checked_all=".update_checked_all_{{version.id}}";
+    var update_checked_it=".update_checked_it_{{version.id}}";
+    check_all(update_checked_all,update_checked_it);
+     
+    // 全选全不选
+	var update_step_checked_all=".update_step_checked_all_{{version.id}}";
+	var update_step_checked_it=".update_step_checked_it_{{version.id}}";
+	check_all(update_step_checked_all,update_step_checked_it);
+	
+	// 弹窗宽度
+	$('#select_example_step_{{version.id}}').css({
+		'width': '1000px',
+		'margin-left': function () {return -($(this).width() / 2);}
+	});
+});
+
+    // 查询
+    function version_template_sync_filter(){
+        var template_name = $("#version_sync_template_name_{{version.id}}").val();
+        oTable_version_template_sync_{{version.id}}.fnReloadAjax( '{{template_ajax_url}}?p=0&template_name=' + template_name);
+    }
+    
+    //替换模板步骤版本
+    function version_template_sync(version_id){
+        if($(".update_checked_it_"+version_id).filter(":checked").length==0) {
+            jNotify("指定模板步骤列表为空，替换脚本版本失败！");
+            return false;
+        }
+        else {
+            var check_list = [];  
+
+            $('#version_sync_form_'+version_id).find("input:checked").each(function(){  
+                check_list.push($(this).val());
+            });
+            $.ajax({
+                type: 'POST',
+                url: '/script/version_template_sync/',
+                data: {
+                        'version_id':version_id,
+                        'check_list':check_list
+                      },
+                dataType: 'json',
+                success: function (data){
+                    if(data.status==500){
+                        jError('替换模板步骤版本失败!');
+                    }else{
+                        oTable_version_template_sync_{{version.id}}.fnReloadAjax('{{template_ajax_url}}');
+                        $(".update_checked_all_"+version_id).prop("checked",false);
+                        jSuccess("替换模板步骤版本成功！");
+                    }
+                },
+                error: function (re, status){
+                }
+            });
+            return false;
+        }
+    }
+</script>

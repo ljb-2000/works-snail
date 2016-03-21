@@ -1,0 +1,39 @@
+<!--登记执行账户-->
+<div class="row-fluid">
+    <form id="addaccountform" action="javascript:void(0);" method="post" class="form-horizontal myform">{% csrf_token %}
+        <div class="alert alert-warning">账户必须在服务器上已存在，uJobs不在服务器上创建账户</div>
+        
+        <div class="control-group">
+            <label class="control-label">账户名称：<span class="red">*</span></label>
+            <div class="controls">
+                {{accountForm.name}}
+                <span style="display: inline-block;color:#999">{{accountForm.errors.name}}</span>
+                <span class="help-block"></span>
+            </div>  
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">账户别名：<span class="red">*</span></label>
+            <div class="controls">
+                {{accountForm.name_abbr}}
+                <span style="display: inline-block;color:#999">{{accountForm.errors.name_abbr}}</span>
+                <span class="help-block"></span>
+            </div>            
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">账户密码：<span class="red">*</span></label>
+            <div class="controls">
+                {{accountForm.password}}
+                <span style="display: inline-block;color:#999">{{accountForm.errors.password}}</span>
+                <span class="help-block"></span>
+            </div>            
+        </div>
+        <br>
+       <div class="control-group">
+            <div class="controls">
+            <button type="button" class="btn btn-primary" onclick="return sum_add_account()"><i class="icon-plus icon-white"></i>登记账户</button>
+            </div>
+       </div>
+    </form>
+</div><!--/row-->

@@ -1,0 +1,188 @@
+2016-01-07 09:13:25,983 [Thread-1505:24688] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 09:13:46,486 [Thread-1572:13492] [logger:41] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\timing_manage.py", line 38, in timing_manage_list
+    logger.debug("current job status: {0}".format(scheduler.print_jobs()))
+  File "C:\Python27\lib\site-packages\apscheduler\schedulers\base.py", line 555, in print_jobs
+    jobs = store.get_all_jobs()
+  File "C:\Python27\lib\site-packages\apscheduler\jobstores\sqlalchemy.py", line 73, in get_all_jobs
+    jobs = self._get_jobs()
+  File "C:\Python27\lib\site-packages\apscheduler\jobstores\sqlalchemy.py", line 124, in _get_jobs
+    for row in self.engine.execute(selectable):
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1991, in execute
+    return connection.execute(statement, *multiparams, **params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 914, in execute
+    return meth(self, multiparams, params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\sql\elements.py", line 323, in _execute_on_connection
+    return connection._execute_clauseelement(self, multiparams, params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1010, in _execute_clauseelement
+    compiled_sql, distilled_params
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1146, in _execute_context
+    context)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1341, in _handle_dbapi_exception
+    exc_info
+  File "C:\Python27\lib\site-packages\sqlalchemy\util\compat.py", line 199, in raise_from_cause
+    reraise(type(exception), exception, tb=exc_tb)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1139, in _execute_context
+    context)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\default.py", line 450, in do_execute
+    cursor.execute(statement, parameters)
+  File "C:\Python27\lib\site-packages\MySQLdb\cursors.py", line 205, in execute
+    self.errorhandler(self, exc, value)
+  File "C:\Python27\lib\site-packages\MySQLdb\connections.py", line 36, in defaulterrorhandler
+    raise errorclass, errorvalue
+OperationalError: (_mysql_exceptions.OperationalError) (2006, 'MySQL server has gone away') [SQL: u'SELECT apscheduler_jobs.id, apscheduler_jobs.job_state \nFROM apscheduler_jobs ORDER BY apscheduler_jobs.next_run_time']
+
+2016-01-07 09:29:24,921 [Thread-1632:24860] [logger:38] [DEBUG]- current job status: None
+2016-01-07 09:33:58,437 [Thread-1705:11076] [logger:38] [DEBUG]- current job status: None
+2016-01-07 09:36:18,029 [Thread-1781:23948] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:22:37,387 [Thread-2088:24056] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 10:23:07,290 [Thread-2147:22952] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:25:59,556 [Thread-2216:26556] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:30:59,509 [Thread-2313:24080] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:31:27,673 [Thread-2376:19848] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:37:46,342 [Thread-2407:26264] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 10:38:42,543 [Thread-2471:21532] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:48:07,457 [Thread-2748:26520] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:50:40,638 [Thread-2783:23716] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:50:41,088 [Thread-2784:24884] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:50:41,243 [Thread-2785:26168] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:50:45,440 [Thread-2789:23728] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:50:49,520 [Thread-2790:25940] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:50:50,009 [Thread-2791:26236] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:50:50,204 [Thread-2792:26136] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:50:50,375 [Thread-2793:24864] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:51:37,642 [Thread-2844:25444] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:51:38,634 [Thread-2845:21868] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:51:38,819 [Thread-2846:24648] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:51:39,000 [Thread-2847:26396] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:51:39,176 [Thread-2848:26464] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:53:22,967 [Thread-2915:11076] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:54:56,999 [Thread-2986:26176] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:56:57,398 [Thread-3234:25616] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:56:59,216 [Thread-3240:25836] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:56:59,621 [Thread-3241:7140] [logger:38] [DEBUG]- current job status: None
+2016-01-07 10:58:43,516 [Thread-3438:25876] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:43,765 [Thread-3440:22708] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:43,986 [Thread-3442:19848] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:44,236 [Thread-3444:26260] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:45,312 [Thread-3454:26232] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:45,543 [Thread-3456:21636] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:45,769 [Thread-3458:24328] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:46,816 [Thread-3468:26540] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:47,039 [Thread-3471:23736] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:49,052 [Thread-3478:21112] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:49,273 [Thread-3481:26456] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:50,043 [Thread-3487:24168] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:50,265 [Thread-3489:23628] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:50,482 [Thread-3492:26280] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:50,697 [Thread-3494:26448] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:50,911 [Thread-3497:26612] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:58:51,148 [Thread-3500:21336] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 10:59:31,236 [Thread-3590:19848] [logger_files:584] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\files\views.py", line 574, in ajax_show_exec_type_detail
+    time_taken = (datetime.datetime.now()-history_step.start_time.replace(tzinfo=None)).seconds
+AttributeError: 'NoneType' object has no attribute 'replace'
+
+2016-01-07 11:16:14,007 [Thread-5990:20244] [logger:978] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\jobs\views.py", line 948, in job_view_v2
+    raise Exception,msg
+Exception: form验证不通过
+
+2016-01-07 11:18:34,963 [Thread-6396:22952] [logger:978] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\jobs\views.py", line 948, in job_view_v2
+    raise Exception,msg
+Exception: form验证不通过
+
+2016-01-07 11:19:44,138 [Thread-6427:10652] [logger:38] [DEBUG]- current job status: None
+2016-01-07 11:24:30,713 [Thread-6452:26136] [logger:38] [DEBUG]- current job status: None
+2016-01-07 11:28:01,105 [Thread-6478:25872] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 11:28:05,734 [Thread-6537:26092] [logger:38] [DEBUG]- current job status: None
+2016-01-07 11:30:11,530 [Thread-6559:26020] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 11:48:49,720 [Thread-6622:25696] [logger:38] [DEBUG]- current job status: None
+2016-01-07 12:19:31,602 [Thread-6635:26064] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 12:19:52,135 [Thread-6695:25084] [logger:38] [DEBUG]- current job status: None
+2016-01-07 14:40:02,436 [Thread-6748:26432] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 14:41:50,680 [Thread-6812:5696] [logger:38] [DEBUG]- current job status: None
+2016-01-07 16:20:37,088 [Thread-6860:26112] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 16:21:08,105 [Thread-6918:8820] [logger:38] [DEBUG]- current job status: None
+2016-01-07 16:21:44,270 [Thread-6938:24820] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 16:23:30,655 [Thread-7012:25308] [logger:38] [DEBUG]- current job status: None
+2016-01-07 16:27:53,686 [Thread-7159:20432] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 17:49:22,986 [Thread-7361:24608] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 18:14:32,444 [Thread-7750:24840] [logger:38] [DEBUG]- current job status: None
+2016-01-07 18:17:05,107 [Thread-7768:25992] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-07 18:17:19,293 [Thread-7828:20432] [logger:38] [DEBUG]- current job status: None
+2016-01-07 18:20:49,055 [Thread-7895:24344] [logger:38] [DEBUG]- current job status: None
+2016-01-07 18:22:11,857 [Thread-7913:22092] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20160107111600>, 'template_step': <TemplateStep: 分发文件>}）
+2016-01-07 18:22:11,878 [Thread-7913:22092] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20160107111600>, 'template_step': <TemplateStep: 拉取文件>}）
+2016-01-07 18:22:11,895 [Thread-7913:22092] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20160107111600>, 'template_step': <TemplateStep: 执行脚本>}）
+2016-01-07 18:24:10,384 [Thread-7954:8872] [logger:38] [DEBUG]- current job status: None
+2016-01-07 18:26:53,911 [Thread-8026:26444] [logger:40] [DEBUG]- [user login] luozh login ok.

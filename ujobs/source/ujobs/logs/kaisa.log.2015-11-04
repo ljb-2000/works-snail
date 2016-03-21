@@ -1,0 +1,134 @@
+2015-11-04 11:55:15,766 [Thread-8:9304] [logger:38] [DEBUG]- [user login] luozh login ok.
+2015-11-04 11:55:25,963 [Thread-69:9036] [logger:1197] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\jobs\views.py", line 1185, in job_start_now_v2
+    logger.debug("start check fail, job_id: {0}, step_id:{1}".format(job.id,job_step.id))
+UnboundLocalError: local variable 'job_step' referenced before assignment
+
+2015-11-04 13:24:38,009 [Thread-99:6468] [logger:38] [DEBUG]- [user login] luozh login ok.
+2015-11-04 13:25:46,384 [Thread-213:9780] [logger:1197] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\jobs\views.py", line 1185, in job_start_now_v2
+    logger.debug("start check fail, job_id: {0}, step_id:{1}".format(job.id,job_step.id))
+UnboundLocalError: local variable 'job_step' referenced before assignment
+
+2015-11-04 13:25:57,262 [Thread-262:9828] [logger:1197] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\jobs\views.py", line 1185, in job_start_now_v2
+    logger.debug("start check fail, job_id: {0}, step_id:{1}".format(job.id,job_step.id))
+UnboundLocalError: local variable 'job_step' referenced before assignment
+
+2015-11-04 13:26:19,584 [Thread-310:10792] [logger:1197] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\jobs\views.py", line 1185, in job_start_now_v2
+    logger.debug("start check fail, job_id: {0}, step_id:{1}".format(job.id,job_step.id))
+UnboundLocalError: local variable 'job_step' referenced before assignment
+
+2015-11-04 13:26:22,078 [Thread-311:5512] [logger:1197] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\jobs\views.py", line 1185, in job_start_now_v2
+    logger.debug("start check fail, job_id: {0}, step_id:{1}".format(job.id,job_step.id))
+UnboundLocalError: local variable 'job_step' referenced before assignment
+
+2015-11-04 13:26:23,776 [Thread-312:7764] [logger:1197] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\jobs\views.py", line 1185, in job_start_now_v2
+    logger.debug("start check fail, job_id: {0}, step_id:{1}".format(job.id,job_step.id))
+UnboundLocalError: local variable 'job_step' referenced before assignment
+
+2015-11-04 13:26:28,858 [Thread-313:10832] [logger:1197] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\apps\jobs\views.py", line 1185, in job_start_now_v2
+    logger.debug("start check fail, job_id: {0}, step_id:{1}".format(job.id,job_step.id))
+UnboundLocalError: local variable 'job_step' referenced before assignment
+
+2015-11-04 13:30:44,375 [Thread-373:6584] [logger_files:408] [DEBUG]- request<QueryDict: {u'file_name': [u'.gitattributes'], u'md5sum': [u'c4f364b364a2ac980a1dbf9d9a73a0e1'], u'size': [u'483']}>
+2015-11-04 13:30:44,378 [Thread-373:6584] [logger_files:443] [DEBUG]- file info not found.
+2015-11-04 13:30:44,378 [Thread-373:6584] [logger_files:453] [DEBUG]- ## check result, status:200,result:{'existed': False}
+2015-11-04 13:40:28,128 [Thread-419:1604] [logger_files:408] [DEBUG]- request<QueryDict: {u'file_name': [u'.gitattributes'], u'md5sum': [u'c4f364b364a2ac980a1dbf9d9a73a0e1'], u'size': [u'483']}>
+2015-11-04 13:40:28,130 [Thread-419:1604] [logger_files:443] [DEBUG]- file info not found.
+2015-11-04 13:40:28,130 [Thread-419:1604] [logger_files:453] [DEBUG]- ## check result, status:200,result:{'existed': False}
+2015-11-04 14:02:08,279 [Thread-532:9136] [logger_files:408] [DEBUG]- request<QueryDict: {u'file_name': [u'tests.min.html'], u'md5sum': [u'9a7a558dc2906555cae849ef25315d44'], u'size': [u'1778']}>
+2015-11-04 14:02:08,279 [Thread-532:9136] [logger_files:443] [DEBUG]- file info not found.
+2015-11-04 14:02:08,280 [Thread-532:9136] [logger_files:453] [DEBUG]- ## check result, status:200,result:{'existed': False}
+2015-11-04 15:35:22,691 [Thread-8:4344] [logger:38] [DEBUG]- [user login] luozh login ok.
+2015-11-04 15:35:35,141 [Thread-60:8240] [logger:42] [ERROR]- Script对象不存在（{'create_user': <SimpleLazyObject: <User: luozh>>, 'name': u'zsdf', 'is_delete': False}）
+2015-11-04 15:39:01,500 [Thread-5:10744] [logger:42] [ERROR]- Script对象不存在（{'create_user': <SimpleLazyObject: <User: luozh>>, 'name': u'zsdffdsa', 'is_delete': False}）
+2015-11-04 15:45:54,726 [Thread-51:9064] [logger:42] [ERROR]- Script对象不存在（{'create_user': <SimpleLazyObject: <User: luozh>>, 'name': u'test', 'is_delete': False}）
+2015-11-04 15:46:31,322 [Thread-4:6672] [logger:42] [ERROR]- Script对象不存在（{'create_user': <SimpleLazyObject: <User: luozh>>, 'name': u'test111', 'is_delete': False}）
+2015-11-04 15:47:49,121 [Thread-4:6672] [logger_utils:98] [DEBUG]- send file response: {"status": 500, "result": {"msg": "save file error."}}
+2015-11-04 15:49:24,605 [Thread-25:10464] [logger:629] [DEBUG]- start template step save...
+2015-11-04 15:49:27,924 [Thread-30:10424] [logger:629] [DEBUG]- start template step save...
+2015-11-04 15:49:39,872 [Thread-35:4424] [logger:629] [DEBUG]- start template step save...
+2015-11-04 15:49:52,729 [Thread-42:8336] [logger:629] [DEBUG]- start template step save...
+2015-11-04 15:49:59,470 [Thread-49:4608] [logger:629] [DEBUG]- start template step save...
+2015-11-04 15:51:38,963 [Thread-63:9816] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20151104115520>, 'template_step': <TemplateStep: 分发文件>}）
+2015-11-04 15:51:39,000 [Thread-63:9816] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20151104115520>, 'template_step': <TemplateStep: 文本步骤1>}）
+2015-11-04 15:51:39,028 [Thread-63:9816] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20151104115520>, 'template_step': <TemplateStep: 执行脚本>}）
+2015-11-04 15:51:39,059 [Thread-63:9816] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20151104115520>, 'template_step': <TemplateStep: 文本步骤2>}）
+2015-11-04 15:51:39,086 [Thread-63:9816] [logger:85] [ERROR]- JobStep对象不存在（{'job': <Job: 作业实例_luozh_20151104115520>, 'template_step': <TemplateStep: 执行脚本>}）
+2015-11-04 15:51:39,138 [Thread-63:9816] [logger:1191] [DEBUG]- job param check ok, start handle job..
+2015-11-04 15:51:39,217 [Thread-63:9816] [logger_utils:2236] [DEBUG]- pre handle job done.
+2015-11-04 15:51:39,220 [Thread-63:9816] [logger_utils:2249] [DEBUG]- ### handle job == current threading name: Thread-63 is handing history: 1
+2015-11-04 15:51:39,244 [Thread-history-1:10504] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 15:51:59,779 [Thread-history-1:10508] [logger_utils:502] [DEBUG]- before redis call
+2015-11-04 15:51:59,779 [Thread-history-1:10508] [logger_utils:518] [DEBUG]- redis handle end...
+2015-11-04 15:51:59,780 [Thread-history-1:10508] [logger_utils:520] [DEBUG]- after redis call
+2015-11-04 16:05:03,471 [Thread-8:10460] [logger:38] [DEBUG]- [user login] luozh login ok.
+2015-11-04 16:05:08,687 [Thread-64:10708] [logger:1191] [DEBUG]- job param check ok, start handle job..
+2015-11-04 16:05:08,723 [Thread-64:10708] [logger_utils:2236] [DEBUG]- pre handle job done.
+2015-11-04 16:05:08,723 [Thread-64:10708] [logger_utils:2249] [DEBUG]- ### handle job == current threading name: Thread-64 is handing history: 2
+2015-11-04 16:05:08,727 [Thread-history-2:10412] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:06:44,325 [Thread-164:10104] [logger:1191] [DEBUG]- job param check ok, start handle job..
+2015-11-04 16:06:44,388 [Thread-164:10104] [logger_utils:2236] [DEBUG]- pre handle job done.
+2015-11-04 16:06:44,391 [Thread-164:10104] [logger_utils:2249] [DEBUG]- ### handle job == current threading name: Thread-164 is handing history: 3
+2015-11-04 16:06:44,400 [Thread-history-3:9800] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:06:55,959 [Thread-history-3:9644] [logger_utils:502] [DEBUG]- before redis call
+2015-11-04 16:06:55,960 [Thread-history-3:9644] [logger_utils:518] [DEBUG]- redis handle end...
+2015-11-04 16:06:55,960 [Thread-history-3:9644] [logger_utils:520] [DEBUG]- after redis call
+2015-11-04 16:07:01,911 [Thread-history-3:11172] [logger_utils:502] [DEBUG]- before redis call
+2015-11-04 16:07:01,911 [Thread-history-3:11172] [logger_utils:518] [DEBUG]- redis handle end...
+2015-11-04 16:07:01,911 [Thread-history-3:11172] [logger_utils:520] [DEBUG]- after redis call
+2015-11-04 16:07:26,237 [Thread-history-3:2092] [logger_utils:502] [DEBUG]- before redis call
+2015-11-04 16:07:26,239 [Thread-history-3:2092] [logger_utils:518] [DEBUG]- redis handle end...
+2015-11-04 16:07:26,239 [Thread-history-3:2092] [logger_utils:520] [DEBUG]- after redis call
+2015-11-04 16:07:42,842 [Thread-history-3:10636] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:07:48,559 [Thread-history-3:8496] [logger_utils:502] [DEBUG]- before redis call
+2015-11-04 16:07:48,559 [Thread-history-3:8496] [logger_utils:518] [DEBUG]- redis handle end...
+2015-11-04 16:07:48,561 [Thread-history-3:8496] [logger_utils:520] [DEBUG]- after redis call
+2015-11-04 16:09:39,092 [Thread-300:9336] [logger:1191] [DEBUG]- job param check ok, start handle job..
+2015-11-04 16:09:39,128 [Thread-300:9336] [logger_utils:2236] [DEBUG]- pre handle job done.
+2015-11-04 16:09:39,130 [Thread-300:9336] [logger_utils:2249] [DEBUG]- ### handle job == current threading name: Thread-300 is handing history: 4
+2015-11-04 16:09:39,134 [Thread-history-4:3300] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:09:46,578 [Thread-history-4:9488] [logger_utils:502] [DEBUG]- before redis call
+2015-11-04 16:09:46,578 [Thread-history-4:9488] [logger_utils:518] [DEBUG]- redis handle end...
+2015-11-04 16:09:46,578 [Thread-history-4:9488] [logger_utils:520] [DEBUG]- after redis call
+2015-11-04 16:09:51,528 [Thread-history-4:9864] [logger_utils:502] [DEBUG]- before redis call
+2015-11-04 16:09:51,528 [Thread-history-4:9864] [logger_utils:518] [DEBUG]- redis handle end...
+2015-11-04 16:09:51,528 [Thread-history-4:9864] [logger_utils:520] [DEBUG]- after redis call
+2015-11-04 16:09:54,871 [Thread-history-4:9588] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:10:35,398 [Thread-383:8244] [logger:1191] [DEBUG]- job param check ok, start handle job..
+2015-11-04 16:10:35,431 [Thread-383:8244] [logger_utils:2236] [DEBUG]- pre handle job done.
+2015-11-04 16:10:35,433 [Thread-383:8244] [logger_utils:2249] [DEBUG]- ### handle job == current threading name: Thread-383 is handing history: 5
+2015-11-04 16:10:35,437 [Thread-history-5:5512] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:10:52,489 [Thread-history-5:10868] [logger_utils:502] [DEBUG]- before redis call
+2015-11-04 16:10:52,489 [Thread-history-5:10868] [logger_utils:518] [DEBUG]- redis handle end...
+2015-11-04 16:10:52,489 [Thread-history-5:10868] [logger_utils:520] [DEBUG]- after redis call
+2015-11-04 16:11:20,398 [Thread-history-5:8888] [logger_utils:502] [DEBUG]- before redis call
+2015-11-04 16:11:20,398 [Thread-history-5:8888] [logger_utils:518] [DEBUG]- redis handle end...
+2015-11-04 16:11:20,398 [Thread-history-5:8888] [logger_utils:520] [DEBUG]- after redis call
+2015-11-04 16:11:23,973 [Thread-history-5:7468] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:11:26,841 [Thread-history-5:3560] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:11:45,625 [Thread-481:11192] [logger:1191] [DEBUG]- job param check ok, start handle job..
+2015-11-04 16:11:45,661 [Thread-481:11192] [logger_utils:2236] [DEBUG]- pre handle job done.
+2015-11-04 16:11:45,661 [Thread-481:11192] [logger_utils:2249] [DEBUG]- ### handle job == current threading name: Thread-481 is handing history: 6
+2015-11-04 16:11:45,664 [Thread-history-6:10740] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:12:03,979 [Thread-540:10364] [logger:1191] [DEBUG]- job param check ok, start handle job..
+2015-11-04 16:12:04,013 [Thread-540:10364] [logger_utils:2236] [DEBUG]- pre handle job done.
+2015-11-04 16:12:04,013 [Thread-540:10364] [logger_utils:2249] [DEBUG]- ### handle job == current threading name: Thread-540 is handing history: 7
+2015-11-04 16:12:04,017 [Thread-history-7:9620] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:13:06,450 [Thread-617:10552] [logger:1191] [DEBUG]- job param check ok, start handle job..
+2015-11-04 16:13:06,486 [Thread-617:10552] [logger_utils:2236] [DEBUG]- pre handle job done.
+2015-11-04 16:13:06,486 [Thread-617:10552] [logger_utils:2249] [DEBUG]- ### handle job == current threading name: Thread-617 is handing history: 8
+2015-11-04 16:13:06,492 [Thread-history-8:10452] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:18:15,875 [Thread-787:11008] [logger:1191] [DEBUG]- job param check ok, start handle job..
+2015-11-04 16:18:15,920 [Thread-787:11008] [logger_utils:2236] [DEBUG]- pre handle job done.
+2015-11-04 16:18:15,921 [Thread-787:11008] [logger_utils:2249] [DEBUG]- ### handle job == current threading name: Thread-787 is handing history: 9
+2015-11-04 16:18:15,924 [Thread-history-9:9588] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 16:18:31,023 [Thread-history-9:8252] [logger:76] [ERROR]- HistoryStep对象不存在（{'id': 0}）
+2015-11-04 17:41:54,109 [Thread-896:11324] [logger:38] [DEBUG]- [user login] luozh login ok.
+2015-11-04 18:15:43,759 [Thread-1878:12028] [logger:38] [DEBUG]- [user login] luozh login ok.
+2015-11-04 18:36:39,302 [Thread-2864:10672] [logger:38] [DEBUG]- [user login] luozh login ok.

@@ -1,0 +1,42 @@
+<!--登记账户弹框-->
+<div class="modal-dialog">
+	<div class="modal-content">
+	    <div class="modal-header">
+		    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		    <h4 class="modal-title" id="myModalLabel">登记账户</h4>
+	    </div>
+	    <div class="modal-body">
+	    	<form id="ajaxaccountform" class="form form-horizontal">
+				<div class="alert alert-warning">账户必须在服务器上已存在，uJobs不在服务器上创建账户</div>
+				<div class="control-group">
+					<label class="control-label">用户名称：<span class="red">*</span></label>
+					<div class="controls">
+						{{accountForm.name}}
+						<span style="display: inline-block;color:#999">{{accountForm.errors.name}}</span>
+					    <span class="help-block"></span>
+					</div>
+				</div>
+				<div class="control-group">
+					<label class="control-label">用户别名：<span class="red">*</span></label>
+					<div class="controls">
+						{{accountForm.name_abbr}}
+						<span style="display: inline-block;color:#999">{{accountForm.errors.name_abbr}}</span>
+					    <span class="help-block"></span>
+					</div>
+				</div>
+				<div class="control-group">
+					<label class="control-label">用户密码：<span class="red">*</span></label>
+					<div class="controls">
+						{{accountForm.password}}
+						<span style="display: inline-block;color:#999">{{accountForm.errors.password}}</span>
+					    <span class="help-block"></span>
+					</div>
+				</div>
+			</form>
+	    </div>
+	    <div class="modal-footer">
+			<button class="btn btn-primary" onclick="javascript:ajax_add_account(this)">保存</button>
+			<button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+	    </div>
+	</div>
+</div>

@@ -1,0 +1,242 @@
+<!-- 结果详细页 -->
+<div class="row-fluid">
+    <form id="history_detail_form" action="/history/export_results/" method="post" class="form-horizontal" style="width:97%;">
+        <div class="control-group" style="margin-left:28px;">
+            <h4>{{ job_step_name }}</h4>
+        </div>
+        <div class="control-group">
+            <label class="control-label muted">步骤Id：</label>
+            <span class="control-label txtlf">{{ history_step.pk }}</span>
+            <label class="control-label muted">成功IP数量：</label>
+            <span id="history_result_detail_success_ip_num_{{check_id}}" class="control-label txtlf">{% if finished %}{{ success_ips|length }}{% endif %}</span>
+            <label class="control-label muted">开始时间：</label>
+            <span id="history_result_detail_start_time_{{check_id}}" class="control-label txtlf">{{ start_time }}</span>
+        </div>
+        <div class="control-group">
+            <label class="control-label muted">失败IP数量：</label>
+            <span id="history_result_detail_fail_ip_num_{{check_id}}" class="control-label txtlf">{% if finished %}{{ fail_ips|length }}{% endif %}</span>
+            <label class="control-label muted">Agent异常IP数量：</label>
+            <span id="history_result_detail_abnormal_ip_num_{{check_id}}" class="control-label txtlf">{% if finished %}{{ abnormal_ips|length }}{% endif %}</span>
+            <label class="control-label muted">结束时间：</label>
+            <span id="history_result_detail_finish_time_{{check_id}}" class="control-label txtlf">{{ end_time }}</span>
+        </div>
+        <div class="control-group">
+            <label class="control-label muted">总耗时(s)：</label>
+            <span id="history_result_detail_total_time_{{check_id}}" class="control-label txtlf">{% if finished %}{{ history_step.delta_time }}{% endif %}
+            </span>
+            <label class="control-label muted">总执行IP数量：</label>
+            <span id="history_result_detail_total_ip_num_{{check_id}}" class="control-label txtlf">{% if finished %}{{ total_ips|length }}{% endif %}</span>
+        	<label class="control-label muted">作业状态：</label>
+            <span id="history_result_detail_status_{{check_id}}" class="control-label txtlf">
+            	<div class="progress">
+				  <div class="bar" style="width: {{ progress }}%;">{{ progress }}%</div>
+				</div>
+            </span>
+        </div>
+        <div class="control-group" style="position:relative;top:45px;z-index: 5;width:100%;">
+            <button id="history_result_detail_waiting_{{check_id}}" class="btn btn-default ip-catetory_{{check_id}}">等待执行(0)</button>
+            <button id="history_result_detail_executing_{{check_id}}" class="btn btn-default ip-catetory_{{check_id}}" value="{% if log.progress != 100 %}{{ total_ips_str }}{% endif %}">执行中({% if log.progress != 100 %}{{ total_ips|length }}{% else %}0{% endif %})</button>
+            <button id="history_result_detail_finished_{{check_id}}" class="btn btn-default ip-catetory_{{check_id}} hide" value="{% if log.progress == 100 %}{{ total_ips_str }}{% endif %}">执行完成({% if log.progress == 100 %}{{ total_ips|length }}{% else %}0{% endif %})</button>
+            <button id="history_result_detail_fail_{{check_id}}" class="btn btn-default ip-catetory_{{check_id}}" value="{% if log.progress == 100 %}{{ total_ips_str }}{% endif %}">执行失败({% if log.progress == 100 %}{{ fail_ips|length }}{% else %}0{% endif %})</button>
+            <button id="history_result_detail_success_{{check_id}}" class="btn btn-default ip-catetory_{{check_id}}" value="{% if log.progress == 100 %}{{ total_ips_str }}{% endif %}">执行成功({% if log.progress == 100 %}{{ success_ips_ips|length }}{% else %}0{% endif %})</button>
+            <span>
+      			<a href="javascript:;" class="btn btn-success pull-right" onclick="$('#history_detail_form').submit();"><i class="icon-file icon-white"></i>一键导出</a>
+			</span>
+        </div>
+        <table id="history_result_details_{{ check_id }}"  class="table table-striped table-bordered table-hover">
+            <thead>
+            <tr>
+                <th width=50%>IP</th>
+                <th width=50%>耗时(s)</th>
+            </tr>
+            </thead>
+        </table>
+        <br>
+        <br>
+        <br>
+        <textarea style="width:100%;height:200px;" id="history_result_details_log_content_{{ check_id }}" name="detail_content">{{ log_content|default_if_none:"" }}</textarea>
+        <input type="hidden" id="history_result_details_history_step_id_{{ check_id }}" value="{{ history_step_id }}"/>
+        <input type="hidden" id="history_result_details_check_id_{{ check_id }}" value="{{ check_id }}"/>
+    </form>
+</div>
+<script type="text/javascript">
+    var step_time = "{{ step_time }}";
+    var history_result_details_{{ check_id }} = "";
+
+    function get_ip_details(ip,check_id){
+        var step_id = $("#history_result_details_history_step_id_"+check_id).val();
+
+        if(!step_id){
+            jError("step id is missing!");
+            return false;
+        }
+
+        if(!ip){
+            jError("ip is missing!");
+            return false;
+        }
+
+        $("#history_result_details_log_content_"+check_id).val("");
+
+        $.ajax({
+            type: 'POST',
+            url: '/files/ajax_show_ip_detail/'+step_id+"/"+ip+"/",
+            dataType:"json",
+            success:function (data){
+                if(data.status == 200) {
+                    var result = data.result;
+
+                    $("#history_result_details_log_content_"+check_id).val(result.log_content);
+                }
+            },
+            error:function () {
+                jError('获取详情出错');
+            },
+        })
+    };
+
+    $(document).ready(function () {
+        var history_result_details_{{ check_id }} = $('#history_result_details_{{ check_id }}').dataTable({
+            "sDom": 'lfrtip',
+            "bRetrieve": true,
+            "bDestroy": true,
+            "aoColumnDefs": [{"bSortable": false, "aTargets": [0, 1]}],
+            "bLengthChange": false,
+            "iDisplayLength": 10,
+            "bProcessing": true,
+            "bServerSide": true,
+            "bPaginate": true,
+            "sAjaxSource": "/history/ip_list/{{ history_step.id }}/{{ check_id }}/" + "all/",
+            "bInfo": false,
+            "sPaginationType": "full_numbers",
+            "bFilter": true,
+            "oLanguage": {
+                "sUrl": '/static/tool_js/data_table/cn/jquery.dataTable.cn.txt'
+            }
+        });
+
+
+
+    function get_exec_type_details(exec_type, check_id){
+
+        // 获取类型执行结果
+        var step_id = $("#history_result_details_history_step_id_"+check_id).val();
+
+        if(!step_id){
+            jError("step id is missing!");
+            return false;
+        }
+
+        if(!exec_type){
+            jError("exec_type is missing!");
+            return false;
+        }
+
+        $("#history_result_details_log_content_"+check_id).val("");
+
+        $.ajax({
+            type: 'POST',
+            url: '/files/ajax_show_exec_type_detail/'+step_id+"/"+exec_type+"/",
+            dataType:"json",
+            success:function (data){
+                if(data.status == 200) {
+                    var result = data.result;
+
+                    $("#history_result_details_log_content_"+check_id).val(result.log_content);
+                }
+            },
+            error:function () {
+                jError('获取详情出错');
+            },
+        });
+
+        // reload datatable.
+        var url = "/history/ip_list/{{ history_step.id }}/{{ check_id }}/" + exec_type + '/';
+
+        history_result_details_{{ check_id }}.fnReloadAjax(url);
+    };
+    
+        $("#history_result_detail_executing_{{ check_id }}").bind("click",function(){
+            get_exec_type_details("executing", '{{check_id}}');
+            return false;
+        });
+        $("#history_result_detail_success_{{ check_id }}").bind("click",function(){
+            get_exec_type_details("success", '{{check_id}}');
+            return false;
+        });
+        $("#history_result_detail_fail_{{ check_id }}").bind("click",function(){
+            get_exec_type_details("fail", '{{check_id}}');
+            return false;
+        });
+        $("#history_result_detail_waiting_{{ check_id }}").bind("click",function(){
+            get_exec_type_details("waiting", '{{check_id}}');
+            return false;
+        });
+	});
+	
+    var timeout_{{check_id}} = 0;
+    var timer_{{check_id}} = setInterval(detail_timer_{{ check_id }}, 3000);  // 隔1秒就查询一次数据
+
+    detail_timer_{{ check_id }}();
+
+    function detail_timer_{{ check_id }}(){
+        var check_id = {{check_id}};
+
+        timeout_{{check_id}} += 1;
+        if(timeout_{{check_id}} > 6000){
+            clearInterval(timer_{{check_id}});
+        }
+
+        var history_step_id=$("#history_result_details_history_step_id_{{check_id}}").val();
+
+        if(!history_step_id){
+            return false;
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/files/ajax_show_page_detail/'+history_step_id+"/",
+            dataType:"json",
+            success:function (data){
+                if(data.status == 200) {
+                    var result = data.result;
+
+                    step_time = result.step_time;
+                    $("#history_result_detail_status_"+check_id).html('<div class="progress"><div class="bar" style="width: '+result.progress+'%;">'+result.progress+'%</div></div>');
+                    $("#history_result_detail_waiting_"+check_id).html("等待执行(0)");
+                    
+                    var executing_ips = $("#history_result_detail_executing_{{check_id}}");
+                    var finished_ips=$("#history_result_detail_finished_{{check_id}}");
+                    var success_ips=$("#history_result_detail_success_{{check_id}}");
+                    var fail_ips=$("#history_result_detail_fail_{{check_id}}");
+
+                    executing_ips.html("执行中("+result.executing_ips.length+")");
+                    success_ips.html("执行成功("+result.success_ips.length+")");
+                    fail_ips.html("执行失败("+result.fail_abnormal_ips.length+")");
+                    executing_ips.val(result.executing_ips);
+                    success_ips.val(result.success_ips);
+                    fail_ips.val(result.fail_abnormal_ips);
+
+                    if(result.finish_time!=""||result.progress==100 ){
+                        executing_ips.html("执行中(0)");
+                        executing_ips.val([]);
+
+                        $("#history_result_detail_success_ip_num_{{check_id}}").html(result.success_ips.length);
+                        $("#history_result_detail_fail_ip_num_{{check_id}}").html(result.fail_ips.length);
+                        $("#history_result_detail_total_ip_num_{{check_id}}").html(result.total_ips.length);
+                        $("#history_result_detail_finish_time_{{check_id}}").html(result.step_finish_time);
+                        $("#history_result_detail_start_time_{{check_id}}").html(result.step_start_time);
+                        $("#history_result_detail_abnormal_ip_num_{{check_id}}").html(result.abnormal_ips.length);
+                        $("#history_result_detail_total_time_{{check_id}}").html(result.step_total_time);
+                    }
+
+                    if (result.finish_time) {
+                        clearInterval(timer_{{check_id}});
+                    }
+                }
+            }
+        })
+    }
+
+
+</script>

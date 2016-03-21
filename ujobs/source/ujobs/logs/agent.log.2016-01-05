@@ -1,0 +1,312 @@
+2016-01-05 10:30:28,895 [Thread-66:9492] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 10:30:28,897 [Thread-66:9492] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 11:19:56,930 [Thread-465:5288] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 11:19:56,930 [Thread-465:5288] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 11:23:20,530 [Thread-719:9744] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 11:23:20,530 [Thread-719:9744] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 11:39:12,157 [Thread-1319:8748] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 11:39:12,157 [Thread-1319:8748] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 11:46:05,818 [Thread-1846:5304] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 11:46:05,818 [Thread-1846:5304] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 11:50:54,128 [Thread-2115:9676] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 11:50:54,128 [Thread-2115:9676] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 13:41:21,470 [Thread-2577:3256] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 13:41:21,470 [Thread-2577:3256] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 13:45:55,125 [Thread-2703:1856] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 13:45:55,125 [Thread-2703:1856] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 14:16:50,971 [Thread-3138:5500] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 14:16:50,971 [Thread-3138:5500] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 14:28:05,535 [Thread-3704:5312] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 14:28:05,535 [Thread-3704:5312] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 14:32:57,575 [Thread-4233:9900] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 14:32:57,575 [Thread-4233:9900] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 14:35:52,128 [Thread-4349:5460] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 14:35:52,128 [Thread-4349:5460] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 14:36:31,775 [Thread-4409:7964] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 14:36:31,775 [Thread-4409:7964] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 14:45:11,112 [Thread-4699:9680] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 14:45:11,112 [Thread-4699:9680] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 14:49:03,167 [Thread-4972:9484] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 14:49:03,167 [Thread-4972:9484] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 14:53:17,398 [Thread-5043:8528] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 14:53:17,398 [Thread-5043:8528] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 14:57:38,384 [Thread-5259:3768] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 14:57:38,385 [Thread-5259:3768] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 15:03:49,361 [Thread-5611:9084] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 15:03:49,361 [Thread-5611:9084] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 15:07:57,638 [Thread-5877:10092] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 15:07:57,638 [Thread-5877:10092] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 15:08:32,779 [Thread-5886:8392] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 15:08:32,779 [Thread-5886:8392] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 15:15:14,964 [Thread-6092:9012] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 15:15:14,964 [Thread-6092:9012] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 15:16:32,250 [Thread-6175:880] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 15:16:32,250 [Thread-6175:880] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 15:52:44,382 [Thread-6254:5400] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 15:52:44,382 [Thread-6254:5400] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 16:28:40,911 [Thread-7112:8152] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 16:28:40,911 [Thread-7112:8152] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 16:34:42,927 [Thread-7362:6464] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 16:34:42,928 [Thread-7362:6464] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 16:38:28,926 [Thread-7552:9592] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 16:38:28,927 [Thread-7552:9592] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 16:41:20,729 [Thread-7571:8884] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 16:41:20,729 [Thread-7571:8884] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 16:43:25,145 [Thread-7648:8372] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 16:43:25,145 [Thread-7648:8372] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 16:43:40,467 [Thread-7720:5636] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 16:43:40,467 [Thread-7720:5636] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 16:47:11,539 [Thread-7897:6472] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 16:47:11,539 [Thread-7897:6472] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 16:51:34,038 [Thread-8014:8936] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 16:51:34,039 [Thread-8014:8936] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 16:55:01,315 [Thread-8122:4780] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 16:55:01,315 [Thread-8122:4780] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 16:58:05,733 [Thread-8261:7140] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 16:58:05,733 [Thread-8261:7140] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:01:52,272 [Thread-8441:4892] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:01:52,272 [Thread-8441:4892] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:06:35,773 [Thread-8641:6412] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:06:35,773 [Thread-8641:6412] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:09:51,348 [Thread-8807:1532] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:09:51,348 [Thread-8807:1532] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:16:54,079 [Thread-8972:3756] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:16:54,079 [Thread-8972:3756] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:23:48,180 [Thread-9226:4892] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:23:48,180 [Thread-9226:4892] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:28:50,380 [Thread-9456:6836] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:28:50,381 [Thread-9456:6836] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:35:33,372 [Thread-9734:6452] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:35:33,372 [Thread-9734:6452] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:39:23,240 [Thread-9905:7848] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:39:23,240 [Thread-9905:7848] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:42:53,717 [Thread-10073:6404] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:42:53,717 [Thread-10073:6404] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:44:48,151 [Thread-10182:6764] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:44:48,151 [Thread-10182:6764] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:46:52,463 [Thread-10269:9476] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:46:52,463 [Thread-10269:9476] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 17:50:16,332 [Thread-10400:6968] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 17:50:16,332 [Thread-10400:6968] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 18:09:31,292 [Thread-10701:6436] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 18:09:31,292 [Thread-10701:6436] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 18:36:01,217 [Thread-11099:7708] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 18:36:01,217 [Thread-11099:7708] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 18:51:49,098 [Thread-11161:10196] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 18:51:49,098 [Thread-11161:10196] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 18:53:53,677 [Thread-11252:6484] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 18:53:53,677 [Thread-11252:6484] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 18:56:51,585 [Thread-11316:840] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 18:56:51,585 [Thread-11316:840] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 18:57:55,063 [Thread-11395:10128] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 18:57:55,065 [Thread-11395:10128] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+
+2016-01-05 18:59:16,743 [Thread-11491:7604] [logger_agent:74] [ERROR]- error get agentinfo
+2016-01-05 18:59:16,743 [Thread-11491:7604] [logger_agent:77] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\agent.py", line 54, in agent_list
+    agents = result.get('down') + result.get('up')
+TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'
+

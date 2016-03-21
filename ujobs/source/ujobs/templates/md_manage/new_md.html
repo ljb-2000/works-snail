@@ -1,0 +1,52 @@
+<!-- 新建作业模板 -->
+<div class="row-fluid">
+	<form id="new_template_form_{{ check_id }}" class="form-horizontal" action="javascript:void(0);" method="POST">{% csrf_token %}
+		<div class="control-group">
+			<label class="control-label muted">模板名称：<span class="red">*</span></label>
+			<div class="controls">
+                {{ templateForm.name }}
+                <span style="display: inline-block;color:#999">{{templateForm.name.errors}}</span>
+                <span class="help-block"></span>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">模板类型：<span>&nbsp;&nbsp;</span></label>
+			<div class="controls">
+                {{ templateForm.template_type }}
+                <span style="display: inline-block;color:#999">{{templateForm.template_type.errors}}</span>
+                <span class="help-block"></span>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">所属业务：<span>&nbsp;&nbsp;</span></label>
+			<div class="controls">
+  				<select style="width:435px;" id="work_type" class="work-type" name="work_type">
+  					<option value="" selected>未分类</option>
+  				</select>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">模板备注：<span class="red">*</span></label>
+			<div class="controls">
+                {{ templateForm.remarks }}
+                <span style="display: inline-block;color:#999">{{templateForm.remarks.errors}}</span>
+                <span class="help-block"></span>
+			</div>
+		</div>
+        <input type="hidden" id="check_id" name="check_id" value="{{ check_id }}">
+		<div class="control-group">
+			<div class="controls">
+				<button class="btn btn-primary" onclick="submit_create_new_template({{ check_id }});">
+                    <i class="icon-ok icon-white"></i>
+                    创建模板
+                </button>
+			</div>
+		</div>
+	</form>
+</div>
+
+<script>
+    // 所属业务拉取
+    var e=$(".work-type");
+    product_from(e,'sss')
+</script>

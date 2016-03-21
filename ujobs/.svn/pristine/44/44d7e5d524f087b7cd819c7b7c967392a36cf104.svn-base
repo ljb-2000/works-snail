@@ -1,0 +1,27 @@
+<!-- 文本步骤详情 -->
+<div class="row-fluid">
+	<form class="form-horizontal">
+		<div class="control-group" style="margin-left:28px;">
+            <h4>{{ job_name }}</h4>
+        </div>
+        <div class="control-group">
+        	<label class="control-label muted">执行人：</label>
+        	<span class="control-label txtlf">{{ history.user.username }}</span>
+        </div>
+        <div class="control-group">
+        	<label class="control-label muted">开始时间：</label>
+        	<span class="control-label txtlf">{{ start_time }}</span>
+        </div>
+        <div class="control-group">
+        	<label class="control-label muted">结束时间：</label>
+        	<span class="control-label txtlf">{{ end_time }}</span>
+        </div>
+        <div class="control-group">
+        	<label class="control-label muted">总耗时(s)：</label>
+        	<span class="control-label txtlf">0</span>
+        </div>
+        <div class="control-group" style="margin-left:25px;">
+			<textarea style="width:380px;height:150px;">{{ history_step.describe }}</textarea>
+        </div>
+	</form>
+</div>

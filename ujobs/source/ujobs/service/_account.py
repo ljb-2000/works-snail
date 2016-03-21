@@ -1,0 +1,79 @@
+#!/usr/bin/python
+# -*- coding:utf-8 -*-
+'''
+Created on 2015-5-22
+
+@author: wx
+'''
+from apps.accounts.models import Account, Perm
+
+import logging
+logger = logging.getLogger('logger')
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+
+def get_or_create_account_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return Account.objects.get_or_create(**kwargs)
+
+def get_account_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return Account.objects.get(**kwargs)
+    except Account.DoesNotExist:
+        logger.error(u"Account对象不存在（%s）" % kwargs)
+    except Account.MultipleObjectsReturned:
+        logger.error(u"Account对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_accounts_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return Account.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+
+def get_or_create_perm_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return Perm.objects.get_or_create(**kwargs)
+
+def get_perm_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return Perm.objects.get(**kwargs)
+    except Perm.DoesNotExist:
+        logger.error(u"Perm对象不存在（%s）" % kwargs)
+    except Perm.MultipleObjectsReturned:
+        logger.error(u"Perm对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_perms_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return Perm.objects.filter(**kwargs)

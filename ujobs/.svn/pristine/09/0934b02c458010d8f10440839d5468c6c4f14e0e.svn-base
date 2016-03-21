@@ -1,0 +1,191 @@
+<!--定时调度管理-->
+<div class="row-fluid">
+	<form class="form-inline form-search myform" name="timing_manage_form" method="post" id="myform" action="javascript:void(0);" >{% csrf_token %}  
+		<fieldset>
+		    <legend style="font-size:14px"><span class="caret-arrow-up"></span>查询条件</legend>
+			<div class="controls">
+				<label>实例名称：</label>
+				<input id="search_schedule_name" type="text" style="width:150px;">
+				<label>启动人：</label>
+  				<input id="search_schedule_executor" type="text" style="width:150px;">
+  				<label>创建人：</label>
+  				<input id="search_schedule_creator" type="text" style="width:150px;">
+			</div>
+  		</fieldset>
+		<fieldset>
+		    <legend style="font-size:14px"><span class="caret-arrow-down"></span>更多条件</legend>
+		    <div class="controls hide">
+				<label>任务状态：</label>
+				<select id="search_schedule_status" style="width:164px;">
+  					<option value="all" selected>全部</option>
+  					<option value="start">已启动</option>
+  					<option value="pause">已暂停</option>
+  					<option value="done">已完成</option>
+  				</select>
+				<label>任务描述：</label>
+  				<input id="search_schedule_note" type="text" style="width:150px;">
+  				<label>作业创建时间：</label>
+				<input id="search_schedule_stime" type="text" style="width:150px;" onkeydown="return false;" onClick="WdatePicker()">
+				<label style="width:70px;text-align: center">至</label>
+				<input id="search_schedule_etime" type="text" style="width:150px;" onkeydown="return false;" onClick="WdatePicker()">
+  			</div>
+		</fieldset>
+		<br>
+		<div class="controls pull-right">
+			<button type="button" class="btn btn-primary" onclick="show_schedule_history()"><i class="icon-search icon-white"></i>定时执行历史</button>
+			<button type="button" class="btn btn-info" onclick="schedule_filter()"><i class="icon-search icon-white"></i>查询</button>
+			<button type="button" class="btn btn-success reset"><i class="icon-repeat icon-white"></i>重置</button>
+		</div>
+		<br>
+		  <table  class="table table-striped table-bordered table-hover table-link" id="timing_manage_table">
+			  <thead>
+				<tr>
+					  <!--
+                      <th><input type='checkbox' id='chkAll' onclick='CheckAll(this.form)'/></th>
+                      -->
+                      {%for name in table_fields %}
+                        <th>{{name}}</th>
+                      {%endfor%}
+				</tr>
+			  </thead>
+			  <tbody>
+{#			  	<tr>#}
+{#				  	<td><a href="javascript:void(0)">mb120222</a></td>#}
+{#				  	<td><a href="javascript:void(0)">md1 实例</a></td>#}
+{#				  	<td>snail</td>#}
+{#				  	<td>0 0 12 * * ?</td>#}
+{#				  	<td>已启动</td>#}
+{#				  	<td>dwsd</td>#}
+{#				  	<td>544095700</td>#}
+{#				  	<td>544095700</td>#}
+{#				  	<td>2015-08-19 09:54:16</td>#}
+{#				  	<td>#}
+{#				  		<a href="javascript:void(0);" data-toggle="modal" data-target="#modify_timing">修改</a>&nbsp;<a href="javascript:void(0);">删除</a>&nbsp;<a href="javascript:void(0);">暂停</a>#}
+{#				  	</td>#}
+{#				</tr>#}
+			  </tbody>
+		</table>
+ 	</form>	
+</div><!--/row--> 
+<!--modal one-->
+<div class="modify-timing-modal modal hide fade" id="modify_timing" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+
+</div>
+<script>
+    var schedule_table = null;
+    $(function () {
+        schedule_table = $('#timing_manage_table').dataTable({
+            "sDom": 'lfrtip',
+            "bLengthChange": false,
+            "iDisplayLength": 10,
+            "aoColumnDefs": [{"bSortable": false, "aTargets": [0, 1, 2, 4, 5, 6, 8]}],
+            "aaSorting": [[7, "desc"]],
+            "aoColumns": [
+                {"sWidth": "8%"},
+{#                {"sWidth": "8%"},#}
+                {"sWidth": "7%"},
+                {"sWidth": "10%"},
+                {"sWidth": "7%"},
+                {"sWidth": "15%"},
+                {"sWidth": "8%"},
+                {"sWidth": "8%"},
+                {"sWidth": "11%"},
+                {"sWidth": "8%"}
+            ],
+            "bProcessing": false,
+            "bServerSide": true,
+            "sPaginationType": "full_numbers",
+            "sAjaxSource": "{{ajax_url}}",
+            "bFilter": false,
+            "bInfo": true,
+            "oLanguage": {
+                "sUrl": '/static/tool_js/data_table/cn/jquery.dataTable.cn.txt'
+            }
+        });
+    });
+
+    //显示修改页面.
+    function show_schedule_edit(task_id) {
+        var modify_modal = $('#modify_timing');
+        $.ajax({
+            type: 'get',
+            url: '/timing_manage/modify/' + task_id + '/',
+            dataType: 'json',
+            success: function (data) {
+                if (data.status == 500) {
+                    jError('定时任务获取失败!');
+                } else {
+                    modify_modal.html(data.result.html);
+                    modify_modal.modal('show');
+                }
+            },
+            error: function (re, status) {
+                jError("页面显示失败");
+            }
+        });
+        return false;
+    }
+
+    //任务启动/暂停切换.
+    function schedule_toggle(task_id,action) {
+        if(confirm("确认执行该操作？")==true) {
+            $.ajax({
+                type: 'post',
+                url: '/timing_manage/toggle/' + task_id + '/' + action + '/',
+                dataType: 'json',
+                success: function (data) {
+                    if (data.status == 200) {
+                        schedule_filter();
+                        jSuccess("操作成功");
+                    } else {
+                        jError(data.result.msg);
+                    }
+                },
+                error: function (re, status) {
+                    jError("状态转换失败");
+                }
+            });
+        }
+        return false;
+    }
+
+        //任务启动/暂停切换.
+    function schedule_delete(task_id) {
+        if(confirm("确认删除该定时任务？")==true) {
+            $.ajax({
+                type: 'post',
+                url: '/timing_manage/delete/' + task_id + '/',
+                dataType: 'json',
+                success: function (data) {
+                    if (data.status == 200) {
+                        schedule_filter();
+                        jSuccess("操作成功");
+                    } else {
+                        jError(data.result.msg);
+                    }
+                },
+                error: function (re, status) {
+                    jError("操作失败");
+                }
+            });
+        }
+        return false;
+    }
+
+    function show_schedule_history() {
+        $.ajax({
+            type: 'get',
+            url: '/timing_manage/history_index/',
+            success: function (data) {
+                var tabArr='schedule_history_list';
+            	var valueArr='定时执行历史';
+            	var dataArr=data;
+                tab_href(tabArr,valueArr,dataArr);
+            },
+            error: function (re, status) {
+                jError("操作失败");
+            }
+        });
+        return false;
+    }
+</script>

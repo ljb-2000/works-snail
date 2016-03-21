@@ -1,0 +1,173 @@
+<!-- 一键重启 -->
+<div class="row-fluid edit-restart-wrap">
+	<form id="myform" action="javascript:void(0);" method="post" class="form-horizontal myform">{% csrf_token %}
+	   <div class="control-group">
+	   		<label class="control-label">机器信息：</label>
+	   		<div class="controls">
+	   			<textarea id="ip-area3" rows="8" class="txtstyle edit-restart-ip-area" placeholder="请输入机器IP，操作多个机器以“回车”换行"></textarea>
+                <textarea id="restart_ips_hide" class="edit-restart-ip-hide" style="display: none;"></textarea>
+            </div>
+	   </div>
+	   <div class="controls">
+			<button type="button" class="btn btn-default add-btn-status ip-add-btn" data-msg="restart" data-loading-text="ip检测中,请稍后..." autocomplete="off"><i class="icon-plus"></i>IP添加</button>
+			<button id="server_modal3" type="button" class="select-servers btn btn-default" data-msg="edit-restart-wrap" data-toggle="modal" data-target="#serverModal3" data-loading-text="ip验证中,请稍后..." autocomplete="off"><i class="icon-th-list"></i>选择目标机器 </button>
+	   </div>
+	   <div class="controls scroll-wrap3 edit-restart-ip-wrap hide">
+	   		<b></b>
+				<ul id="ip-show3" class="ip-style edit-restart-ip-result" data-msg="restart">
+
+				</ul>
+		   </div>
+		   	<br>
+		   <label class="control-label">一键操作：</label>
+		<div class="controls">
+			<button id="restart-btn" type="button" class="btn btn-primary edit-restart-save" onclick="reboot();return false;" data-loading-text="机器重启中,请稍后..." autocomplete="off"><i class="icon-off icon-white"></i>一键重启</button>
+			<button style="display:none;" id="confirm1" type="button" class="btn btn-primary" data-toggle="modal" data-target="#confirm_restart"></button>
+	   	</div>
+	   	<br>
+	   	<div class="controls">
+				<ul id="reboot_result" class="ip-style2" name="reboot_result">
+					
+				</ul>
+		   </div>
+	</form>
+</div>
+
+<!-- modal one -->
+<div class="modal set-model hide fade" id="serverModal3" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel3">选择目标服务器</h4>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+          <li class="active"><a href="#APP3" data-toggle="tab">配置中心  - CMDB</a></li>
+          <li class="fliter-tab"><a href="#fliter3" data-toggle="tab">条件选择</a></li>
+		    </ul>
+  		  <div class="tab-content">
+    			<div class="tab-pane active" id="APP3">
+    				<div class="ujobs-cmdb-tree">
+    					
+    				</div>
+            <div class="modal-footer">
+              <button class="add-servers-ip btn btn-primary" data-msg="restart" data-dismiss="modal">添加选中</button>
+              <button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+            </div>
+    			</div>
+          <div class="tab-pane" id="fliter3">
+            <form class="form-horizontal fliter-select">
+              <div class="control-group">
+                <label class="control-label">产品：<span class="red">*</span></label>
+                <div class="controls">
+                    <select class="product-fliter">
+                    </select>
+                </div>
+              </div>
+              <div class="control-group">
+                <label class="control-label">set：</label>
+                <div class="controls">
+                    <input class="set-fliter" type="text" value="">
+                </div>
+              </div>
+              <div class="control-group">
+                <label class="control-label">module：</label>
+                <div class="controls">
+                    <input class="module-fliter" type="text" value="">
+                </div>
+              </div>
+              <div class="control-group">
+                <label class="control-label">已选set：<span class="red">*</span></label>
+                <div class="controls">
+                    <input class="set-value" type="text" value="" disabled>
+                    <button class="clear-fliter btn btn-default" data-msg="set" onclick="return false">清空</button>
+                </div>
+              </div>
+              <div class="control-group">
+                <label class="control-label">已选module：<span class="red">*</span></label>
+                <div class="controls">
+                    <input class="module-value" type="text" value="" disabled>
+                    <button class="clear-fliter btn btn-default" onclick="return false">清空</button>
+                </div>
+              </div>
+            </form>
+            <div class="modal-footer">
+              <button class="add-fliter btn btn-primary" data-msg="restart" data-dismiss="modal">添加</button>
+              <button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+            </div>
+          </div>
+  		  </div>
+      </div>
+</div>
+
+<!-- modal two -->
+<div class="modal hide fade" id="confirm_restart" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="restart_header">操作提示</h4>
+      </div>
+      <div class="modal-body">
+        <p style="text-align: center;font-size:20px;">是否确认重启？</p>
+      </div>
+      <div class="modal-footer">
+		<button id="restart-y" class="btn btn-primary model-close" data-dismiss="modal">确定</button>
+		<button type="button" class="btn btn-default model-close" data-dismiss="modal">取消</button>
+      </div>
+</div>
+<script language="javascript">
+function reboot(){
+    var ips = $('#restart_ips_hide').val();
+
+    // 检测是否全部支持操作
+    var check=check_ip_support(ips);
+
+    if(check==false) {
+    	return false;
+    }
+    
+	  $("#confirm1").trigger("click");
+    
+    $("#restart-y").bind("click",function(){
+        $("#restart-y").unbind("click");
+    		$("#reboot_result").empty();
+        $("#restart-btn").button('loading');
+
+        var support=$("#ip-show3 li");
+
+        for(var i=0;i<support.length;i++) {
+        	  var ip=support.eq(i).find(".ipconfig").text();
+
+        	  $("#reboot_result").append("<li><i class='ipconfig'>"+ip+"</i><i i class='loading'><img width='20px' src='/static/assets/img/loading.gif'></i></li>");
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/usual/reboot/',
+            data: {
+                'ips': ips
+            },
+            dataType: 'json',
+            success: function (data) {
+            	$("#restart-btn").button('complete').html("<i class='icon-off icon-white'></i>一键重启");
+                if (data.status == 200) {
+                    jSuccess('机器重启中, jid: ' + data.jid);
+                    $("#ip-area3").val('');
+                    $("#restart_ips_hide").val('');
+                    $(".scroll-wrap3 b").empty();
+                    $("#ip-show3").empty();
+
+                    showRebootResults(data.jid,data.ip_list,data.total);
+                } else {
+                    jError('重启失败!');
+                }
+            },
+            error: function () {
+            	  $("#restart-btn").button('complete').html("<i class='icon-off icon-white'></i>一键重启");
+                jError('重启错误!');
+            }
+
+        });
+    });
+
+};
+</script>
+            

@@ -1,0 +1,82 @@
+<!--脚本执行结果页-->
+<div class="row-fluid">
+	<form id="myform" action="javascript:void(0);" method="post" class="form-horizontal myform">
+		<div class="control-group" style="margin-left:28px;">
+			<h4>{{script_name}}</h4>
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">开发商：</label>
+			<span class="control-label" style="text-align:left;">{{user}}</span>
+			<label class="control-label muted">启动人：</label>
+			<span class="control-label" style="text-align:left;">{{script.create_user}}</span>	
+			<div class="controls pull-right" style="position: absolute;right: 120px;">
+				<button type="button" class="btn btn-info" onclick="show_script_instance('{{ history.pk }}');"><i class="icon-file icon-white"></i>查看作业实例</button>
+			</div>				  		  
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">总耗时：</label>
+			<span id="script_result_delta_time_{{version.id}}" class="control-label" style="text-align:left;"></span>
+			<label class="control-label muted">开始时间：</label>
+			<span id="script_result_start_time_{{version.id}}" class="control-label" style="text-align:left;"></span>		  
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">结束时间：</label>
+			<span id="script_result_end_time_{{version.id}}" class="control-label" style="text-align:left;"></span>
+			<label class="control-label muted">作业备注：</label>
+			<span class="control-label" style="text-align:left;"></span>
+		</div>
+		<div class="control-group">
+			<div class="controls pull-right">
+				<label class="control-label muted">作业状态：</label>
+				<span id="script_result_status_{{version.id}}" class="control-label" style="text-align:left;">正在执行</span>
+			</div>
+		</div>
+		
+		<table  class="table table-striped table-bordered table-hover" id="script_result_{{version.id}}_example">
+		  <thead>
+			<tr>
+			    <th>序号</th>
+			    <th>步骤名称</th>
+			    <th>目标机器(检测失败/总)</th>
+			    <th>步骤耗时</th>
+			    <th>步骤执行人</th>
+			    <th>状态</th>
+			</tr>
+		  </thead>
+		  <tbody>
+			<tr onclick="javascript:script_once_detail('{{version.id}}','{{history_step.id}}','{{script_name}}')">
+				<td>1</td>
+				<td>一次性脚本操作</td>
+				<td><div id='no_{{version.id}}'></div></td>
+				<td><div id='time_{{version.id}}'></div></td>
+				<td>{{ user.username }}</td>
+				<td><div id='step_{{version.id}}'><img width='20px' src='/static/assets/img/loading.gif' /></div></td>
+			</tr>
+		  </tbody>
+		</table>
+		
+	</form>
+</div>
+
+<script type="text/javascript">
+$(document).ready(function() {
+	 $('#script_result_{{version.id}}_example').dataTable({
+		 "sDom": 'lfrtip',
+		 "bRetrieve":true,
+		 "bDestroy":true,
+		 "aoColumnDefs": [{ "bSortable": false, "aTargets": [0] }],
+		 "bLengthChange":false,
+		 "iDisplayLength":10,
+	     "bProcessing": true,
+	     "bServerSide": false,
+	     "bPaginate": false,
+	     "bInfo": false,
+	     "sPaginationType": "full_numbers",
+	     "bFilter":false,
+		 "oLanguage":{
+		 	   "sUrl":'/static/tool_js/data_table/cn/jquery.dataTable.cn.txt'
+	         }
+     });
+ });
+ 
+</script>

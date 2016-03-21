@@ -1,0 +1,9 @@
+eclipse.preferences.version=1
+encoding//source/ujobs/apps/accounts/forms.py=utf-8
+encoding//source/ujobs/enums/enum_page.py=utf-8
+encoding//source/ujobs/page/account.py=utf-8
+encoding//source/ujobs/releaseinfo.py=utf-8
+encoding//source/ujobs/res/mysql_ujobs.py=utf-8
+encoding//source/ujobs/settings.py=utf-8
+encoding//source/ujobs/urls.py=utf-8
+encoding//source/ujobs/utils/pwd_valid.py=utf-8

@@ -1,0 +1,227 @@
+<!--查看系统状态-->
+<div class="row-fluid edit-status-wrap">
+	<form id="myform" action="javascript:void(0);" method="post" class="form-horizontal myform">{% csrf_token %}
+	   <div class="control-group">
+	   		<label class="control-label">机器信息：</label>
+	   		<div class="controls">
+	   			<textarea id="ip-area5" rows="8" class="txtstyle edit-status-ip-area" placeholder="请输入机器IP，操作多个机器以“回车”换行"></textarea>
+                <textarea id="view_status_ips_hide" class="edit-status-ip-hide" style="display: none;"></textarea>
+            </div>
+	   </div>
+	   <div class="controls">
+			<button type="button" class="btn btn-default add-btn-status ip-add-btn" data-msg="status" data-loading-text="ip检测中,请稍后..." autocomplete="off"><i class="icon-plus"></i>IP添加</button>
+			<button id="server_modal5" type="button" class="select-servers btn btn-default" data-msg="edit-status-wrap" data-toggle="modal" data-target="#serverModal5" data-loading-text="ip验证中,请稍后..." autocomplete="off"><i class="icon-th-list"></i>选择目标机器 </button>
+	   </div>
+	   <div class="controls scroll-wrap5 edit-status-ip-wrap hide">
+	   		<b></b>
+				<ul id="ip-show5" class="ip-style edit-status-ip-result" data-msg="status">
+				</ul>
+		   </div>
+		   <br>
+	   <div class="control-group">
+	   		<label class="control-label">查看状态：</label>
+	   		<div class="controls">
+				<div id="btn-status" class="btn-inline" data-toggle="buttons-checkbox"> 
+				  <button type="button" class="btn btn-default">启动时间</button>
+				  <button type="button" class="btn btn-default">磁盘空间</button>
+				  <button type="button" class="btn btn-default">内存</button>
+				</div>
+			</div>
+			<br>
+			<label class="control-label">一键操作：</label>
+			<div class="controls">
+				<button id="view-status" type="button" class="btn btn-primary edit-status-save" data-loading-text="状态抓取中,请稍后..." autocomplete="off"><i class="icon-eye-open icon-white"></i>一键查看状态</button>
+	   		</div>
+	   </div>
+		<br>
+	   <table class="table mytable3 table-striped table-bordered table-hover hide">
+	  		<caption>状态信息</caption>
+	   		<tr id="status_line">
+	   			<th>ip</th>
+	   		</tr>
+	   </table>
+
+	</form>
+</div><!--/row-->
+<!--modal one-->
+<div class="modal set-model hide fade" id="serverModal5" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel5">选择目标服务器</h4>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+		  <li class="active"><a href="#APP5" data-toggle="tab">配置中心  - CMDB</a></li>
+          <li class="fliter-tab"><a href="#fliter5" data-toggle="tab">条件选择</a></li>
+		</ul>
+		<div class="tab-content">
+			<div class="tab-pane active" id="APP5">
+				<div class="ujobs-cmdb-tree">
+					
+				</div>
+                <div class="modal-footer">
+                    <button class="add-servers-ip btn btn-primary" data-msg="status" data-dismiss="modal">添加选中</button>
+                    <button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+                </div>
+			</div>
+            <div class="tab-pane" id="fliter5">
+                <form class="form-horizontal fliter-select">
+                    <div class="control-group">
+                        <label class="control-label">产品：<span class="red">*</span></label>
+                        <div class="controls">
+                            <select class="product-fliter">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">set：</label>
+                        <div class="controls">
+                            <input class="set-fliter" type="text" value="">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">module：</label>
+                        <div class="controls">
+                            <input class="module-fliter" type="text" value="">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">已选set：<span class="red">*</span></label>
+                        <div class="controls">
+                            <input class="set-value" type="text" value="" disabled>
+                            <button class="clear-fliter btn btn-default" data-msg="set" onclick="return false">清空</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">已选module：<span class="red">*</span></label>
+                        <div class="controls">
+                            <input class="module-value" type="text" value="" disabled>
+                            <button class="clear-fliter btn btn-default" onclick="return false">清空</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button class="add-fliter btn btn-primary" data-msg="status" data-dismiss="modal">添加</button>
+                    <button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+		</div>
+      </div>
+</div>			
+<script>
+	$(function(){
+		//状态筛选
+		$("#view-status").bind("click",function(){
+            //检查是否已检查机器
+            var ips = $('#view_status_ips_hide').val();
+            var check=check_ip_support(ips);
+            if(check==false) {
+            	return false;
+            }
+            
+			$(".mytable3 tr:first th").eq(0).siblings().remove();
+			var active=$("#btn-status .active");
+			var status=$("#btn-status .active").length;
+            var indexArray=new Array();
+            var type='';
+			for(var i=0;i<status;i++){
+				var btnIndex=active.eq(i).html();
+                if (btnIndex == '启动时间') {
+                    type = type+'uptime,';
+                } else if (btnIndex == '磁盘空间') {
+                    type = type+'disk,';
+                } else if(btnIndex=='内存'){
+                    type = type+'memory,';
+                }
+                indexArray.push(type);
+				$(".mytable3 tr").eq(0).append("<th>"+btnIndex+"</th>");
+			}
+            //check selected type.
+            if(type==''){
+                jNotify('请选择要查看的类型');
+                return false;
+            }
+            $(".mytable3").removeClass("hide");
+            $("#view-status").button('loading');
+            $('#status_line').siblings().remove(); 
+            
+            var ips_obj = JSON.parse(ips);
+            var ip_dict = ips_obj.distinct_ip_dict;
+            for(key in ips_obj) {
+                if(key!='total' && key != 'num' && key !='distinct_ip_dict'){
+                    var ip=key;
+                    var html="<tr><td>"+ip+"</td>";
+                    for(var j=0;j<indexArray.length;j++){
+                        html+="<td><img width='20px' src='/static/assets/img/loading.gif'></td>";
+                    }
+                    html+="</tr>";
+                    $(".mytable3").append(html);
+                }
+            } 
+                  
+			/*var support=$("#ip-show5 li");
+            for(var i=0;i<support.length;i++) {
+            	var ip=support.eq(i).find(".ipconfig").text();
+            	var html="<tr><td>"+ip+"</td>";
+            	for(var j=0;j<indexArray.length;j++){
+            		html+="<td><img width='20px' src='/static/assets/img/loading.gif'></td>";
+            	}
+            	html+="</tr>";
+            	$(".mytable3").append(html);
+            }*/
+            
+            $.ajax({
+                type: 'POST',
+                url: '/usual/show_status/',
+                data:{
+                    'type':type,
+                    'ips':ips
+                },
+{#                async:false,#}
+                dataType: 'json',
+                timeout:300000,
+                success: function(data){
+                    $("#ip-area5").val('');
+                    $("#view_status_ips_hide").val('');
+                    $(".scroll-wrap5 b").empty();
+                    $("#ip-show5").empty();
+                
+                    if(data.status==200){
+                    	$("#view-status").button('complete').html("<i class='icon-eye-open icon-white'></i>一键查看状态");
+                        var result = data.result;
+                        var agents = data.agents;
+                        var types = data.status_types;
+                        $('#status_line').siblings().remove();
+                        for(var i=0;i<agents.length;i++){
+                            var minion_id = agents[i].minion_id;
+                            var minion_ip = agents[i].ip;
+                            var html='<tr><td>'+minion_ip+'</td>';
+                            if(types.indexOf('uptime')>-1){
+                                html+='<td>'+result[minion_id]['uptime']+'</td>';
+                            }
+                            if(types.indexOf('disk')>-1){
+                                html+='<td>'+result[minion_id]['disk']+'</td>';
+                            }
+                            if(types.indexOf('memory')>-1){
+                                html+='<td>'+result[minion_id]['memory']+'</td>';
+                            }
+                            html+='</tr>';
+                            $('#status_line').after(html);
+                        }
+                    }else{
+                    	$("#view-status").button('complete').html("<i class='icon-eye-open icon-white'></i>一键查看状态");
+                    	$('#status_line').siblings().remove(); 
+                        jError(data.msg);
+                    }
+                    indexArray=undefined;
+                },
+                error:function(){
+                	$("#view-status").button('complete').html("<i class='icon-eye-open icon-white'></i>一键查看状态");
+                	$('#status_line').siblings().remove(); 
+                    jError('error get type'+indexArray[j]);
+                }
+
+            });
+		});
+	});
+</script>

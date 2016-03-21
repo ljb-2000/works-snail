@@ -1,0 +1,38 @@
+mysql:
+    CREATE DATABASE `ujobs` /*!40100 DEFAULT CHARACTER SET utf8 */;
+redis:
+    安装redis
+
+===== salt master =====
+yum -y install gcc zlib-devel openssl-devel sqlite-devel gcc-c++ mysql-devel python-devel ncurses-devel
+
+/etc/salt/master 配置example
+  interface: 0.0.0.0
+  pidfile: /var/run/salt-master.pid
+  root_dir: /
+  timeout: 5
+  auto_accept: False
+  file_recv: True
+  file_roots:
+    base:
+      - /srv/salt/
+      - /opt/www/ujobs/ujobs/uploads
+      - /opt/www/ujobs/ujobs/file
+  order_masters: True
+  log_level: debug
+  log_level_logfile: debug
+  mysql_ujobs.host: '117.121.19.138'
+  mysql_ujobs.user: 'root'
+  mysql_ujobs.pass: '123456'
+  mysql_ujobs.db: 'ujobs'
+  mysql_ujobs.port: 3306
+  master_job_cache: mysql_ujobs
+  returner_dirs:
+    - /srv/salt/returners
+## sync module config, sync module when new auth comes. #
+  reactor:
+   - 'salt/minion/*/start':
+     - /srv/salt/reactor/sync_modules.sls
+
+将res文件夹下文件复制到/srv/salt/下
+执行 salt 'syndic*' state.highstate

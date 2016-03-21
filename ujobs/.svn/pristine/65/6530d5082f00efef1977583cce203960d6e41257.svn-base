@@ -1,0 +1,123 @@
+<!--查看模板-->          
+<div class="row-fluid">
+	<form id="myform" action="javascript:void(0);" method="post" class="form-horizontal myform">{% csrf_token %}
+		<div class="alert alert-warning">模板中步骤增删、顺序调整、步骤名称、文本步骤描述以及脚本替换会同步到实例中。同一脚本不同版本的变化不会同步到实例中。
+			<a class="tooltips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" title="同步功能会将作业模板中的如下数据同步至已有作业实例中：作业模板中步骤的个数、顺序、名称、文本步骤内容等。    对于分发文件和拉取文件步骤，不会同步详细设置，允许每个作业实例中的分发文件和拉取文件与作业模板不一致。"><i class="icon-question-sign"></i></a>	
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">模板名称：</label>
+			<span class="control-label txt-ellipsis" style="text-align:left;">{{ template.name }}</span>
+			<label class="control-label muted">开发商：</label>
+			<span class="control-label" style="text-align:left;">{{ template.create_user.username }}</span>
+			<div class="controls pull-right" style="margin-right:128px;">
+				<button type="button" class="btn btn-info" onclick="template_edit('{{ template.id }}');"><i class="icon-edit icon-white"></i>编辑作业模板</button>
+				<button type="button" class="btn btn-info" onclick="template_del('{{ template.id }}');"><i class="icon-trash icon-white"></i>删除作业模板</button>
+			</div>				  		  
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">模板类型：</label>
+			<span class="control-label" style="text-align:left;">{{ template.get_template_type_display }}</span>
+			<label class="control-label muted">所属业务：</label>
+			<span class="control-label" style="text-align:left;">{{ template.work_type|default_if_none:'' }}</span>
+		</div>
+		<div class="control-group">
+            <label class="control-label muted">更新时间：</label>
+			<span class="control-label" style="text-align:left;">{{ template.updated|date:'Y-m-d H:i:s' }}</span>
+			<label class="control-label muted">备注：</label>
+			<span class="control-label limit-size">{{ template.remarks }}</span>
+		</div>
+		<div class="control-group">
+			<div class="controls pull-right">
+				<button type="button" onclick="javascript:example_manage_add({{ template.id }})" class="btn btn-info reset"><i class="icon-plus icon-white"></i>添加作业实例</button>	
+				<button type="button" onclick="javascript:template_job_sync({{ template.id }})" class="btn btn-success"><i class="icon-repeat icon-white"></i>同步作业实例</button>	       
+				<button type="button" id="refresh_job_list_{{ template.id }}" class="btn btn-success reset"><i class="icon-refresh icon-white"></i>刷新作业实例</button>
+			</div>
+		</div>
+		<table  class="table table-striped table-bordered table-hover" id="md_example_{{ template.id }}">
+			  <thead>
+				<tr>
+				  <th width=2% class="text-center"><input class="md_view_checked_all_{{ template.id }}" value="" type="checkbox"></th>
+				  <th>实例名称</th>
+				  <th>创建时间</th>
+				  <th>创建人</th>
+				  <th>状态</th>
+				  <th>操作</th>
+				</tr>
+			  </thead>
+			  <tbody>
+
+			  </tbody>
+		</table>
+	</form>
+</div>
+<script>
+var job_list_{{ template.id }} = null;
+$(function(){
+	job_list_{{ template.id }} = $("#md_example_{{ template.id }}").dataTable({
+	 "sDom": 'lfrtip',
+	 "bLengthChange":false,
+	 "iDisplayLength":10,
+	 "aoColumnDefs": [{ "bSortable": false, "aTargets": [0,5] }],
+	 "bProcessing": true,
+	 "bServerSide": true,
+	 "sPaginationType": "full_numbers",
+	 "sAjaxSource": "{{ajax_url}}",
+	 "bFilter":false,
+	 "oLanguage":{
+	 	   "sUrl":'/static/tool_js/data_table/cn/jquery.dataTable.cn.txt'
+	         }
+	 });
+	 
+	 $(".tooltips").tooltip();
+	 
+	//全选全不选
+	var md_view_checked_all=".md_view_checked_all_{{ template.id }}";
+	var md_view_checked_it=".md_view_checked_it_{{ template.id }}";
+	check_all(md_view_checked_all,md_view_checked_it);
+
+    // bind click action.
+    $('#refresh_job_list_{{ template.id }}').bind('click', function () {
+        job_list_{{ template.id }}.fnReloadAjax("{{ ajax_url }}");
+        $(".md_view_checked_all_{{ template.id }}").prop("checked",false);
+        jSuccess("实例列表刷新成功");
+    });
+});
+
+    //同步作业实例
+    function template_job_sync(template_id){
+        if($(".md_view_checked_it_{{ template.id }}").filter(":checked").length==0) {
+            jNotify("指定实例列表为空，同步实例失败！");
+            return false;
+        }
+        else{
+            var check_list = [];  
+            $('#md_example_{{ template.id }} input:checked').each(function(){  
+                check_list.push($(this).val());//向数组中添加元素  
+            });
+            $.ajax({
+                type: 'post',
+                url: '/job/template_job_sync/',
+                data: {
+                        'template_id':template_id,
+                        'check_list':check_list
+                      },
+                dataType: 'json',
+                success: function(data){
+                    if(data.status==500){
+                        jError('同步作业实例失败!');
+                    }else{
+                        jSuccess('同步作业实例成功!');
+                    }
+                    job_list_{{ template.id }}.fnReloadAjax("{{ ajax_url }}");
+                    $(".md_view_checked_all_{{ template.id }}").prop("checked",false);
+                },
+                error: function(re, status){
+                }
+            });
+            
+            return false;
+        }
+    }
+
+
+</script>

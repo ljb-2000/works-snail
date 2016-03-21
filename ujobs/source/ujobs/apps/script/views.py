@@ -1,0 +1,892 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+'''
+Created on 2015-5-28
+
+@author: wx
+'''
+
+import os, sys
+reload(sys)
+sys.setdefaultencoding( "utf-8" )
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+import logging
+from django.utils.translation import ugettext_lazy as _
+from utils.decorator import render_to, login_required
+from django.db.transaction import commit_on_success
+from django.views.decorators.csrf import csrf_exempt
+from service import _account, _script, _template, _job, _history
+from django.http import HttpResponse
+import json, traceback, datetime
+from django.template.loader import render_to_string
+from utils.ctranslate import LazyEncoder
+from django.core.paginator import Paginator
+from ujobs.settings import MEDIA_ROOT
+from enums import enum_script, enum_template, enum_job, enum_history
+from utils.redisclient import rc
+from releaseinfo import DETAIL_KEY_PREFIX, IP_KEY_PREFIX, MINIONS_UP_SET_KEY
+from apps.history.models import RunningResult
+import time
+from utils.utils import send_single_api_request, calc_md5, fileserver_save_file, fileserver_get_file
+from django.shortcuts import render_to_response
+from utils.utils import handle_job
+
+
+logger = logging.getLogger('scripts')
+
+@login_required
+@csrf_exempt
+def script_execute(request):
+    '''
+        @author: wx
+        execute script
+    '''
+    user = request.user
+    logger.debug("### start execute script...")
+    script_name = request.POST.get('script_once_name')
+    script_type = request.POST.get('script_once_type')
+    file_content = request.POST.get('file_content')
+    script_account = request.POST.get('script_account')
+    account = _account.get_account_by_params(id=int(script_account))
+    timeout = request.POST.get('script_once_timeout')
+    if timeout:
+        timeout = int(timeout)
+    else:
+        timeout = 0
+    parameter = request.POST.get('script_once_parameter').strip()
+    ip_area_hide = request.POST.get('ip-area-script-hide')
+    minion_info_dict = json.loads(ip_area_hide)
+    
+    script = _script.get_script_by_params(name=script_name,create_user=user,is_delete=False)
+    if script:
+        return HttpResponse(json.dumps({
+            "status":500,
+            "result":{
+                "msg": u"作业名称已存在"
+            }
+        }))
+    
+    try:
+        script = _script.create_script_by_params(name=script_name,create_user=user)
+        script.script_type = script_type
+        script.update_user = user
+        script.is_once = True
+        script.save()
+    
+        now = datetime.datetime.now()
+        version_name = '%s_%s'%(datetime.datetime.strftime(now, '%Y%m%d%H%M%S'),user.username)
+        version = _script.get_or_create_version_by_params(script=script,name=version_name)[0]
+    
+        file_doc_num = version.id % 100
+        file_doc_path = os.path.join(MEDIA_ROOT,'scripts','%s'%file_doc_num)
+        if not os.path.exists(file_doc_path):
+            os.mkdir(file_doc_path)
+        suffix = enum_script.SCIPT_TYPE_DICT.get(int(script.script_type))
+        filename = u'%s.%s'%(version_name, suffix)
+        file_path = os.path.join(file_doc_path,filename)
+
+        f = open(file_path, 'wb')
+        try:
+            f.write(file_content)
+        except Exception,e:
+            print e
+        finally:
+            f.close()
+            
+        md5sum = calc_md5(file_path)
+        fileserver_save_file(file_path,user.username,md5sum)
+
+        version.sfile = u'%s/%s'%(file_doc_num, filename)
+        version.save()
+
+        # minion-ip map
+        minion_id_map = {}
+
+        # add all minion item to ip_set.
+        ip_set = set()
+        if minion_info_dict:
+            for (item, minion_info) in minion_info_dict.items():
+                if item == 'total' or item == 'num':
+                    continue
+                
+                minion_id = item
+                ip_str = minion_info[3]
+                ip_list = ip_str.split('<br>')
+                minion_ip = ip_list[0]
+                
+                if minion_id in minion_id_map.keys():
+                    continue
+                minion_id_map.update({minion_id:item})
+                ip_set.add(minion_ip)
+
+        template = _template.get_or_create_template_by_params(name=u'一次性脚本模板')[0]
+        template.template_type = enum_template.TEMPLATE_TYPE99
+        template.account = account
+        template.target = json.dumps(list(ip_set))
+        template.save()
+
+        templateStep = _template.get_or_create_templateStep_by_params(template=template,name=version_name)[0]
+        templateStep.step_type = enum_template.STEP_TYPE_SCRIPT
+        templateStep.order = 1
+        templateStep.save()
+
+        templateStepScript = _template.get_or_create_templateStepScript_by_params(step=templateStep, version=version)[0]
+        templateStepScript.parameter = parameter
+        templateStepScript.timeout = timeout
+        templateStepScript.save()
+
+        job = _job.get_or_create_job_by_params(template=template,name=script_name)[0]
+        job.account = account
+        job.target = json.dumps(list(ip_set))
+        job.create_user=user
+        job.update_user = user
+        job.save()
+        
+        jobStep = _job.get_or_create_jobStep_by_params(job=job,template_step=templateStep,name=u'一次性脚本操作')[0]
+        jobStep.target = job.target
+        jobStep.step_type = enum_template.STEP_TYPE_SCRIPT
+        jobStep.order = 1
+        jobStep.save()
+
+        jobStepScript = _job.get_or_create_jobStepScript_by_params(step=jobStep, version=version)[0]
+        jobStepScript.parameter = parameter
+        jobStepScript.timeout = timeout
+        jobStepScript.save()
+        logger.debug("start handle job...")
+        result = handle_job(job,user)
+        logger.debug("script_result:%s"%(result))
+
+        return HttpResponse(json.dumps(result))
+    except:
+        error = traceback.format_exc()
+        logger.error(error)
+        print error
+        return HttpResponse(json.dumps({
+            'status': 500,
+            'result':{
+                'msg': u'执行脚本失败'
+            }
+        }))
+    
+
+@login_required
+@csrf_exempt
+def ajax_script_upload(request):
+    sdicts = {}
+    sdicts["result"] = 0
+    if request.method == "POST":
+        try:
+            fileToUpload = request.POST.get('fileToUpload','script_fileToUpload')
+            f = request.FILES.get(fileToUpload, None)
+            if f:
+                content = ''
+                for chunk in f.chunks():
+                    content += chunk
+                sdicts['result'] = 1
+                sdicts['content'] = content
+        except Exception, e:
+            print e
+            sdicts['result'] = -1
+    return HttpResponse(json.dumps(sdicts))
+
+@login_required
+@csrf_exempt
+def script_detail(request,version_id,history_step_id):
+    '''
+         show detail of script once.
+    '''
+    code = 200
+    history_step = _history.get_historyStep_by_params(id=history_step_id)
+    history = history_step.history
+    start_time = history_step.start_time.strftime("%Y-%m-%d %H:%M:%S") if history_step.start_time else ""
+    end_time = history.end_time.strftime("%Y-%m-%d %H:%M:%S") if history.end_time else ""
+    current_status = history_step.get_result_display()
+
+    total_ips = history_step.total_ips
+    abnormal_ips = history_step.abnormal_ips
+    fail_ips = history_step.fail_ips
+    success_ips = history_step.success_ips
+
+    total_ips = json.loads(total_ips) if total_ips else []
+    abnormal_ips = json.loads(abnormal_ips) if abnormal_ips else []
+    fail_ips = json.loads(fail_ips) if fail_ips else []
+    success_ips = json.loads(success_ips) if success_ips else []
+
+    progress = 0
+    total_ips_str = ','.join(total_ips)
+    finished = True if progress == 100 else False
+    job_name = history.job.name
+    check_id = version_id
+    template_file = "history/detail.html"
+    html = render_to_string(template_file, locals())
+    result = {
+        'html': html,
+        'version_id': version_id,
+        'job_name': job_name,
+        "success_ips": success_ips,
+        "status":current_status,
+        "fail_ips": fail_ips,
+        "abnormal_ips": abnormal_ips,
+
+        "start_time": history.start_time.strftime("%Y-%m-%d %H:%M:%S") if history.start_time else "",
+        "finish_time": history.end_time.strftime("%Y-%m-%d %H:%M:%S") if history.end_time else "",
+        "total_ips": total_ips,
+        "total_time": history.delta_time if history.delta_time else "",
+        "step_time": history_step.delta_time or "",
+        "job_msg": history.get_status_display(),
+        "step_msg":history_step.get_result_display(),
+
+    }
+    return HttpResponse(json.dumps({
+        "status":code,
+        "result":result
+    }))
+    
+    
+@login_required
+@csrf_exempt
+def script_add(request):
+    user = request.user
+    sdicts = {}
+    code = 500
+    
+    if request.method == 'POST':
+        try:
+            check_id = request.POST.get('check_id')
+            script_name = request.POST.get('new_script_name')
+            script_describe = request.POST.get('new_script_describe')
+            script_type = request.POST.get('new_script_type')
+            file_content = request.POST.get('new_file_content')
+        
+            script = _script.get_script_by_params(name=script_name,create_user=user,is_delete=False)
+            if script:
+                return HttpResponse(json.dumps({
+                    "status":500,
+                    "msg": u"作业名称已存在"
+                }))
+        
+            script = _script.create_script_by_params(name=script_name,create_user=user)
+            script.script_type = script_type
+            script.update_user = user
+            script.describe = script_describe
+            script.save()
+            script_type_display = enum_script.SCIPT_TYPE_CHOICES[int(script.script_type)-1][1]
+            version_list = _script.get_versions_by_params(script=script,is_delete=False)
+            
+            version_name = '%s_%s'%(check_id,user.username)
+            version = _script.get_or_create_version_by_params(script=script,name=version_name)[0]
+    
+            file_doc_num = version.id % 100
+            file_doc_path = os.path.join(MEDIA_ROOT,'scripts','%s'%file_doc_num)
+            if not os.path.exists(file_doc_path):
+                os.mkdir(file_doc_path)
+            suffix = enum_script.SCIPT_TYPE_DICT.get(int(script.script_type))
+            filename = u'%s.%s'%(version_name, suffix)
+            file_path = os.path.join(file_doc_path,filename)
+    
+            f = open(file_path, 'wb')
+            try:
+                f.write(file_content)
+            except Exception,e:
+                print e
+            finally:
+                f.close()
+                
+            md5sum = calc_md5(file_path)
+            fileserver_save_file(file_path,user.username,md5sum)
+    
+            version.sfile = u'%s/%s'%(file_doc_num, filename)
+            version.save()
+        
+            code = 200
+        except Exception,e:
+            code = 500
+            msg = u'保存脚本失败'
+        
+        template_file = "script_manage/script_view.html"
+        html = render_to_string(template_file, locals())
+        sdicts['status'] = code
+        sdicts['script_id'] = script.id
+        sdicts['html'] = html
+        return HttpResponse(json.dumps(sdicts))
+        
+    else:
+        code = 200
+        now = datetime.datetime.now()
+        check_id = now.strftime("%Y%m%d%H%M%S")
+        
+        template_file = "script_manage/new_script.html"
+        html = render_to_string(template_file, locals())
+        sdicts['status'] = code
+        sdicts['check_id'] = check_id
+        sdicts['html'] = html
+        return HttpResponse(json.dumps(sdicts))
+
+@login_required
+@csrf_exempt
+def script_delete(request):
+    '''
+        delete script
+    '''
+    sdicts = {}
+    script_id = request.POST.get('script_id',0)
+    user = request.user
+    script = _script.get_script_by_params(id=script_id)
+    if script:
+        versions = _script.get_versions_by_params(script=script,is_delete=False)
+#        jobStepScripts = _job.get_jobStepScripts_by_params(step__job__is_delete=False,version__in=versions)
+        templateStepScripts = _template.get_templateStepScripts_by_params(step__template__is_delete=False,version__in=versions)
+#        if jobStepScripts:
+#            sdicts = {'result':0}
+#            sdicts['showMsg'] = _(u"删除失败: 当前脚本存在关联的作业实例")
+#        elif templateStepScripts:
+#            sdicts = {'result':0}
+#            sdicts['showMsg'] = _(u"删除失败: 当前脚本存在关联的作业模板")
+        if templateStepScripts:
+            sdicts = {'result':0}
+            sdicts['showMsg'] = _(u"删除失败: 当前脚本存在关联的作业实例")
+        else:
+            script.is_delete = True
+            script.update_user = user
+            script.save()
+            sdicts['result'] = 1
+            sdicts['showMsg'] = _(u"删除成功")
+    else:
+        sdicts = {'result':0}
+        sdicts['showMsg'] = _(u"删除失败")
+    
+#    table_fields = [u'脚本名称', u'脚本描述', u'创建人', u'创建时间', u'最后修改人', u'最后修改时间', u'操作']
+    table_fields = [u'脚本名称', u'脚本描述', u'创建人', u'最后修改人', u'已授权用户', u'操作']
+    ajax_url = u'/script_manage/list/' 
+    template_file = "script_manage/contentDiv.html"
+    html = render_to_string(template_file, locals())
+    sdicts['html'] = html
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def script_edit(request):
+    user = request.user
+    sdicts = {}
+    code = 500
+    
+    try:
+        script_id = request.POST.get('script_id')
+        script_name = request.POST.get('script_name')
+        script_describe = request.POST.get('script_describe')
+        
+        script = _script.get_script_by_params(id=script_id)
+        scripts = _script.get_scripts_by_params(name=script_name,create_user=user,is_delete=False).exclude(id=script.id)
+        if scripts:
+            return HttpResponse(json.dumps({
+                "status":500,
+                "msg": u"作业名称已存在"
+            }))
+        
+        script.name = script_name
+        script.describe = script_describe
+        script.update_user = user
+        script.save()
+        script_type_display = script.get_script_type_display()
+        version_list = _script.get_versions_by_params(script=script,is_delete=False)
+    
+        code = 200
+    except Exception,e:
+        code = 500
+        msg = u'保存脚本名称失败'
+    
+    template_file = "script_manage/script_view.html"
+    html = render_to_string(template_file, locals())
+    sdicts['status'] = code
+    sdicts['html'] = html
+    return HttpResponse(json.dumps(sdicts))
+
+@login_required
+@csrf_exempt
+def script_describe_edit(request):
+    user = request.user
+    sdicts = {}
+    code = 500
+    
+    try:
+        script_id = request.POST.get('script_id')
+        script_describe = request.POST.get('script_describe')
+    
+        script = _script.get_script_by_params(id=script_id)
+        script.describe = script_describe
+        script.update_user = user
+        script.save()
+        script_type_display = script.get_script_type_display()
+        version_list = _script.get_versions_by_params(script=script,is_delete=False)
+    
+        code = 200
+    except Exception,e:
+        code = 500
+        msg = u'保存脚本描述失败'
+    
+    template_file = "script_manage/script_view.html"
+    html = render_to_string(template_file, locals())
+    sdicts['status'] = code
+    sdicts['html'] = html
+    return HttpResponse(json.dumps(sdicts))
+
+@login_required
+@csrf_exempt
+def script_view(request):
+    user = request.user
+    sdicts = {}
+    code = 500
+    
+    try:
+        script_id = request.POST.get('script_id')
+        script = _script.get_script_by_params(id=script_id)
+        script_type_display = script.get_script_type_display()
+        version_list = _script.get_versions_by_params(script=script,is_delete=False)
+        code = 200
+    except Exception,e:
+        code = 500
+    
+    template_file = "script_manage/script_view.html"
+    html = render_to_string(template_file, locals())
+    sdicts['status'] = code
+    sdicts['script_id'] = script_id
+    sdicts['html'] = html
+    return HttpResponse(json.dumps(sdicts))
+
+@login_required
+@csrf_exempt
+def version_copy(request):
+    '''
+        copy version
+    '''
+    sdicts = {}
+    user = request.user
+    code = 500
+    
+    if request.method == 'POST':
+        version_id = request.POST.get('version_id',0)
+        file_content = request.POST.get('file_content','')
+        version_copy = _script.get_version_by_params(id=version_id)
+        if version_copy:
+            script = version_copy.script
+            script_type = script.script_type
+            
+            now = datetime.datetime.now()
+            version_name = '%s_%s'%(now.strftime("%Y%m%d%H%M%S"),user.username)
+            version = _script.get_or_create_version_by_params(script=script,name=version_name)[0]
+    
+            file_doc_num = version.id % 100
+            file_doc_path = os.path.join(MEDIA_ROOT,'scripts','%s'%file_doc_num)
+            if not os.path.exists(file_doc_path):
+                os.mkdir(file_doc_path)
+            suffix = enum_script.SCIPT_TYPE_DICT.get(int(script.script_type))
+            filename = u'%s.%s'%(version_name, suffix)
+            file_path = os.path.join(file_doc_path,filename)
+    
+            f = open(file_path, 'wb')
+            try:
+                f.write(file_content)
+            except Exception,e:
+                print e
+            finally:
+                f.close()
+                
+            md5sum = calc_md5(file_path)
+            fileserver_save_file(file_path,user.username,md5sum)
+    
+            version.sfile = u'%s/%s'%(file_doc_num, filename)
+            version.save()
+            
+            script_type_display = script.get_script_type_display()
+            version_list = _script.get_versions_by_params(script=script,is_delete=False)
+            
+            code = 200
+        else:
+            code = 500
+        
+        template_file = "script_manage/script_view.html"
+        html = render_to_string(template_file, locals())
+        sdicts['status'] = code
+        sdicts['script_id'] = script.id
+        sdicts['html'] = html
+        return HttpResponse(json.dumps(sdicts))
+    else:
+        version_id = request.GET.get('version_id',0)
+        version = _script.get_version_by_params(id=version_id)
+        if version:
+            script = version.script
+            script_type = script.script_type
+            
+            file_path = os.path.join(MEDIA_ROOT,'scripts','%s'%version.sfile)
+            file_content = ''
+            f = open(file_path)
+            try:
+                file_content = f.read()
+            except Exception,e:
+                print e
+            finally:
+                f.close()
+            
+            code = 200
+        else:
+            code = 500
+        
+        template_file = "script_manage/copy_script.html"
+        html = render_to_string(template_file, locals())
+        sdicts['status'] = code
+        sdicts['html'] = html
+        sdicts['version_id'] = version_id
+        return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def version_delete(request):
+    '''
+        delete version
+    '''
+    sdicts = {}
+    version_id = request.POST.get('version_id',0)
+    user = request.user
+    version = _script.get_version_by_params(id=version_id)
+    if version:
+#        jobStepScripts = _job.get_jobStepScripts_by_params(step__job__is_delete=False,version=version)
+        templateStepScripts = _template.get_templateStepScripts_by_params(step__template__is_delete=False,version=version)
+#        if jobStepScripts:
+#            sdicts = {'result':0}
+#            sdicts['showMsg'] = _(u"删除失败: 当前版本存在关联的作业实例")
+#        elif templateStepScripts:
+#            sdicts = {'result':0}
+#            sdicts['showMsg'] = _(u"删除失败: 当前版本存在关联的作业模板")
+        if templateStepScripts:
+            sdicts = {'result':0}
+            sdicts['showMsg'] = _(u"删除失败: 当前版本存在关联的作业实例")
+        else:
+            version.is_delete = True
+            version.save()
+            sdicts['result'] = 1
+            sdicts['showMsg'] = _(u"删除成功")
+        
+        script = version.script
+        script_type_display = script.get_script_type_display()
+        version_list = _script.get_versions_by_params(script=script,is_delete=False)
+        sdicts['script_id'] = script.id
+    else:
+        sdicts = {'result':0}
+        sdicts['showMsg'] = _(u"删除失败")
+    
+    template_file = "script_manage/script_view.html"
+    html = render_to_string(template_file, locals())
+    sdicts['html'] = html
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def show_version_detail(request):
+    user = request.user
+    sdicts = {}
+    code = 500
+    
+    try:
+        version_id = request.POST.get('version_id')
+        version = _script.get_version_by_params(id=version_id)
+        
+        script = version.script
+        file_path = os.path.join(MEDIA_ROOT,'scripts','%s'%version.sfile)
+        file_content = ''
+        f = open(file_path)
+        try:
+            file_content = f.read()
+        except Exception,e:
+            print e
+        finally:
+            f.close()
+        
+        code = 200
+    except Exception,e:
+        code = 500
+    
+    template_file = "script_manage/script_details.html"
+    html = render_to_string(template_file, locals())
+    sdicts['status'] = code
+    sdicts['version_id'] = version_id
+    sdicts['html'] = html
+    return HttpResponse(json.dumps(sdicts))
+
+@login_required
+@csrf_exempt
+def version_remarks_edit(request):
+    '''
+        version remarks edit
+    '''
+    sdicts = {}
+    version_id = request.GET.get('version_id',0)
+    user = request.user
+    version = _script.get_version_by_params(id=version_id)
+    if version:
+        sdicts['result'] = 1
+    else:
+        sdicts = {'result':0}
+    
+    template_file = "script_manage/version_remarks_edit.html"
+    html = render_to_string(template_file, locals())
+    sdicts['html'] = html
+    sdicts['version_id'] = version_id
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def version_remarks_save(request):
+    '''
+        version remarks save
+    '''
+    sdicts = {}
+    user = request.user
+    version_id = request.GET.get('version_id',0)
+    version_remarks = request.GET.get('version_remarks','')
+    code = 500
+    try:
+        version = _script.get_version_by_params(id=version_id)
+        version.remarks = version_remarks
+        version.save()
+        
+        script = version.script
+        script_type_display = script.get_script_type_display()
+        version_list = _script.get_versions_by_params(script=script,is_delete=False)
+        code = 200
+    except Exception,e:
+        code = 500
+    
+    template_file = "script_manage/script_view.html"
+    html = render_to_string(template_file, locals())
+    sdicts['status'] = code
+    sdicts['script_id'] = script.id
+    sdicts['html'] = html
+    return HttpResponse(json.dumps(sdicts))
+
+@login_required
+@csrf_exempt
+def template_list(request,version_id):
+    '''
+        显示版本模板列表.
+    '''
+    user = request.user
+    template_name = request.GET.get('template_name', None)
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None,'step__template__name', 'step__template__create_user__username', 'step__name', 'version__script__name', 'version__name', 'version__remarks', None]
+    order_item = order_list[iSortCol_0]
+    
+    version = _script.get_version_by_params(id=version_id)
+    script = version.script
+    templateStepScripts = _template.get_templateStepScripts_by_params(version__script=script,step__template__is_delete=False)
+    
+    #查询
+    if template_name:
+        templateStepScripts = templateStepScripts.filter(step__template__name__icontains = template_name)
+    
+    if order_item:
+        if sSortDir_0 == "desc":
+            order_item = '-%s' % order_item
+        templateStepScripts = templateStepScripts.order_by(order_item)
+    else:
+        templateStepScripts = templateStepScripts.order_by('id')
+
+    p = Paginator(templateStepScripts, iDisplayLength)
+    total = p.count
+    page_range = p.page_range
+    page = p.page(page_range[iDisplayStart / iDisplayLength])
+    object_list = page.object_list
+
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+    for obj in object_list:
+        box_field = '<td class="text-center"><input class="update_checked_it_%s" type="checkbox" value="%s"></td>'%(version.id,obj.id)
+        operation = '<td><a href="javascript:void(0);" onclick="version_job_sync(%s,%s);">选择实例步骤进行替换</a></td>'%(version.id,obj.step.template.id)
+        data = [box_field,obj.step.template.name,obj.step.template.create_user.username, obj.step.name, obj.version.script.name, obj.version.name, obj.version.remarks, operation]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def version_template_sync(request):
+    '''
+        version template sync
+    '''
+    sdicts = {}
+    user = request.user
+    code = 500
+    
+    if request.method == 'POST':
+        try:
+            version_id = request.POST.get('version_id',0)
+            check_list = request.POST.getlist('check_list[]',[])
+            version = _script.get_version_by_params(id=version_id)
+            for templateStepScript_id in check_list:
+                if templateStepScript_id:
+                    templateStepScript = _template.get_templateStepScript_by_params(id=templateStepScript_id)
+                    templateStepScript.version = version
+                    templateStepScript.save()
+            code = 200
+        except Exception,e:
+            code = 500
+    
+        sdicts['status'] = code
+        return HttpResponse(json.dumps(sdicts))
+    else:
+        try:
+            version_id = request.GET.get('version_id',0)
+            version = _script.get_version_by_params(id=version_id)
+            script = version.script
+            code = 200
+        except Exception,e:
+            code = 500
+        
+        template_ajax_url = '/script/template_list/'+version_id+'/'
+        template_file = "script_manage/update_script.html"
+        html = render_to_string(template_file, locals())
+        sdicts['status'] = code
+        sdicts['html'] = html
+        return HttpResponse(json.dumps(sdicts))
+
+@login_required
+@csrf_exempt
+def version_job_sync(request):
+    '''
+        version job sync
+    '''
+    sdicts = {}
+    user = request.user
+    code = 500
+    
+    if request.method == 'POST':
+        try:
+            version_id = request.POST.get('version_id',0)
+            check_list = request.POST.getlist('check_list[]',[])
+            version = _script.get_version_by_params(id=version_id)
+            for jobStepScript_id in check_list:
+                if jobStepScript_id:
+                    jobStepScript = _job.get_jobStepScript_by_params(id=jobStepScript_id)
+                    jobStepScript.version = version
+                    jobStepScript.save()
+            code = 200
+        except Exception,e:
+            code = 500
+    
+        sdicts['status'] = code
+        return HttpResponse(json.dumps(sdicts))
+    else:
+        try:
+            version_id = request.GET.get('version_id',0)
+            template_id = request.GET.get('template_id',0)
+            version = _script.get_version_by_params(id=version_id)
+            template = _template.get_template_by_params(id=template_id)
+            jobStepScripts = _job.get_jobStepScripts_by_params(step__job__template=template,step__job__is_delete=False)
+            code = 200
+        except Exception,e:
+            code = 500
+        
+        template_file = "script_manage/version_sync_modal.html"
+        html = render_to_string(template_file, locals())
+        sdicts['status'] = code
+        sdicts['html'] = html
+        return HttpResponse(json.dumps(sdicts))
+
+@login_required
+@csrf_exempt
+def template_list_v2(request,version_id):
+    '''
+        显示版本模板列表.
+    '''
+    user = request.user
+    template_name = request.GET.get('template_name', None)
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None,'step__template__name', 'step__template__create_user__username', 'step__name', 'version__script__name', 'version__name', 'version__remarks', None]
+    order_item = order_list[iSortCol_0]
+    
+    version = _script.get_version_by_params(id=version_id)
+    script = version.script
+    templateStepScripts = _template.get_templateStepScripts_by_params(version__script=script,step__template__is_delete=False)
+    
+    #查询
+    if template_name:
+        templateStepScripts = templateStepScripts.filter(step__template__name__icontains = template_name)
+    
+    if order_item:
+        if sSortDir_0 == "desc":
+            order_item = '-%s' % order_item
+        templateStepScripts = templateStepScripts.order_by(order_item)
+    else:
+        templateStepScripts = templateStepScripts.order_by('id')
+
+    p = Paginator(templateStepScripts, iDisplayLength)
+    total = p.count
+    page_range = p.page_range
+    page = p.page(page_range[iDisplayStart / iDisplayLength])
+    object_list = page.object_list
+
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+    for obj in object_list:
+        box_field = '<td class="text-center"><input class="update_checked_it_%s" type="checkbox" value="%s"></td>'%(version.id,obj.id)
+        data = [box_field,obj.step.template.name,obj.step.template.create_user.username, obj.step.name, obj.version.script.name, obj.version.name, obj.version.remarks]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def version_template_sync_v2(request):
+    '''
+        version template sync v2
+    '''
+    sdicts = {}
+    user = request.user
+    code = 500
+    
+    if request.method == 'POST':
+        try:
+            version_id = request.POST.get('version_id',0)
+            check_list = request.POST.getlist('check_list[]',[])
+            version = _script.get_version_by_params(id=version_id)
+            for templateStepScript_id in check_list:
+                if templateStepScript_id:
+                    templateStepScript = _template.get_templateStepScript_by_params(id=templateStepScript_id)
+                    templateStepScript.version = version
+                    templateStepScript.save()
+            code = 200
+        except Exception,e:
+            code = 500
+    
+        sdicts['status'] = code
+        return HttpResponse(json.dumps(sdicts))
+    else:
+        try:
+            version_id = request.GET.get('version_id',0)
+            version = _script.get_version_by_params(id=version_id)
+            script = version.script
+            code = 200
+        except Exception,e:
+            code = 500
+        
+        template_ajax_url = '/script/template_list_v2/'+version_id+'/'
+        template_file = "script_manage/update_script_v2.html"
+        html = render_to_string(template_file, locals())
+        sdicts['status'] = code
+        sdicts['html'] = html
+        return HttpResponse(json.dumps(sdicts))

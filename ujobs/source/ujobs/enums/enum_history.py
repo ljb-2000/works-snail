@@ -1,0 +1,73 @@
+#!/usr/bin/python
+# -*- coding:utf-8 -*-
+from django.utils.translation import ugettext_lazy as _
+
+'''
+Created on 2015-5-15
+
+@author: wx
+'''
+
+
+#作业状态
+STATUS_NOT_START = 0
+STATUS_SUCCESS = 1
+STATUS_FAIL = 2
+STATUS_PROCESSING = 3
+# STATUS4 = 4
+
+HISTORY_STATUS_CHOICES = (
+     (STATUS_NOT_START, _(u'未执行')),
+     (STATUS_SUCCESS, _(u'执行成功')),
+     (STATUS_FAIL, _(u'执行失败')),
+     (STATUS_PROCESSING, _(u'执行中')),
+     # (STATUS4, _(u'执行完成')),
+)
+
+
+#步骤执行结果
+RESULT_NOT_START = 0
+RESULT_PROCESSING = 1
+RESULT_SUCCESS = 2
+RESULT_FAIL = 3
+RESULT_SKIP = 4
+RESULT_IGNORE_ERROR = 5
+RESULT_WAIT_USER = 6
+RESULT_MANUAL_STOP = 7
+RESULT_STATUS_ABNORMAL = 8
+RESULT_FORCE_STOPPING = 9
+RESULT_FORCE_STOP_SUCCESS = 10
+RESULT_FORCE_STOP_FAIL = 11
+
+HISTORYSTEP_RESULT_CHOICES = (
+     (RESULT_NOT_START, _(u'未执行')),
+     (RESULT_PROCESSING, _(u'正在执行')),
+     (RESULT_SUCCESS, _(u'执行成功')),
+     (RESULT_FAIL, _(u'执行失败')),
+     (RESULT_SKIP, _(u'跳过')),
+     (RESULT_IGNORE_ERROR, _(u'忽略错误')),
+     (RESULT_WAIT_USER, _(u'等待用户')),
+     (RESULT_MANUAL_STOP, _(u'手动结束')),
+     (RESULT_STATUS_ABNORMAL, _(u'状态异常')),
+     (RESULT_FORCE_STOPPING, _(u'步骤强制终止中')),
+     (RESULT_FORCE_STOP_SUCCESS, _(u'步骤强制终止成功')),
+     (RESULT_FORCE_STOP_FAIL, _(u'步骤强制终止失败')),
+)
+
+HISTORY_STARTUP_TYPE_MANUAL = 1
+HISTORY_STARTUP_TYPE_AUTO = 2
+
+HISTORY_RUN_TYPE_CHOICES  = (
+     (HISTORY_STARTUP_TYPE_MANUAL, _(u'手动执行任务')),
+     (HISTORY_STARTUP_TYPE_AUTO, _(u'自动执行任务')),
+)
+
+SCHEDULE_HISTORY_RESULT_TRIGGER = 1
+SCHEDULE_HISTORY_RESULT_SUCCESS = 2
+SCHEDULE_HISTORY_RESULT_FAIL = 3
+
+SCHEDULE_HISTORY_RESULT_CHOICES  = (
+     (SCHEDULE_HISTORY_RESULT_TRIGGER, _(u'定时任务触发')),
+     (SCHEDULE_HISTORY_RESULT_SUCCESS, _(u'启动成功')),
+     (SCHEDULE_HISTORY_RESULT_FAIL, _(u'启动失败')),
+)

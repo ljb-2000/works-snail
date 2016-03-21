@@ -1,0 +1,98 @@
+<!--新建定时任务弹框-->
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    <h4 class="modal-title" id="new_timing_header">新建定时任务</h4>
+</div>
+<div class="modal-body">
+    <form class="form-horizontal" id="schedule_add_{{ check_id }}" enctype="multipart/form-data">
+        <div class="control-group">
+            <label class="control-label muted">定时规则：<span class="red">*</span></label>
+            <div class="controls">
+                <input id="expression" class="expression" name="expression" type="text" placeholder="请输入定时规则" value="* * * * * * *">
+            </div>
+        </div>
+        <div class="control-group">
+            <div class="controls">
+                <input class="rule-show" type="checkbox">
+                <label style="display:inline-block;">显示定时规则</label>
+            </div>
+        </div>
+        <div class="control-group rule-txt hide">
+            <div class="controls">
+                <div class="timing-pannel">
+                    <p>格式同cron,0-6或mon-sun代表星期，其中0代表周一,对于一次性的定时调度规则，请务必加上年份.</p>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th width="20%">字段域</th>
+                                <th width="55%">允许值</th>
+                                <th width="25%">允许字符</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>秒</td>
+                                <td>0-59</td>
+                                <td>, - * /</td>
+                            </tr>
+                            <tr>
+                                <td>分</td>
+                                <td>0-59</td>
+                                <td>, - * /</td>
+                            </tr>
+                            <tr>
+                                <td>小时</td>
+                                <td>0-23</td>
+                                <td>, - * /</td>
+                            </tr>
+                            <tr>
+                                <td>星期</td>
+                                <td>0-6或mon,tue,wed,thu,fri,sat,sun</td>
+                                <td>, - * /</td>
+                            </tr>
+                            <tr>
+                                <td>日期</td>
+                                <td>1-31</td>
+                                <td>, - * / last</td>
+                            </tr>
+
+                            <tr>
+                                <td>月份</td>
+                                <td>1-12</td>
+                                <td>, - * /</td>
+                            </tr>
+                            <tr>
+                                <td>年</td>
+                                <td>1970-2099</td>
+                                <td>, - * /</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p style="color:#800080">注意: 每周第一天为星期一</p>
+                    <span>例：</span>
+                    <p>'0 0 12 * last * *' 表示每月最后一天中午12点触发</p>
+                    <p>'0 0/5 14,18 * * * *'在每天下午2点到2:55期间和下午6点到6:55期间的每5分钟触发</p>
+                </div>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label muted">任务描述：<span class="red">*</span></label>
+            <div class="controls">
+                <input id="note" class="note" name="note" type="text" placeholder="请输入任务描述">
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label muted">启动人：<span class="red">*</span></label>
+            <div class="controls">
+                <input id="executor" class="executor" name="executor" type="text" placeholder="请输入启动人" value="{{user}}" disabled>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary" onclick="schedule_save('{{ check_id }}','{{ job.id }}',this);">保存</button>
+    <button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+</div>
+<script>
+icheck($(".modify-timing-modal input:checkbox"));
+</script>

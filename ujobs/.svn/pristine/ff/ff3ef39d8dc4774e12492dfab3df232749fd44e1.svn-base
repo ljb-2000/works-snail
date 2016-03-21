@@ -1,0 +1,128 @@
+{% extends "base.html"%}
+
+{% block js%}
+<script src="/static/assets/js/bootstrap.js"></script>
+<script src="/static/assets/js/bootstrap-modal.js"></script>
+<script type="text/javascript">
+function submit(){
+$("#form1").submit();
+}
+
+$(function(){
+
+	/*	//本地存储访客是否第一次访问
+	var strModel="startJobs";
+	var storeDisplay=function(){
+			var modelDisplay=1;
+			//存储，IE6~IE7 cookie 其他浏览器HTML5本地存储
+			if(window.localStorage) {
+				localStorage.setItem(strModel,modelDisplay);
+			}
+			else {
+				Cookie.write(strModel,modelDisplay);
+			}
+	};
+	
+	//检测触发是否显示弹窗
+	var strStoreDate=window.localStorage ? localStorage.getItem(strModel) : Cookie.read(strModel);
+
+		if(strStoreDate!="1"){
+			$('#startJobs').removeClass("hide");
+			$('#startJobs').modal({
+				show:true
+			}).css({
+				'width': '1350px',
+				'margin-left': function () {return -($(this).width() / 2);},
+				'height':'710px',
+				'margin-top': function () {return -($(this).height() / 2);},
+			});
+			
+				$(".step-show1 span").addClass("zoomIn").addClass("animated");
+				$(".step-show2").delay(1200).animate({"opacity":1},500,function(){
+					$(".step-show3").animate({"opacity":1},500,function(){
+						$(".step-show4").animate({"opacity":1},500,function(){
+							$(".step-show5").animate({"opacity":1},500,function(){
+
+							});
+						});
+					});
+				});
+		}
+
+		storeDisplay();*/
+	
+	$(document).on("click","#start-job",function(){
+		location.href="/index/";
+	});
+	$(".popovers").popover();
+
+});
+</script>
+{%endblock%}
+
+{% block logo_url %}/index/{% endblock %}
+   
+{% block userinfo %}
+	  <div class="nav-collapse">
+	  	<ul class="nav pull-right">
+	              <li>
+				 	 <p class="navbar-text" style="width: 350px; text-align:right;">
+				 	 	<i class="icomoon local-user"></i>
+					  	<span>当前用户： </span>						
+					 </p>
+				  </li>
+	              <li class="dropdown">
+	                <a class="dropdown-toggle user-now" data-toggle="dropdown" href="#">{{user.username}}<span class="caret"></span></a>
+	                <ul class="dropdown-menu">
+	                	{% block dropdown-menu %}
+						<li><a class="ujobs-out" href="/logout/">退出</a> </li>
+						{% endblock %}
+					</ul>
+	              </li>
+	            </ul>
+	    <ul class="nav nav-pills nav-menu">
+	      <li><a class="titlelistone" href="/index/"><i class="icomoon work-tools"></i>作业管理</a></li>
+	      <li class="popovers" style="margin-left:5px;" data-toggle="popover" data-placement="right" data-content="暂未开放，敬请期待！" data-trigger='hover'><a class="titlelisttwo"><i class="icomoon user-center"></i>个人中心</a></li>
+	    </ul>
+	  </div><!--/.nav-collapse -->
+{% endblock %}
+
+
+{% block content %}	
+      <div class="hero-unit overview-box">
+        <span class="hfont">Ujobs蜗牛作业管理平台</span>
+        <br/>
+        <p>uJobs（作业管理平台）是一个以开放的思路实现的“开放式”操作平台，运维人员在uJobs中可以定制</p>
+        <p>几乎所有的运维操作，例如：批量shell脚本执行，大量文件传输，发布变更，数据备份等。</p>
+		<p>uJobs核心是作业，一个作业即代表一类运维场景。例如：发布游戏版本作业，数据库备份作业。</p>
+		<p>点击下方的按钮即可进入作业管理界面。</p>
+		
+		<a id="start-job" class="btn hvr-float-shadow" href="#">Start</a>
+      </div>
+	  <ul class="list-view">
+	  	<li><img class="gear" src="/static/assets/img/gear.png"><span>一键操作</span></li>
+	  	<li><img class="good" src="/static/assets/img/good.png"><span class="ml25">批量查看</span></li>
+	  	<li class="margin-clear">
+	  		<ul class="overviews-bars">
+	  			<li class="bar1"><i></i></li>
+	  			<li class="bar2"><i></i></li>
+	  			<li class="bar3"><i></i></li>
+	  			<li class="bar4"><i></i></li>
+	  			<li class="bar5"><i></i></li>
+	  		</ul>
+	  		<span>数据分析</span>
+	  	</li>
+	  </ul>
+	  <div class="row">
+		
+      </div><!--/row-->
+      
+<!-- modal -->
+<div class="modal hide fade" id="startJobs" data-show="true"  tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+	{% include 'step_model.html' %}
+</div>	
+{% endblock %} 
+
+
+{% block modal  %}
+{% endblock %}

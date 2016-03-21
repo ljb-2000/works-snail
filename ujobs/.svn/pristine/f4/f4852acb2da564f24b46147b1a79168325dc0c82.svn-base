@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html style="overflow-y: scroll;">
+  <head>
+    <meta charset="utf-8">
+    <title>{% block title %}蜗牛作业管理平台{% endblock %}</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+	{% block meta %}
+	{% endblock %}
+	  <link href="/static/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/assets/css/docs.css" rel="stylesheet">
+    <link href="/static/assets/css/sample.css?v=201511051026" rel="stylesheet">
+    <link href="/static/assets/css/jquery-ui.min.css?v=201510081141" rel="stylesheet">
+    <link href="/static/assets/css/jquery-ui.theme.css?v=201510081141" rel="stylesheet">
+    <link href="/static/tool_js/data_table/css/demo_table.css?v=201509291004" rel="stylesheet">
+    <link href="/static/tool_js/jNotify/jNotify.jquery.css" rel="stylesheet">
+    <link href="/static/tool_js/icheck/minimal/grey.css" rel="stylesheet">
+    <link href="/static/tool_js/jstree/themes/default/style.min.css" rel="stylesheet">
+    <link href="/static/tool_js/codemirror/codemirror.css" rel="stylesheet" >
+	  <link href="/static/tool_js/codemirror/3024-night.css" rel="stylesheet">
+    <link href="/static/tool_js/codemirror/erlang-dark.css" rel="stylesheet">
+	  <link href="/static/tool_js/fullpage/jquery.fullPage.css" rel="stylesheet">
+    {% block css %}
+    {% endblock %}
+    <script type="text/javascript" src="/static/assets/js/jquery-2.1.4.min.js"></script>
+  </head>
+
+  <body>
+  {% block header %}
+    <div class="navbar">
+      <div class="navbar-inner navbar-top" style="padding-left:0;">
+        <div class="row-fluid">
+          <a class="pull-left ujobs-logo" href="{% block logo_url %}#{% endblock %}">{% block logo_img %}<img src="/static/assets/img/logo.png" style="padding-left:20px;width:111px;">{% endblock %}</a>
+          {% block userinfo %}
+          {% endblock %}
+        </div>
+      </div>
+    </div>
+  {% endblock %}
+
+    <div class="{% block coltype %}container-fluid{% endblock %}">
+    	
+	    {% block content %}
+		  {% endblock %} 
+    </div><!--/.fluid-container-->
+    
+    {% block modal  %}
+    {% endblock %}
+
+    {% block js %}
+    {% endblock %}
+	</body>
+</html>

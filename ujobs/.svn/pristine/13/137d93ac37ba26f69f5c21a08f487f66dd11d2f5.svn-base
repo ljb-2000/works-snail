@@ -1,0 +1,15 @@
+<script type="text/javascript" src="/static/assets/js/until.js?v=201511041352"></script>
+<script type="text/javascript" src="/static/assets/js/ujobs.js?v=201511041352"></script>
+<script type="text/javascript" src="/static/assets/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/static/assets/js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="/static/tool_js/jNotify/jNotify.jquery.js"></script>
+<script type="text/javascript" src="/static/tool_js/icheck/icheck.min.js"></script>
+<script type="text/javascript" src="/static/tool_js/jstree/jstree.min.js"></script>
+<script type="text/javascript" src="/static/tool_js/jstree/jstree.checkbox.js"></script>
+<script type="text/javascript" src="/static/tool_js/codemirror/codemirror.js"></script>
+<script type="text/javascript" src="/static/tool_js/codemirror/shell.js"></script>
+<script type="text/javascript" src="/static/tool_js/codemirror/perl.js"></script>
+<script type="text/javascript" src="/static/tool_js/codemirror/python.js"></script>
+<script type="text/javascript" src="/static/tool_js/data_table/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="/static/tool_js/ajaxfileupload.js"></script>
+

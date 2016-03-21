@@ -1,0 +1,19 @@
+# nginx config file.
+server {
+        listen  80; 
+        server_name  117.121.19.134;
+        uwsgi_read_timeout 600;
+        location / {
+            include uwsgi_params;
+            uwsgi_pass 117.121.19.134:11111;
+        } 
+        location /static {
+            root   /opt/www/ujobs/ujobs/;
+            expires 1h;
+        }
+    #   location ~* ^.+\.(ico|gif|jpg|jpeg|png|html|htmi)$ {
+    #       root         /opt/www/ujobs/ujobs/static/;
+    #       access_log   off;
+    #       expires      30d;
+    #   }
+}

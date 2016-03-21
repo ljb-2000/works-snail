@@ -1,0 +1,6 @@
+2016-01-08 10:08:30,812 [Thread-10971:26652] [logger_usual:856] [DEBUG]- ##start call to get emp list.... 
+2016-01-08 10:08:30,815 [Thread-10971:26652] [logger_usual:868] [DEBUG]- selected users for template_None: []
+2016-01-08 10:08:31,759 [Thread-10971:26652] [logger_usual:945] [DEBUG]- ##end call to get emp list.
+2016-01-08 10:41:47,390 [Thread-12807:24956] [logger_usual:856] [DEBUG]- ##start call to get emp list.... 
+2016-01-08 10:41:47,390 [Thread-12807:24956] [logger_usual:868] [DEBUG]- selected users for script_None: []
+2016-01-08 10:41:48,811 [Thread-12807:24956] [logger_usual:945] [DEBUG]- ##end call to get emp list.

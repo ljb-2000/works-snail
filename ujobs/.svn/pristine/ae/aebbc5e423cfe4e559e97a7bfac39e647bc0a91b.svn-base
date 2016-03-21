@@ -1,0 +1,108 @@
+#encoding:utf-8
+
+import os
+REL_SITE_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+REL_STATIC_ROOT = os.path.join(REL_SITE_ROOT, 'static')
+
+REL_DEBUG = True
+
+DATABASE_ENGINE = 'django.db.backends.mysql'
+DATABASE_NAME = 'ujobs'
+DATABASE_USER = 'root'
+DATABASE_PASSWORD = 'root'
+DATABASE_HOST = '172.18.80.173'
+DATABASE_PORT = '3306'
+
+REL_ROOT_PATH = 'http://127.0.0.1:8000'
+REL_MEDIA_URL = '%s/file/' % REL_ROOT_PATH
+REL_MEDIA_ROOT = os.path.join(REL_SITE_ROOT, 'file')
+
+#REL_CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
+REL_CACHE_BACKEND = 'locmem:///?timeout=300&max_entries=30000'
+
+if REL_DEBUG:
+    REL_CACHE_TIME = 60
+else:
+    REL_CACHE_TIME = 600
+
+SALT_MASTER_CONFIG = '/etc/salt/master'
+
+# REDIS configuration.
+REDIS_SERVER = {
+    'host': '117.121.19.138',
+    'port': 6379,
+    'db': 0,
+    'password': None
+}
+
+####### keys for redis data storage  #######
+AGENT_KEY_PREFIX = 'snail:ujobs:agentinfo:'
+# detail of agent.
+DETAIL_KEY_PREFIX = AGENT_KEY_PREFIX+'agents:'
+# ip==minion-id map
+IP_KEY_PREFIX = AGENT_KEY_PREFIX+'ip:'
+# result of manage.status
+STATUS_RESULT_KEY = AGENT_KEY_PREFIX+'status_result'
+# result of last retrieve.
+RESULT_TIMESTAMP_KEY = AGENT_KEY_PREFIX+'timestamp'
+# store all minions.
+AGENTS_ALL_KEY = AGENT_KEY_PREFIX+'agents_set'
+# master result
+STATUS_RESULT_MASTER_KEY = AGENT_KEY_PREFIX+'master_result'
+# manage.status result of every syndic.
+SYNDIC_RESULT_PREFIX = AGENT_KEY_PREFIX+'syndic:result:'
+# minions under every syndic
+SYNDIC_MINIONS_PREFIX = AGENT_KEY_PREFIX+'syndic:minions:'
+# 当前所有minion集合
+MINIONS_SET_KEY = AGENT_KEY_PREFIX+'minions_total'
+# up minions set.
+MINIONS_UP_SET_KEY = AGENT_KEY_PREFIX+'minions_up'
+# down minions set.
+MINIONS_DOWN_SET_KEY = AGENT_KEY_PREFIX+'minions_down'
+####### end keys for redis data storage  #######
+
+#for user send file uploads
+FILE_UPLAOD_FOLDER = 'uploads/'
+REL_FILE_UPLAOD_FOLDER = os.path.join(REL_SITE_ROOT, FILE_UPLAOD_FOLDER)
+SYNDIC_MASTER_FILE_CACHE = "/srv/salt/"
+
+FILESRCIP="[FILESRCIP]"
+
+## ujobs_api host, should use https in production.
+UJOBS_API_HOST = 'https://192.168.19.171:443'
+
+## salt-master auth
+SALT_MASTER_USER = "ujobs"
+SALT_MASTER_PASSWD = "snailgame"
+
+## ENTRY OF PLATFORM_HOST
+PLATFORM_HOST = "http://10.103.4.19"
+
+# account auth of cmdb, get user permission.
+ACCOUNT_AUTH_URL = PLATFORM_HOST + '/service/AccountHandler.ashx'
+
+# fileserver request url
+FILE_SERVER_HOST = "http://192.168.19.1:8083/"
+
+# mapped fileserhost for syndic to get file.
+MAPPED_FILE_SERVER_HOST = "https://221.224.86.166:8888/"
+
+#cmdb request url
+sysid = '4'
+CMDB_NODE_URL = 'http://10.206.2.5/ops/cmdb/business/service/QueryNodeInfo/'
+CMDB_SUBNODE_URL = 'http://10.206.2.5/ops/cmdb/business/service/QueryNodeIP/'
+CMDB_PRODUCT_URL = 'http://10.206.2.5/ops/cmdb/business/service/QueryProductByMt/'
+CMDB_IPVALID_URL = 'http://10.206.2.5/ops/cmdb/business/service/QueryIPByMt/'
+CMDB_QUERYSET_URL = 'http://10.206.2.5/ops/cmdb/business/service/QuerySetOrModule/'
+CMDB_QUERYIP_URL = 'http://10.206.2.5/ops/cmdb/business/service/QueryIPByExpression/'
+
+#运维组织架构查询
+YW_DEPT_CODE = 'YWZX'
+YW_DEPT_OA_URL = "http://10.100.0.5/eHRSystemService/eHRSystemService.asmx?wsdl"
+
+#蜗牛盾验证
+H_APPID = 'operations_user'
+H_PWD = 'QdoP^76%'
+SNAIL_SHIELD_URL = "http://passport.ocp.woniu.com/user/security/securetoken/validation"
+SNAIL_ACCOUNT_URL = "http://passport.ocp.woniu.com/user/passport/query "

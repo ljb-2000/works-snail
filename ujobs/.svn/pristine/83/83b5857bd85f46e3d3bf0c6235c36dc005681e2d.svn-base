@@ -1,0 +1,72 @@
+<!--拉取文件步骤设置项-->
+<legend style="font-size:14px"><span class="caret-arrow-up"></span>步骤设置</legend>
+<form id="pullfile_view_form_{{ history_step.id }}" action="javascript:void(0);" method="post" class="form-horizontal">{% csrf_token %}
+	<div class="control-group">
+		<label class="control-label muted">步骤名称：<span class="red">*</span></label>
+		<div class="controls">
+			<input type="text" disabled value="{{ history_step.name|default_if_none:"" }}">
+		</div>			  
+	</div>
+	<div class="control-group">
+		<label class="control-label muted">步骤描述：<span class="red">*</span></label>
+		<div class="controls">
+			<textarea style="width:420px;" disabled>{{ history_step.describe|default_if_none:"" }}</textarea>
+		</div>		  
+	</div>
+	<div class="control-group">
+		<label class="control-label muted">待拉取文件：<span class="red">*</span></label>
+		<div class="controls">
+			<b></b>
+			<ul class="file-style">
+{#                {% for fileinfo in history_file_infos %}#}
+{#                    <li class='clearfix list2'>{{ fileinfo.get_location_type_display }}：<i class='file-road' style="width: auto;">{{ fileinfo.remote_path }}</i><i class='ipconfig'  style="width: auto;">{{ fileinfo.remote_ip }}</i><i class='server-account'></i></li>#}
+{#                {% endfor %}#}
+                {% for file_path in file_paths %}
+                    <li class='clearfix list2'>远程文件: <i class='file-road' style="width: auto;">{{ file_path }}</i></li>
+                {% endfor %}
+
+			</ul>
+		</div>  
+	</div>
+	<div class="control-group">
+		<label class="control-label muted">拉取至IP：<span class="red">*</span></label>
+		<div class="controls">
+			<input type="text" placeholder="请输入IP地址" value="{{ history_step_pull_file.pull_to_ip }}" disabled />
+		</div>  
+	</div>
+	<div class="control-group">
+		<label class="control-label muted">路径：<span class="red">*</span></label>
+		<div class="controls">
+			<input type="text" placeholder="请填写拉取的路径" value="{{ history_step_pull_file.pull_to }}" disabled>
+		</div>
+	</div>
+	<div class="control-group">
+		<div class="controls">
+			<input class="sendfile-view-toggle" style="margin-top: 8px;" type="checkbox" {% if history_step.is_setting == 1 %}checked{% endif %} disabled>
+			<label style="display:inline-block;">本步骤使用如下目标机器取代全程目标机器</label>
+		</div>			  
+	</div>
+	<div class="control-group target-view hide">
+		<label class="control-label muted">目标机器：</label>
+		<div class="controls">
+			<ul class="ip-style">
+                <li class="clearfix">
+                    {% for ip in targets %}
+                        <i class="ipconfig">{{ ip }}</i>
+{#                        <i class="os">windows</i>#}
+{#                        <i class="status1">agent正常</i>#}
+{#                        <i class="status2">支持操作</i>#}
+                    {% endfor %}
+                </li>
+			</ul>
+		</div>  
+	</div>
+</form>
+<script>
+	//按钮样式
+    icheck($('#pullfile_view_form_{{history_step.id}} input:checkbox'));
+
+	if($(".sendfile-view-toggle").prop("checked")){
+		$(".target-view").removeClass("hide");
+	}
+</script>

@@ -1,0 +1,464 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+from settings import MEDIA_ROOT
+from utils.decorator import render_to, login_required
+from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
+import json, datetime
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from service import _history, _account
+from enums import enum_template, enum_history
+from apps.history.models import RunningResult,HistoryFileInfo
+import traceback
+from settings import TIME_FMT,SPECIAL_USERS
+from utils.utils import build_hidden_ip_dict
+
+@login_required
+@render_to('history/contentDiv.html')
+@csrf_exempt
+def history_index(request):
+    template_type_tuple = enum_template.TEMPLATE_TYPE_CHOICES
+    table_fields = [u'作业名', u'创建人', u'作业类型', u'当前状态', u'开始时间', u'结束时间', u'总耗时', u'启动人', u'操作']
+    ajax_url = u'/history/list/'
+    return locals()
+
+@login_required
+@csrf_exempt
+def history_list(request):
+    user = request.user
+    job_name = request.GET.get('job_name', None)
+    history_user = request.GET.get('history_user', None)
+    start_from = request.GET.get('start_from', None)
+    start_to = request.GET.get('start_to', None)
+    history_status = request.GET.get('history_status', None)
+    template_type = request.GET.get('template_type', None)
+    template_step = request.GET.get('template_step', None)
+    end_from = request.GET.get('end_from', None)
+    end_to = request.GET.get('end_to', None)
+    template_result = request.GET.get('template_result', None)
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+    #iColumns = int(request.GET.get('iColumns', 0))
+    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0'))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = ['job__name', 'job__create_user__username', 'template__template_type', 'status', 'start_time', 'end_time', 'delta_time', 'user_username', None]
+    order_item = order_list[iSortCol_0]
+    
+    historys = _history.get_historys_by_params(user=user) if user.username not in SPECIAL_USERS else _history.get_historys_by_params()
+    # historys = historys.exclude(startup_type=enum_history.HISTORY_STARTUP_TYPE_AUTO)
+
+    if sSearch:
+        pass
+#        historys = _agent.search(departments, sSearch)
+    if job_name:
+        historys = historys.filter(job__name__icontains = job_name)
+        
+    if history_user:
+        historys = historys.filter(user__username__icontains = history_user)
+    one_day = datetime.timedelta(days=1)
+    if start_from:
+        historys = historys.filter(start_time__gte = start_from)
+    if start_to:
+        start_to = datetime.datetime.strptime(start_to,'%Y-%m-%d')
+        historys = historys.filter(start_time__lte = (start_to+one_day))
+    if history_status:
+        historys = historys.filter(status = history_status)
+    if template_type:
+        historys = historys.filter(job__template__template_type = template_type)
+    if template_step:
+        historys = historys.filter(historystep__jobstep__template_step__name__icontains=template_result)
+    if end_from:
+        historys = historys.filter(end_time__gte = end_from)
+    if end_to:
+        end_to = datetime.datetime.strptime(end_to,'%Y-%m-%d')
+        historys = historys.filter(end_time__lte = (end_to+one_day))
+    if template_result:
+        historys = historys.filter(historystep__result=template_result)
+    
+    if order_item:
+        if sSortDir_0 == "desc":
+            order_item = '-%s' % order_item
+        historys = historys.order_by(order_item)
+    else:
+        historys = historys.order_by('-id')
+    
+    #第一个参数表示需要分页的对象，可为list、tuple、QuerySet，只要它有count()或者__len__()函数
+    #第二个参数为每页显示记录数
+    p = Paginator(historys, iDisplayLength)
+    total = p.count #总数
+    page_range = p.page_range #页数list
+    page = p.page(page_range[iDisplayStart / iDisplayLength])
+    object_list = page.object_list
+    
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+    for obj in object_list:
+        #封装数组，按照列数填入对应的值
+#         edit_url = u'/department/%d/' % obj.id
+        
+        template = obj.job.template
+#        template_name = u'<a style="color: blue;" href="javascript:void(0)" onclick="template_view(\'%s\');return false;">%s</a>' % (template.id, template.name)
+        if template.template_type in [enum_template.TEMPLATE_TYPE97,enum_template.TEMPLATE_TYPE98,enum_template.TEMPLATE_TYPE99,enum_template.TEMPLATE_TYPE100]:
+            template_name = u'无'
+#         if template.template_type == enum_template.TEMPLATE_TYPE100:
+#             template_name = u'模板已删除'
+        # job_name = u'<a style="color: blue;" href="javascript:void(0)">%s</a>'%(obj.job.name)
+        job_name = u'<a style="color: blue;" href="javascript:void(0)"  onclick="javascript:show_history_info(\'%s\');">%s</a>'%(obj.id,obj.name if obj.name else obj.job.name)
+        
+        start_time = datetime.datetime.strftime(obj.start_time,'%Y-%m-%d %H:%M:%S') if obj.start_time else ""
+        end_time = datetime.datetime.strftime(obj.end_time,'%Y-%m-%d %H:%M:%S') if obj.end_time else ""
+
+        operation = u'<a style="color: blue;" href="javascript:void(0)" onclick="javascript:show_result(\'%s\');">查看执行详情</a>' % (obj.id)
+        data = [job_name, obj.job.create_user.username if obj.job.create_user else "", template.get_template_type_display(), obj.get_status_display(), start_time, end_time, obj.delta_time, obj.user.username if obj.user else "", operation]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+
+@login_required
+@csrf_exempt
+def show_history_info(request,history_id):
+    '''
+         历史查看作业详情，查看实例.
+    '''
+    now = datetime.datetime.now()
+    code = 200
+    check_id = now.strftime("%Y%m%d%H%M%S")
+
+    history = _history.get_history_by_params(pk=history_id)
+    if not history:
+        code = 500
+        return HttpResponse(json.dumps({
+            "status":code,
+            "result":{
+                'msg': 'request instance not exist.'
+            }
+        }))
+
+    history_steps = _history.get_historySteps_by_params(history=history).order_by("id")
+    template_type = history.job.template.get_template_type_display()
+    job_name = history.name if history.name else history.job.name
+    overall_target = history.target if history.target else "[]"
+    try:
+        overall_target = ','.join(json.loads(overall_target)) if overall_target else overall_target
+    except:
+        print traceback.format_exc()
+    template_file = "history/job_info.html"
+    html = render_to_string(template_file, locals())
+    result = {
+        'html': html,
+        'check_id': check_id,
+        'job_name': job_name,
+    }
+    return HttpResponse(json.dumps({
+        "status":code,
+        "result":result
+    }))
+
+@login_required
+@csrf_exempt
+def show_result(request,history_id):
+    '''
+       显示执行结果页面
+    '''
+    now = datetime.datetime.now()
+    code = 200
+    check_id = now.strftime("%Y%m%d%H%M%S")
+
+    history = _history.get_history_by_params(pk=history_id)
+    STATUS_SUCCESS = enum_history.STATUS_SUCCESS
+    TEMPLATE_MODE_MANNUAL = enum_template.TEMPLATE_MODE_MANNUAL
+    TEMPLATE_TYPE_RESTART = enum_template.TEMPLATE_TYPE97 #批量重启
+    TEMPLATE_TYPE_PWD = enum_template.TEMPLATE_TYPE98 #批量改密
+    if not history:
+        code = 500
+        return HttpResponse(json.dumps({
+            "status":code,
+            "result":{
+                'msg': 'request instance not exist.'
+            }
+        }))
+
+    history_steps = _history.get_historySteps_by_params(history=history).order_by("id")
+    template_type = history.job.template.get_template_type_display()
+    job_name = history.job.name
+    
+    template_file = "history/result.html"
+    html = render_to_string(template_file, locals())
+    result = {
+        'html': html,
+        'check_id': check_id,
+        'job_name':job_name
+    }
+    return HttpResponse(json.dumps({
+        "status":code,
+        "result":result
+    }))
+    
+@login_required
+@csrf_exempt
+def show_detail(request,history_step_id):
+    '''
+         show detail of send file.
+    '''
+    now = datetime.datetime.now()
+    code = 200
+    check_id = now.strftime("%Y%m%d%H%M%S")
+    history_step = _history.get_historyStep_by_params(pk=history_step_id)
+    history = history_step.history
+    start_time = history_step.start_time.strftime("%Y-%m-%d %H:%M:%S") if history_step.start_time else ""
+    end_time = history_step.end_time.strftime("%Y-%m-%d %H:%M:%S") if history_step.end_time else ""
+    current_status = history_step.get_result_display()
+
+    total_ips = history_step.total_ips
+    abnormal_ips = history_step.abnormal_ips
+    fail_ips = history_step.fail_ips
+    success_ips = history_step.success_ips
+
+    total_ips = json.loads(total_ips) if total_ips else []
+    abnormal_ips = json.loads(abnormal_ips) if abnormal_ips else []
+    fail_ips = json.loads(fail_ips) if fail_ips else []
+    success_ips = json.loads(success_ips) if success_ips else []
+
+    log = RunningResult.objects.filter(step=history_step,progress__gt=0).order_by('-id').first()
+    progress = log.progress if log else 100 if history_step.end_time else 0
+    total_ips_str = ','.join(total_ips)
+    finished = True if progress == 100 else False
+    job_name = history.name
+    job_step_name = history_step.name
+    log_content = "["+log.res_time.strftime(TIME_FMT)+"]  "+"  [  "+log.ip+"  ]  "+log.content if log else ""
+    template_file = "history/detail.html"
+    if history_step.jobstep.step_type == enum_template.STEP_TYPE_TEXT:
+        template_file = "history/text_detail.html"
+    html = render_to_string(template_file, locals())
+    result = {
+        'html': html,
+        'check_id': check_id,
+        'job_name': job_name,
+    }
+    return HttpResponse(json.dumps({
+        "status":code,
+        "result":result
+    }))
+
+@login_required
+@csrf_exempt
+def ajax_show_result_progress(request,history_id):
+    """
+        异步刷新结果页面,result.html
+    """
+    code = 200
+    history = _history.get_history_by_params(pk=history_id)
+    history_steps = _history.get_historySteps_by_params(history=history)
+    history_step_infos = []
+    for history_step in history_steps:
+        current_status = history_step.get_result_display()
+        total_ips = history_step.total_ips
+        abnormal_ips = history_step.abnormal_ips
+        fail_ips = history_step.fail_ips
+        success_ips = history_step.success_ips
+
+        total_ips = json.loads(total_ips) if total_ips else []
+        abnormal_ips = json.loads(abnormal_ips) if abnormal_ips else []
+        fail_ips = json.loads(fail_ips) if fail_ips else []
+        success_ips = json.loads(success_ips) if success_ips else []
+        
+        step_type_text = ''
+        if history.mode != enum_template.TEMPLATE_MODE_AUTO and history_step.jobstep.step_type == enum_template.STEP_TYPE_TEXT:
+            step_type_text = history_step.describe
+        
+        logs = RunningResult.objects.filter(step=history_step,progress__gt=0).order_by('-id')
+        log = logs[0] if logs.count()>0 else None
+        history_step_infos.append({
+            "history_step_id": history_step.pk,
+            "success_ips": success_ips,
+            "status":current_status,
+            "fail_ips": fail_ips,
+            "abnormal_ips": abnormal_ips,
+            "total_ips": total_ips,
+            "progress": log.progress if log else 0,
+            "step_time": history_step.delta_time or "",
+            "step_msg":history_step.get_result_display(),
+            "step_finished": True if history_step.result !=1 else False,
+            "step_type_text":step_type_text
+        })
+
+    result = {
+        "start_time": history.start_time.strftime("%Y-%m-%d %H:%M:%S") if history.start_time else "",
+        "finish_time": history.end_time.strftime("%Y-%m-%d %H:%M:%S") if history.end_time else "",
+        "total_time": history.delta_time if history.delta_time else "",
+        "history_step_infos":history_step_infos,
+        "job_msg": history.get_status_display(),
+
+    }
+    # print result
+    return HttpResponse(json.dumps({
+        "status":code,
+        "result":result
+    }))
+
+@login_required
+@csrf_exempt
+def ajax_show_history_step_info(request,history_step_id):
+    """
+        历史作业实例中点击步骤后的步骤详细信息显示.
+    """
+    code = 200
+    history_step = _history.get_historyStep_by_params(pk=history_step_id)
+    result = {}
+    step_type = history_step.jobstep.step_type
+    html = ""
+    targets = history_step.target if history_step.target else "[]"
+    try:
+        targets = json.loads(targets)
+    except:
+        print traceback.format_exc()
+        targets = []
+    if step_type == enum_template.STEP_TYPE_SCRIPT:
+        #执行脚本.
+        template_file = "history/script_view.html"
+        history_step_script = _history.get_historyStepScript_by_params(step=history_step)
+        version = history_step_script.version
+        script = version.script
+        file_path = os.path.join(MEDIA_ROOT,'scripts','%s'%version.sfile)
+        file_content = ''
+        f = open(file_path)
+        try:
+            file_content = f.read()
+        except Exception,e:
+            print e
+        finally:
+            f.close()
+            
+        step = history_step_script.step
+        accounts = _account.get_accounts_by_params(is_delete=False)
+        account_id = step.account.id if step.account else 0
+            
+    elif step_type == enum_template.STEP_TYPE_PUSH_FILE:
+        #分发文件.
+        history_file_infos = HistoryFileInfo.objects.filter(step=history_step).order_by("location_type")
+        template_file = "history/file_view.html"
+        history_step_push_file = _history.get_historyStepPushFile_by_params(step=history_step)
+        step = history_step_push_file.step
+        
+    elif step_type == enum_template.STEP_TYPE_PULL_FILE:
+        #拉取文件.
+        history_file_infos = HistoryFileInfo.objects.filter(step=history_step).order_by("location_type")
+        template_file = "history/pullfile_view.html"
+        history_step_pull_file = _history.get_historyStepPullFile_by_params(step=history_step)
+        file_paths = json.loads(history_step_pull_file.file_paths)
+        step = history_step_pull_file.step
+        
+    elif step_type == enum_template.STEP_TYPE_TEXT:
+        #文本步骤.
+        template_file = "history/text_view.html"
+        history_step_text = _history.get_historyStepText_by_params(step=history_step)
+        step = history_step_text.step
+        
+    else:
+        #批量重启,批量改密
+        return HttpResponse(json.dumps({
+            "status":code,
+            "result":result
+        }))
+    
+    target_ips = json.loads(step.target) if step.target else []
+    hide_ip_dict = build_hidden_ip_dict(target_ips)
+    hide_ip_json = json.dumps(hide_ip_dict)
+    
+    html = render_to_string(template_file, locals())
+    result.update({
+        "html":html,
+    })
+
+    # print result
+    return HttpResponse(json.dumps({
+        "status":code,
+        "result":result
+    }))
+
+
+
+@login_required
+@csrf_exempt
+def export_results(request):
+    content = request.POST.get('detail_content')
+    response = HttpResponse()
+    response["Content-Type"] = "txt/plain; charset=utf-8" 
+    response["Content-Disposition"] = 'attachment; filename=result.txt'
+    response.write(content)
+    return response
+
+@login_required
+@csrf_exempt
+def history_ip_list(request,history_step_id,status,check_id):
+    user = request.user
+    data = request.GET
+
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, None]
+    order_item = order_list[iSortCol_0]
+    history_step = _history.HistoryStep.objects.get(id=history_step_id)
+
+
+    if status == "success":
+        ip_list = history_step.success_ips
+    elif status == 'fail':
+        ip_list = history_step.fail_ips
+    elif status == 'all':
+        ip_list = history_step.total_ips
+    elif status == "executing" and not history_step.end_time:
+        total_ips = history_step.total_ips
+        fail_ips = history_step.fail_ips
+        success_ips = history_step.success_ips
+        total_ips = json.loads(total_ips) if total_ips else []
+        fail_ips = json.loads(fail_ips) if fail_ips else []
+        success_ips = json.loads(success_ips) if success_ips else []
+        ip_list = json.dumps(list(set(total_ips).difference(set(fail_ips),set(success_ips))))
+    else:
+        ip_list = ""
+    ip_list = json.loads(ip_list) if ip_list else []
+
+    p = Paginator(ip_list, iDisplayLength)
+    total = p.count #总数
+    page_range = p.page_range #页数list
+
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+    if len(page_range)==0:
+        return HttpResponse(json.dumps(sdicts))
+
+    page = p.page(page_range[iDisplayStart / iDisplayLength])
+    object_list = page.object_list
+
+    for obj in object_list:
+        ip = u'<a href="javascript:void(0)" onclick="get_ip_details(\'%s\',\'%s\');">%s</a>' % (obj, check_id,obj)
+        time_taken = "" if not history_step.delta_time else history_step.delta_time
+        sdicts["aaData"].append([ip,time_taken])
+    return HttpResponse(json.dumps(sdicts))
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^history/export_results/$', export_results),
+    url(r'^history/$', history_index),
+    url(r'^history/list/$', history_list),
+    url(r'^history/show_result/(?P<history_id>\d+)/$', show_result),
+    url(r'^history/show_detail/(?P<history_step_id>\d+)/$', show_detail),
+    url(r'^history/ajax_show_result_progress/(?P<history_id>\d+)/$', ajax_show_result_progress),
+    url(r'^history/(?P<history_id>\d+)/$', show_history_info),
+    url(r'^history/ip_list/(?P<history_step_id>\d+)/(?P<check_id>\d+)/(?P<status>\w+)/$', history_ip_list),
+    url(r'^history/ajax_show_history_step_info/(?P<history_step_id>\d+)/$', ajax_show_history_step_info),
+)

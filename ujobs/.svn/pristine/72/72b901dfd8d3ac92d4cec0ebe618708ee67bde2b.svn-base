@@ -1,0 +1,192 @@
+<!--编辑作业（分发文件）-->  
+<div class="row-fluid edit-sendfile-wrap">
+	<form id="edit_job_step_form_{{ step.id }}" class="form-horizontal edit-sendfile-form">{% csrf_token %}
+		<div class="control-group">
+			<label class="control-label muted">步骤名称：<span class="red">*</span></label>
+			<div class="controls">
+				<input id="step_name" class="edit-sendfile-name" name="step_name" type="text" placeholder="请输入步骤名称" value='{{ step.name }}' disabled>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">步骤描述：<span class="red">*</span></label>
+			<div class="controls">
+				<textarea id="step_description" class="edit-sendfile-desc txtstyle" name="step_description" placeholder="请输入步骤描述" disabled>{{ step.describe }}</textarea>
+			</div>		  
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">源文件：<span class="red">*</span></label>
+			<div class="controls">
+				<label style="display: inline;margin-left: 5px;" for="edit_sendfile_local" ><input style="vertical-align:middle; margin-top:0;" type="radio" name="edit_send_file_location" id="edit_sendfile_local" class="edit-sendfile-btn" data-msg="lcoalbox" data-msg2="remotebox" checked="checked" value="local"> 本地文件 </label>
+				<label style="display: inline;margin-left: 5px;" for="edit_sendfile_remote" ><input style="vertical-align:middle; margin-top:0;" type="radio" name="edit_send_file_location" id="edit_sendfile_remote" class="edit-sendfile-btn" data-msg="remotebox" data-msg2="lcoalbox" value="remote"> 远程文件 </label>
+                <label style="display: inline;margin-left: 35px;"><a href="{{ fileserver_url }}index/" target="_blank">如本地上传出错,请点击此处添加证书信任</a></label>
+                <textarea id="edit_sendfile_record" class="edit_sendfile_record" name="edit_sendfile_record" style="display: none;">{{ local_ids }}</textarea>
+            </div>
+	    </div>
+	    <div class="control-group edit-sendfile-lcoalbox">
+			<div class="controls">
+				<input class="edit-sendfile-docfield" type='text' name='edit-sendfile-docfield' onfocus=this.blur() placeholder="请上传小于100M的本地文件" /> &nbsp;<button type='button' value='浏览...' class='edit-sendfile-find p-filefind btn btn-default' data-msg="sendfile" data-loading-text="文件解析中,请稍后..." autocomplete="off"><i class="icon-folder-open"></i>浏览...</button>&nbsp;<button type='button' value='导入' class='edit-sendfile-upload btn btn-default' data-msg="sendfile" data-size="{{max_upload_size}}" data-loading-text="文件上传中,请稍后..." autocomplete="off"><i class="icon-arrow-up"></i>导入</button>
+				<input id="upField" name="upField" class="edit-sendfile-upField p-upField" data-msg="sendfile" style="opacity:0;filter:alpha(opacity:0);margin-left:-999%" type="file" size="28" />
+            </div>
+            <input id="send_file_hash" name="send_file_hash" class="edit-sendfile-hash" type="hidden" value=""/>
+            <input type="hidden" id="send_file_username" name="send_file_username" value="{{ user.username }}"/>
+	    </div>
+		<div class="edit-sendfile-remotebox ml75 hide">
+			<div class="control-group">
+				<label class="control-label muted">IP：</label>
+				<div class="controls">
+					<input class="edit-sendfile-ipserver" style="width:345px;" type="text" placeholder="请输入IP地址" value="">
+				</div>
+			</div> 
+			<div class="control-group">
+				<label class="control-label muted">文件列表：</label>
+				<div class="controls">
+					<textarea class="edit-sendfile-filelists" rows="2" style="width: 345px;font-size:14px;" placeholder="请输入文件名，多个文件请以 ‘回车’ 分隔"></textarea>
+	                <textarea id="send_file_remote_files_list" name="send_file_remote_files_list" class="edit-sendfile-hidelists" style="display: none;">{{ remote_uploads_str }}</textarea>
+					<a class="tooltips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" title="" data-original-title="只能为具体的文件，不能为目录"><i class="icon-question-sign"></i></a>
+					<button class="edit-sendfile-addfile p-addfile btn btn-default" data-msg="sendfile" type="button" data-loading-text="文件添加中,请稍后..." autocomplete="off"><i class="icon-plus"></i>添加待分发文件</button>
+				</div>
+			</div>
+			<div class="control-group hide">
+				<label class="control-label">常用账户：</label>
+				<div class="controls">
+				<select style="width: 359px;" id="send_file_remote_server_account" class="edit-sendfile-account" name="send_file_remote_server_account">
+                    {% for account in accounts %}
+                        <option value="{{account.id}}">{{account.name}}&nbsp;&nbsp;账号:{{account.name_abbr}}</option>
+                    {% endfor %}
+				</select>
+				</div>
+			</div>
+		</div>
+        <div class="controls">
+            <b></b>
+            <ul class="edit-sendfile-ip file-style">
+                {% for fileinfo in file_infos %}
+                    {% if fileinfo.location_type == 1 %}
+                        <li>{{ fileinfo.get_location_type_display }}：{{ fileinfo.remote_path }}<i style="display:none;" class="file-id">{{ fileinfo.record.id }}</i><span class="delete1">删除</span></li>
+                    {% else %}
+                        <li class="clearfix list2">{{ fileinfo.get_location_type_display }}：<i class="file-road">{{ fileinfo.remote_path }}</i><i class="ipconfig">{{ fileinfo.remote_ip }}</i><i class="server-account"></i><span class="delete2">删除</span></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+		<div class="control-group">
+			<label class="control-label muted">分发至：<span class="red">*</span></label>
+			<div class="controls">
+				<input type="text" id="send_file_target_path" class="edit-sendfile-path" name="send_file_target_path" placeholder="请填写分发的路径" value="{{ sub_step.push_to }}"/>
+				<a class="tooltips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" title="" data-original-title="只允许为目录；如果该路径不存在，系统将自动创建该路径；linux下格式为/tmp；windows路径格式为c:\temp."><i class="icon-question-sign"></i></a>
+			</div>
+		</div>
+		<div class="control-group">
+			<div class="controls">
+				<input id="dst_use_own" name="dst_use_own" class="check-toggle3" style="margin-top: 8px;" type="checkbox" {% if target_ips|length > 0 %}checked="checked"{% endif %}>
+				<label style="display:inline-block;">本步骤使用如下目标机器取代全程目标机器</label>
+			</div>			  
+		</div>
+
+		<div class="control-group check-toggle-box3 {% if not target_ips or target_ips|length == 0 %}hide{% endif %}" >
+			<label class="control-label muted">目标机器：</label>
+			<div class="controls">
+				<textarea rows="5" class="txtstyle edit-sendfile-ip-area" placeholder="请输入机器IP，操作多个机器以“回车”换行"></textarea>
+				<textarea id="target_ips_hide" name="target_ips_hide" class="edit-sendfile-ip-hide" style="display: none;">{{ hide_ip_json }}</textarea>
+
+				<button type="button" class="ip-add-btn2 add-btn-status btn btn-default" data-msg="sendfile" data-loading-text="ip检测中,请稍后..." autocomplete="off"><i class="icon-plus"></i>IP添加</button>
+				<button type="button" class="select-servers btn btn-default" data-msg="edit-sendfile-wrap" data-toggle="modal" data-target="#selectServer2" data-loading-text="ip验证中,请稍后..." autocomplete="off"><i class="icon-th-list"></i>选择目标机器 </button>
+			</div>  
+			<div class="edit-sendfile-ip-wrap controls">
+				<b>{% if target_ips|length > 0 %}涉及服务器[{{ target_ips|length }}]台，仅[{{ hide_ip_dict.num }}]台支持操作{% endif %}</b>
+				<ul class="edit-sendfile-ip-result ip-style" data-msg="sendfile">
+                    {% for key,value in hide_ip_dict.items %}
+                        {% if key != 'num' and key != 'total' %}
+                            <li class="clearfix">
+                                <i class="ipconfig">{{ key }}</i>
+                                <i class="os">{{ value.2 }}</i>
+                                <i class="status1">agent{% if value.0 == 1 %}
+                                    正常{% elif value.0 == -1 %}异常{% elif value.0 == -99 %}不存在
+                                {% endif %} </i>
+                                <i class="status2">{% if value.0 != 1 %}不{% endif %}支持操作</i>
+                                <span>删除</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+				</ul>
+			</div>
+		</div>
+		<br>
+		<div class="control-group">
+			<div class="controls">
+				<button class="btn btn-primary edit-sendfile-save" data-type="sendfile" data-msg="job" onclick="handle_edit_template_step({{ step.id }},{{ step.job.id }},true,this,true);return false;"><i class="icon-ok icon-white"></i>保存步骤</button>
+				<button class="btn btn-success" data-msg="job" onclick="handle_edit_template_step({{ step.id }},{{ step.job.id }},false,this,false);return false;"><i class="icon-share-alt icon-white"></i>返回</button>
+			</div>
+		</div>
+	</form>
+</div>
+<!--modal one-->
+<div class="set-model modal hide fade" id="selectServer2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria  -hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="selectServerLabel2">选择目标服务器</h4>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+		  <li class="active"><a href="#APP_text_view2" data-toggle="tab">配置中心  - CMDB</a></li>
+		  <li class="fliter-tab"><a href="#ex_fliter2" data-toggle="tab">条件选择</a></li>
+		</ul>
+		<div class="tab-content">
+			<div class="tab-pane active" id="APP_text_view2">
+				<div class="ujobs-cmdb-tree">
+					
+				</div>
+				<div class="modal-footer">
+					<button class="add-servers-ip btn btn-primary" data-msg="sendfile">添加选中</button>
+					<button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+			    </div>
+			</div>
+			<div class="tab-pane" id="ex_fliter2">
+				<form class="form-horizontal fliter-select">
+					<div class="control-group">
+						<label class="control-label">产品：<span class="red">*</span></label>
+						<div class="controls">
+			                <select class="product-fliter">
+			                </select>
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">set：</label>
+						<div class="controls">
+			                <input class="set-fliter" type="text" value="">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">module：</label>
+						<div class="controls">
+			                <input class="module-fliter" type="text" value="">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">已选set：<span class="red">*</span></label>
+						<div class="controls">
+			                <input class="set-value" type="text" value="" disabled>
+			                <button class="clear-fliter btn btn-default" data-msg="set" onclick="return false">清空</button>
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">已选module：<span class="red">*</span></label>
+						<div class="controls">
+			                <input class="module-value" type="text" value="" disabled>
+			                <button class="clear-fliter btn btn-default" onclick="return false">清空</button>
+						</div>
+					</div>
+				</form>
+				<div class="modal-footer">
+					<button class="add-fliter btn btn-primary" data-msg="sendfile" data-dismiss="modal">添加</button>
+					<button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+		     	</div>
+			</div>
+		</div>
+      </div>
+</div>
+<script src="/static/tool_js/spark-md5.js" type="text/javascript"></script>
+<script>
+	icheck($(".edit-sendfile-wrap input:checkbox,.edit-sendfile-wrap input:radio"));
+	$(".tooltips").tooltip();
+</script>

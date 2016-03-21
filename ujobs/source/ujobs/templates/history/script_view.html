@@ -1,0 +1,152 @@
+<!-- 脚本步骤设置项 -->
+<legend style="font-size:14px"><span class="caret-arrow-up"></span>步骤设置</legend>
+<form class="form-horizontal" id="script_view_icheck_{{history_step.history.id}}">{% csrf_token %}
+	<div class="control-group">
+		<label class="control-label muted">步骤名称：<span class="red">*</span></label>
+		<div class="controls">
+			<input type="text" disabled value="{{ history_step.jobstep.name }}">
+		</div>			  
+	</div>
+	<div class="control-group">
+		<label class="control-label muted">步骤描述：<span class="red">*</span></label>
+		<div class="controls">
+			<textarea style="width:420px;" disabled>{{ history_step.jobstep.template_step.describe|default_if_none:'' }}</textarea>
+		</div>		  
+	</div>
+	<div class="control-group">
+		<label class="control-label muted">步骤脚本：</label>
+		<div class="controls">
+			<input type="text" disabled value="{{history_step_script.version.script.name}}">
+		</div>			  
+	</div>
+	<div class="control-group">
+		<label class="control-label muted">脚本版本：</label>
+		<div class="controls">
+			<input type="text" disabled value="{{version.name}}">
+		</div>			  
+	</div>
+	   <div class="control-group">
+		<label class="control-label muted">脚本类型：</label>
+		<div class="controls">
+			<label style="display: inline;margin-left: 5px;"><input class="ck-code" style="vertical-align:middle; margin-top:0;" type="radio"  value="1" disabled {% if script.script_type == 1 %}checked{% endif %}> shell</label>
+			<label style="display: inline;margin-left: 5px;"><input class="ck-code" style="vertical-align:middle; margin-top:0;" type="radio"  value="2" disabled {% if script.script_type == 2 %}checked{% endif %}> bat</label>
+			<label style="display: inline;margin-left: 5px;"><input class="ck-code" style="vertical-align:middle; margin-top:0;" type="radio"  value="3" disabled {% if script.script_type == 3 %}checked{% endif %}> python</label>
+		</div>
+	   </div>
+	   <div class="control-group">
+		<label class="control-label muted">查看脚本详细信息：</label>
+		<div class="controls">
+			<input id="view_details_check_{{history_step.history.id}}" style="margin-top: 8px;" type="checkbox" checked="checked">
+		</div>			  
+	</div>
+	
+	<div class="control-group" id="script_view_describe_{{history_step.history.id}}">
+		<label class="control-label muted">脚本描述：</label>
+		<div class="controls">
+			<textarea style="width:420px;" disabled>{{script.describe|default_if_none:''}}</textarea>
+		</div>		  
+	</div>
+	<div class="control-group" id="script_view_content_{{history_step.history.id}}">
+		<label class="control-label">&nbsp;</label>
+		<div class="controls">
+			<p><select id="code_style" style="width: 200px;" disabled="disabled">
+			    <option>default</option>
+			    <option>3024-night</option>
+			    <option selected>erlang-dark</option>
+			</select></p>
+			
+			<textarea id="script_once_code_{{history_step.history.id}}" name="script_once_code_{{history_step.history.id}}"  readonly="readonly">{{file_content}}</textarea>
+		</div>			  
+	</div>
+	
+	<div id="timeout2" class="control-group">
+		<label class="control-label muted">超时时间（秒）：</label>
+		<div class="controls">
+		<input style="width:420px;" type="number" min="0" max="259200" class="form-control" placeholder="最长等待执行秒数，超时则系统返回失败" disabled value="{{history_step_script.timeout}}">
+		</div>			  
+	</div>
+	
+	<div id="parameter2" class="control-group">
+		<label class="control-label muted">脚本入口参数：</label>
+		<div class="controls">
+			<input type="text" class="form-control" placeholder="该参数用于脚本的输入参数，以空格相隔，无则不填" disabled value="{{history_step_script.parameter}}">
+		</div>			  
+	</div>
+	
+    <div class="control-group">
+        <div class="controls">
+            <input id="dst_use_own" name="dst_use_own"  class="check-toggle" data-msg="box2" style="margin-top: 8px;" type="checkbox" disabled {% if target_ips|length > 0 %}checked="checked"{% endif %}>
+            <label style="display:inline-block;">本步骤使用如下目标机器取代全程目标机器</label>
+        </div>            
+    </div>
+    <div class="control-group check-toggle-box2 {% if not step.is_setting %}hide{% endif %}">
+        <label class="control-label muted">目标机器：</label>
+        <div class="controls">
+            <textarea rows="5" class="txtstyle edit-script-ip-area" placeholder="请输入机器IP，操作多个机器以“回车”换行" disabled></textarea>
+            <textarea  id="target_ips_hide" name="target_ips_hide" class="edit-script-ip-hide" style="display: none;">{{ hide_ip_json }}</textarea>
+            
+        </div>  
+        <div class="controls edit-script-ip-wrap">
+            <b>{% if target_ips|length > 0 %}涉及服务器[{{ target_ips|length }}]台，仅[{{ hide_ip_dict.num }}]台支持操作{% endif %}</b>
+            <ul class="edit-script-ip-result ip-style" data-msg="script">
+                {% for key,value in hide_ip_dict.items %}
+                    {% if key != 'num' and key != 'total' %}
+                        <li class="clearfix">
+                            <i class="ipconfig" id="{{ key }}">{{ value.3 }}</i>
+                            <i class="status1">agent{% if value.0 == 1 %}
+                                正常{% elif value.0 == -1 %}异常{% elif value.0 == -99 %}不存在
+                            {% endif %} </i>
+                            <i class="status2">{% if value.0 != 1 %}不{% endif %}支持操作</i>
+                            <span></span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="control-group check-toggle-box2 {% if not step.is_setting %}hide{% endif %}">
+        <label class="control-label muted">执行账户：<span class="red">*</span></label>
+        <div class="controls">
+            <select id="template_account" name="template_account" class="reg-val account-msg" style="width: 434px;" disabled>
+                {% for account in accounts %}
+                    <option value="{{account.id}}" {% if account_id == account.id%}selected{% endif %}>{{account.name}}&nbsp;&nbsp;账号:{{account.name_abbr}}</option>
+                {% endfor %}
+            </select>
+        </div>            
+    </div>  
+	
+</form>
+
+<script>
+	var editor_{{history_step.history.id}} = CodeMirror.fromTextArea($("#script_once_code_{{history_step.history.id}}")[0], {
+	        lineNumbers: true,
+	        mode:"shell",
+	        lineWrapping:true,
+    });
+    
+    $(function () {
+  		// 脚本详细信息显隐
+    	$("#view_details_check_{{history_step.history.id}}").on("ifClicked",function () {
+    		if($(this).prop("checked")){
+    			$("#script_view_describe_{{history_step.history.id}}").addClass("hide");
+    			$("#script_view_content_{{history_step.history.id}}").addClass("hide");
+    		}
+    		else {
+    			$("#script_view_describe_{{history_step.history.id}}").removeClass("hide");
+    			$("#script_view_content_{{history_step.history.id}}").removeClass("hide");
+    		}
+    	});
+    	
+    	// codeMirror
+    	$('#code_style').change(function () {
+		    var theme = $('#code_style').val();
+
+		    editor_{{history_step.history.id}}.setOption("theme", theme);
+		 });
+    	
+    	$("#code_style").trigger("change");
+    });
+    
+    // 按钮样式
+    icheck($('#script_view_icheck_{{history_step.history.id}} input:checkbox,#script_view_icheck_{{history_step.history.id}} input:radio'));
+</script>

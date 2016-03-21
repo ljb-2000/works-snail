@@ -1,0 +1,31 @@
+[2015-11-04 15:37:51][fileserver.py][line:291][INFO] Web Server On 0.0.0.0:8083
+[2015-11-04 15:45:54][fileserver.py][line:170][INFO] Start file post request, username:luozh,file_hash:3e2b31c72181b87149ff995e7202c0e3, src_ip:172.18.80.173
+[2015-11-04 15:46:15][fileserver.py][line:251][ERROR] Traceback (most recent call last):
+  File "ujobs\res\fileserver.py", line 174, in do_POST
+    mysql_handler = MysqlHandler()
+  File "ujobs\res\fileserver.py", line 42, in __init__
+    self.cursor = self.get_connection().cursor()
+  File "ujobs\res\fileserver.py", line 47, in get_connection
+    cursorclass=MySQLdb.cursors.DictCursor)
+  File "C:\Python27\lib\site-packages\MySQLdb\__init__.py", line 81, in Connect
+    return Connection(*args, **kwargs)
+  File "C:\Python27\lib\site-packages\MySQLdb\connections.py", line 193, in __init__
+    super(Connection, self).__init__(*args, **kwargs2)
+OperationalError: (2003, "Can't connect to MySQL server on '192.168.19.140' (10060)")
+
+[2015-11-04 15:46:15][fileserver.py][line:259][INFO] End request, return result:{'status': 500, 'result': {'msg': 'save file error.'}}
+[2015-11-04 15:47:11][fileserver.py][line:170][INFO] Start file post request, username:luozh,file_hash:3e2b31c72181b87149ff995e7202c0e3, src_ip:172.18.80.173
+[2015-11-04 15:47:32][fileserver.py][line:251][ERROR] Traceback (most recent call last):
+  File "ujobs\res\fileserver.py", line 174, in do_POST
+    mysql_handler = MysqlHandler()
+  File "ujobs\res\fileserver.py", line 42, in __init__
+    self.cursor = self.get_connection().cursor()
+  File "ujobs\res\fileserver.py", line 47, in get_connection
+    cursorclass=MySQLdb.cursors.DictCursor)
+  File "C:\Python27\lib\site-packages\MySQLdb\__init__.py", line 81, in Connect
+    return Connection(*args, **kwargs)
+  File "C:\Python27\lib\site-packages\MySQLdb\connections.py", line 193, in __init__
+    super(Connection, self).__init__(*args, **kwargs2)
+OperationalError: (2003, "Can't connect to MySQL server on '192.168.19.140' (10060)")
+
+[2015-11-04 15:47:32][fileserver.py][line:259][INFO] End request, return result:{'status': 500, 'result': {'msg': 'save file error.'}}

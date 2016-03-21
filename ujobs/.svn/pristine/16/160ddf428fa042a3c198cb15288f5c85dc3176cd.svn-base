@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛盾登陆</title>
+<link rel="stylesheet" type="text/css" href="/static/assets/css/login.css">
+</head>
+<body>
+    <div class="wrapper">
+        <div class="login-box">
+            <div class="logo">
+                <img src="/static/assets/img/login_logo.png">
+            </div>
+            <form id="login_form" class="login-form" method="POST" action="/valid/">{% csrf_token %}
+                <input id="account_name" name="account_name" class="username" type="text" value='' placeholder="通行证号">
+                <input id="valid_code" name="valid_code" class="password" type="text" value='' placeholder="动态密码">
+                <button id="login_btn" class="login-btn" type="button" onclick="form_submit()">验证</button>
+                <textarea id="VerifyId" name="VerifyId" class="guid" style="display:none;">{{guid}}</textarea>
+            </form>
+            <div class="massage">
+                {{error_msg}}
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/static/assets/js/jquery-2.1.4.min.js"></script>
+    <script>
+    document.onkeydown=function(event){
+        var e = event || window.event || arguments.callee.caller.arguments[0];        
+        if(e && e.keyCode==13){
+             form_submit();
+        }
+    }; 
+    
+    function form_submit(){
+        var account_name = $('#account_name').val();
+        var valid_code = $('#valid_code').val();
+        if(!account_name || !valid_code) {
+            $('.massage').html('通行证号或动态密码不能为空！');
+            return false;
+        }
+        var form = $('#login_form');
+        form.submit();
+    }
+    </script>    
+</body>
+</html>

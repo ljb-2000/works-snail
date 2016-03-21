@@ -1,0 +1,97 @@
+<!-- 新手引导弹框 -->
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h1 class="modal-title text-center step-show1" id="startModalLabel">
+                <span>云端作业，一触即发</span>
+            </h1>
+        </div>
+        <div class="modal-body" style="position:relative;max-height:546px !important;padding-top:0;overflow-y:hidden;">
+        	<div class="left-text" style="opacity:0">
+        		接入三部曲
+        	</div>
+        	<div id="dowebok" style="opacity:0;">
+        		<div class="section">
+					<div class="clearfix start-step step-show2" style="">
+						<div class="step-num">
+                            <span class="icomoon2 computer"></span>
+                            <span class="step-num-text">Step One</span>
+                        </div>
+		        		<div class="step-content">
+			        		<p style="line-height:35px;">目前Ujobs系统可管理的IDC及对应的jobsvr如下：</p>
+							<p class="font13">北京鲁谷jobsvr ：192.168.49.253<span class="ml-indent">117.121.13.32</span></p>
+							<p class="font13">北京苏州桥jobsvr ：10.36.0.216<span class="ml-indent">115.182.196.216</span></p>
+							<p class="font13">北京酒仙桥jobsvr ：10.3.97.159<span class="ml-indent">115.182.77.159</span></p>
+							<p class="font13">北京国贸jobsvr ：10.168.116.185<span class="ml-indent">115.182.197.185</span></p>
+							<p class="font13">无锡机房jobsvr ：192.168.180.35<span class="ml-indent">117.121.136.35</span></p>
+							<p class="font13">上海金桥jobsvr ：192.168.80.224<span class="ml-indent">140.207.233.224</span></p>
+		        			<p class="font13">上海国定jobsvr ：192.168.77.88<span class="ml-indent">180.153.226.54</span></p>
+							<p class="font13">上海南汇jobsvr ：192.168.95.110<span class="ml-indent">180.153.139.110</span></p>
+							<p class="font13">上海外高桥jobsvr ：10.10.50.95<span class="ml-indent">40.207.210.95</span></p>
+							<p class="font13">北京石景山jobsvr ：10.90.12.121<span class="ml-indent">124.202.142.121</span></p>
+							<p class="font13">北美jobsvr : 10.107.230.20<span class="ml-indent">184.172.120.246 (覆盖北美及周边)</span></p>
+							<p class="font13">德国jobsvr : 10.134.81.38<span class="ml-indent">159.122.80.166 (覆盖欧州)</span></p>
+							<p class="font13">香港jobsvr : 10.111.132.220<span class="ml-indent">161.202.41.231 (覆盖东南亚包括澳洲)</span></p>
+		        		</div>
+		        	</div>
+			    </div>
+			    <div class="section">
+			    	<div class="clearfix start-step step-show3">
+		        		<div class="step-num">
+                            <span class="icomoon2 beenhere"></span>
+                            <span class="step-num-text">Step Two</span>
+                        </div>
+		        		<div class="step-content">
+							<p class="font13"><b>windows</b>：（确保安装了vcredist_x64.exe）<br>
+								<span class="step-indent">1.下载：http://117.121.19.121/snail/ujobs/ujobs_agent4win.zip</span><br>
+								<span class="step-indent">2.解压后在cmd下执行：ujobs_agent4win.bat jobsvr </span><br> 
+							</p>
+							<p class="font13"><b>linux</b>：<br>
+								<span class="step-indent">1.wget http://117.121.19.121/snail/ujobs/ujobs_agent4linux.sh</span><br>
+								<span class="step-indent">2.sh ujobs_agent4linux.sh jobsvr </span><br>
+							</p>
+							<p class="font13">jobsvr填写各idc对应的jobsv,能连内网尽量连内网</p>
+		        		</div>
+		        	</div>
+			    </div>
+			   	<div class="section">
+			    	<div class="clearfix start-step step-show4" style="">
+		        		<div class="step-num">
+                            <span class="icomoon2 contacts"></span>
+                            <span class="step-num-text" style="left: 75px;">Step Three</span>
+                        </div>
+		        		<div class="step-content">
+		        			<p class="step-height">提OA【跨部门协作单】到项目二部，<br>将要接入Ujobs平台的ip列表（内网+外网）邮件发到<br>zhangyanl@snail.com并cc部门leader和zhaoym@snail.com进行申请，<br>后台处理完毕后即可开启Ujobs自动化作业之旅。</p>
+		        		</div>
+		        	</div>
+			    </div>
+			</div>
+
+			<div id="move_box" style="position:absolute;top:205px;right: 40px;opacity:0">
+				<a id="move_up" class="carousel-control left" href="#myCarousel" data-slide="next">‹</a>
+				<br><br><br>
+				<a id="move_down" class="carousel-control right" href="#myCarousel" data-slide="prev">›</a>
+			</div>
+        </div>
+    </div>
+</div>
+<script>
+$(function (){
+    $('#dowebok').fullpage({
+    	'verticalCentered':false,
+    	'loopBottom':true,
+    });
+
+    $("#move_up").on('click',function (){
+    	$.fn.fullpage.moveSectionDown();
+    });
+
+    $("#move_down").on('click',function (){
+    	$.fn.fullpage.moveSectionUp();
+    });
+});
+
+</script>

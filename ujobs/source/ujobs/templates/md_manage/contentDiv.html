@@ -1,0 +1,132 @@
+<!-- 作业模板管理 -->
+<div class="row-fluid edit-mdcontent-wrap">
+	<form class="form-inline form-search myform" name="md_manage_form" method="post" id="myform" action="javascript:void(0);" >{% csrf_token %}  
+		<fieldset>
+		    <legend style="font-size:14px"><span class="caret-arrow-up"></span>查询条件</legend>
+			<div class="controls">
+				<label>模板名称：</label>
+				<input id="template_name" type="text" style="width:150px;">
+				<label>模板创建人：</label>
+  				<input id="template_creator" type="text" style="width:150px;">
+			</div>
+  		</fieldset>
+		<fieldset>
+		    <legend style="font-size:14px"><span class="caret-arrow-down"></span>更多条件</legend>
+		    <div class="controls hide">
+				<label>模板类型：</label>
+				<select id="template_type" style="width:164px;">
+  					<option value="" selected>请选择模板类型</option>
+  					<option value="0">未分类</option>
+  					<option value="1">运营发布</option>
+  					<option value="2">故障处理</option>
+  					<option value="3">常用工具</option>
+  					<option value="4">测试工具</option>
+  				</select>
+				<label>特定步骤：</label>
+  				<input id="template_step" type="text" style="width:150px;">
+  				<label>模板创建时间：</label>
+				<input id="template_stime" name="template_stime" type="text" style="width:150px;" onkeydown="return false;" onClick="WdatePicker()">
+				<label style="width:70px;text-align: center">至</label>
+				<input id="template_etime" name="template_etime" type="text" style="width:150px;" onkeydown="return false;" onClick="WdatePicker()">
+  			</div>
+		</fieldset>
+		<br>
+		<div class="controls pull-right">
+        <button type="button" class="btn btn-primary" onclick="show_template_add();">
+          <i class="icon-plus icon-white"></i>
+          新建作业模板
+        </button>
+		    <button id="md_btn_power" type="button" class="btn btn-primary select-power" data-msg="mdcontent" data-toggle="modal" data-target="#md_select_power" data-auth-type="{{ auth_type }}" disabled>
+          <i class="icon-random icon-white"></i>
+          授权
+        </button>
+			  <button type="button" class="btn btn-info" onclick="template_filter()">
+          <i class="icon-search icon-white"></i>
+          查询
+        </button>
+			  <button type="button" class="btn btn-warning reset">
+          <i class="icon-repeat icon-white"></i>
+          重置
+        </button>
+		</div>
+		<br>
+		  <table  class="table table-striped table-bordered table-hover table-limit" id="md_manage_table">
+			  <thead>
+				<tr>
+          <th><input type='checkbox' class="mdcontent_checked_all"></th>
+          {%for name in table_fields %}
+            <th>{{name}}</th>
+          {%endfor%}
+				</tr>
+			  </thead>
+			  <tbody>
+			  	<tr><th></th></tr>
+			  </tbody>
+		</table>
+ 	</form>	
+</div><!--/row--> 
+
+<!--modal one-->
+<div class="modal set-model hide fade" id="md_select_power" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myPowerLabel">授权/取消授权</h4>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+      <li class="active"><a href="#power_list" data-toggle="tab">用户列表</a></li>
+    </ul>
+    <div class="tab-content">
+      <div class="tab-pane active" id="power_list">
+        <div class="ujobs-power-tree">
+            
+        </div>
+      </div>
+    </div>
+      </div>
+      <div class="modal-footer">
+    <button class="power-comfirm btn btn-primary" data-msg="mdcontent" data-dismiss="modal">确认</button>
+    <button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+      </div>
+</div>
+
+<script>
+  var template_table = null;
+  
+  $(function () {
+      template_table = $('#md_manage_table').dataTable({
+          "sDom": 'lfrtip',
+          "bLengthChange": false,
+          "iDisplayLength": 10,
+          "aoColumnDefs": [{"bSortable": false, "aTargets": [0,4,5,6]}],
+          "aaSorting": [[9, "desc"]],
+          "aoColumns": [
+              { "sWidth": "5%" },
+  		      { "sWidth": "12%" },
+  		      { "sWidth": "7%" },
+  		      { "sWidth": "9%" },
+  		      { "sWidth": "18%" },
+  		      { "sWidth": "6%" },
+  		      { "sWidth": "7%" },
+  		      { "sWidth": "11%" },
+  		      { "sWidth": "7%" },
+  		      { "sWidth": "11%" }
+	        ],
+          "bProcessing": false,
+          "bServerSide": true,
+          "sPaginationType": "full_numbers",
+          "sAjaxSource": "{{ajax_url}}",
+          "bFilter": false,
+          "bInfo": true,
+          "oLanguage": {
+              "sUrl": '/static/tool_js/data_table/cn/jquery.dataTable.cn.txt'
+          }
+      });
+
+      // 全选全不选
+      var md_home_checked_all=".mdcontent_checked_all";
+      var md_home_checked_it=".mdcontent_checked_it";
+
+      check_all(md_home_checked_all,md_home_checked_it,$("#md_btn_power"));
+  });
+</script>

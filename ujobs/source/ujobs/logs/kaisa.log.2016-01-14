@@ -1,0 +1,42 @@
+2016-01-12 09:22:03,230 [Thread-43480:29692] [logger:41] [ERROR]- Traceback (most recent call last):
+  File "D:\work\Aptana Studio 3 Workspace\ujobs\source\ujobs\page\timing_manage.py", line 38, in timing_manage_list
+    logger.debug("current job status: {0}".format(scheduler.print_jobs()))
+  File "C:\Python27\lib\site-packages\apscheduler\schedulers\base.py", line 555, in print_jobs
+    jobs = store.get_all_jobs()
+  File "C:\Python27\lib\site-packages\apscheduler\jobstores\sqlalchemy.py", line 73, in get_all_jobs
+    jobs = self._get_jobs()
+  File "C:\Python27\lib\site-packages\apscheduler\jobstores\sqlalchemy.py", line 124, in _get_jobs
+    for row in self.engine.execute(selectable):
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1991, in execute
+    return connection.execute(statement, *multiparams, **params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 914, in execute
+    return meth(self, multiparams, params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\sql\elements.py", line 323, in _execute_on_connection
+    return connection._execute_clauseelement(self, multiparams, params)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1010, in _execute_clauseelement
+    compiled_sql, distilled_params
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1146, in _execute_context
+    context)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1341, in _handle_dbapi_exception
+    exc_info
+  File "C:\Python27\lib\site-packages\sqlalchemy\util\compat.py", line 199, in raise_from_cause
+    reraise(type(exception), exception, tb=exc_tb)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\base.py", line 1139, in _execute_context
+    context)
+  File "C:\Python27\lib\site-packages\sqlalchemy\engine\default.py", line 450, in do_execute
+    cursor.execute(statement, parameters)
+  File "C:\Python27\lib\site-packages\MySQLdb\cursors.py", line 205, in execute
+    self.errorhandler(self, exc, value)
+  File "C:\Python27\lib\site-packages\MySQLdb\connections.py", line 36, in defaulterrorhandler
+    raise errorclass, errorvalue
+OperationalError: (_mysql_exceptions.OperationalError) (2006, 'MySQL server has gone away') [SQL: u'SELECT apscheduler_jobs.id, apscheduler_jobs.job_state \nFROM apscheduler_jobs ORDER BY apscheduler_jobs.next_run_time']
+
+2016-01-12 10:10:49,790 [Thread-43585:29832] [logger:38] [DEBUG]- current job status: None
+2016-01-12 10:11:27,657 [Thread-43643:28048] [logger:38] [DEBUG]- current job status: None
+2016-01-12 10:25:50,539 [Thread-43727:26072] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-12 10:26:27,369 [Thread-43791:28308] [logger:38] [DEBUG]- current job status: None
+2016-01-12 10:27:52,078 [Thread-43822:30624] [logger:38] [DEBUG]- current job status: None
+2016-01-12 10:28:19,048 [Thread-43923:30608] [logger:38] [DEBUG]- current job status: None
+2016-01-12 10:29:23,242 [Thread-43954:22820] [logger:38] [DEBUG]- current job status: None
+2016-01-12 15:08:39,296 [Thread-43994:31364] [logger:40] [DEBUG]- [user login] luozh login ok.
+2016-01-12 15:10:52,605 [Thread-44072:27720] [logger:38] [DEBUG]- current job status: None

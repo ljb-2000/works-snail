@@ -1,0 +1,322 @@
+<!-- 执行脚本 -->
+<div class="row-fluid edit-scriptonce-wrap">
+	<form id="scriptform" action="javascript:void(0);" method="post" class="form-horizontal script-icheck">{% csrf_token %}
+		<div class="control-group">
+			<label class="control-label">脚本名称：<span class="red">*</span></label>
+			<div class="controls">
+			<input type="text" id="script_once_name" name="script_once_name" value="{{name}}"/>
+			</div>			  
+		</div>
+	   
+	   <div class="control-group">
+			<label class="control-label">脚本来源：</label>
+			<div class="controls">
+				<label style="display: inline;margin-left: 5px;"><input class="handscript" style="vertical-align:middle; margin-top:0;" type="radio" name="stype" checked="checked"> 手工录入 </label>
+				<label style="display: inline;margin-left: 5px;"><input class="localscript" style="vertical-align:middle; margin-top:0;" type="radio" name="stype"> 本地脚本 </label>
+			</div>
+	   </div>
+	   <div class="local-find control-group hide">
+			<div class="controls">
+				<input type='text' name='textfield' id='textfield' class="edit-scriptonce-docfield" onfocus=this.blur() placeholder="请上传本地文件" /> &nbsp;
+				<button id='find' type='button' value='浏览...' class='p-filefind btn btn-default' data-msg="scriptonce">
+					<i class="icon-folder-open"></i>
+					浏览...
+				</button>&nbsp;
+				<button type='button' value='导入' class='btn btn-default' onclick="javascript:script_ajax_file_upload();">
+					<i class="icon-arrow-up"></i>
+					导入
+				</button>
+				<input style="opacity:0;filter:alpha(opacity:0);margin-left:-999%" id="script_fileToUpload" class="edit-scriptonce-upField" name="script_fileToUpload" type="file" size="28" />
+			</div>
+	   </div>
+	   <div class="control-group">
+			<label class="control-label">脚本类型：</label>
+			<div class="controls">
+				<label style="display: inline;margin-left: 5px;" for="script_once_type1"><input class="ck-code" style="vertical-align:middle; margin-top:0;" type="radio" name="script_once_type" id="script_once_type1" value="1" checked> shell</label>
+				<label style="display: inline;margin-left: 5px;" for="script_once_type2"><input class="ck-code" style="vertical-align:middle; margin-top:0;" type="radio" name="script_once_type" id="script_once_type2" value="2"> bat</label>
+				<label style="display: inline;margin-left: 5px;" for="script_once_type3"><input class="ck-code" style="vertical-align:middle; margin-top:0;" type="radio" name="script_once_type" id="script_once_type3" value="3"> python</label>
+			</div>
+	   </div>
+	   
+		<div class="control-group">
+			<label class="control-label">&nbsp;</label>
+			<div class="controls">
+				<p><select style="width: 200px;" id='select' name="select">
+				    <option>default</option>
+				    <option>3024-night</option>
+				    <option selected>erlang-dark</option>
+				</select></p>
+				<div class="alert alert-warning tishi">
+					注意：在脚本中如要将语句置于后台执行，请写成 sh abc.sh >out.txt 2>&1 & 这种格式，不能写成sh abc.sh &
+				</div>
+				<textarea id="script_once_code" name="script_once_code">
+#!/bin/sh
+</textarea>
+<textarea id="code2" class="hide">
+#!/usr/bin/env python
+# -*- coding: utf8 -*-
+</textarea>
+			</div>			  
+		
+		</div>
+		<div class="control-group">
+			<label class="control-label">目标机器：<span class="red">*</span></label>
+			<div class="controls">
+				<textarea id="ip-area-script" rows="5" class="txtstyle edit-scriptonce-ip-area" placeholder="请输入机器IP，操作多个机器以“回车”换行"></textarea>
+				<textarea id="ip-area-script-hide" class="edit-scriptonce-ip-hide" name="ip-area-script-hide" style="display: none;"></textarea>
+				
+				<button type="button" class="btn btn-default add-btn-status ip-add-btn" data-msg="scriptonce" data-loading-text="ip检测中,请稍后..." autocomplete="off">
+					<i class="icon-plus"></i>
+					IP添加
+				</button>
+				<button id="server_modal2" type="button" class="select-servers btn btn-default" data-msg="edit-scriptonce-wrap" data-toggle="modal" data-target="#serverModal2" data-loading-text="ip验证中,请稍后..." autocomplete="off">
+					<i class="icon-th-list"></i>
+					选择目标机器 
+				</button>
+			</div>  
+			<div class="controls scroll-wrap edit-scriptonce-ip-wrap hide">
+				<b></b>
+				<ul id="ip-show" class="ip-style edit-scriptonce-ip-result" data-msg="scriptonce">
+				</ul>
+			</div>
+		</div>
+		
+		<div class="control-group">
+			<label class="control-label">执行账户：<span class="red">*</span></label>
+			<div class="controls">
+				<select id="script_account" name="script_account" class="reg-val account-msg" style="width: 434px;">
+				    <option value="" selected="">请选择执行账户</option>
+					{% for account in accounts %}
+					<option value="{{account.id}}">{{account.name}}&nbsp;&nbsp;账号:{{account.name_abbr}}&nbsp;&nbsp;创建人:{{account.create_user}}</option>
+					{% endfor %}
+				</select>
+				<button type="button" class="btn btn-default reg-user" data-toggle="modal" data-target="#myModal2">
+					<i class="icon-plus"></i>
+					登记账户
+				</button>
+				<button type="button" class="btn btn-default reg-user" onclick="refresh_accounts(this);return false;">
+					<i class="icon-refresh"></i>
+					刷新
+				</button>
+			</div>			  
+		</div>				
+		<div class="control-group">
+			<label class="control-label">高级选项：</label>
+			<div class="controls">
+		        <input id="more-choose" style="margin-top: 8px;" type="checkbox">
+			</div>			  
+		</div>
+		
+		<div id="timeout" style="display: none;" class="control-group">
+			<label class="control-label">超时时间（秒）：</label>
+			<div class="controls">
+				<input id="script_once_timeout" name="script_once_timeout" style="width:420px;" type="number" min="0" max="259200" class="form-control ujobs_timeout" onkeydown="return doit()" placeholder="最长等待执行秒数，超时则系统返回失败"/>
+			</div>			  
+		</div>
+		
+		<div id="parameter" style="display: none;" class="control-group">
+			<label class="control-label">脚本入口参数：</label>
+			<div class="controls">
+				<input type="text" id="script_once_parameter" name="script_once_parameter" class="form-control" placeholder="该参数用于脚本的输入参数，以空格相隔，无则不填"/>
+				<a class="tooltips" href="javascript:void(0);" data-toggle="tooltip" data-placement="right" title="" data-original-title="脚本入口参数支持时间宏变量[DATEFMT:%Y-%m-%d]，时间格式遵循strftime的格式，宏变量将以ujobs开始执行任务的时间替换"><i class="icon-question-sign"></i></a>
+			</div>			  
+		</div>
+	   
+	   <div class="control-group">
+			<div class="controls">
+				<button id="script_file_btn_start" type="button" class="btn btn-primary edit-scriptonce-save" onclick="execute_script();" data-loading-text="脚本执行中,请稍后..." autocomplete="off">
+					<i class="icon-ok icon-white"></i>
+					执行脚本
+				</button>
+			</div>
+	   </div>
+	</form>
+
+</div>
+			
+<!-- modal one -->
+<div class="modal set-model hide fade" id="serverModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel2">选择目标服务器</h4>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+		  <li class="active"><a href="#APP2" data-toggle="tab">配置中心  - CMDB</a></li>
+		  <li class="fliter-tab"><a href="#fliter2" data-toggle="tab">条件选择</a></li>
+		</ul>
+		<div class="tab-content">
+			<div class="tab-pane active" id="APP2">
+				<div class="ujobs-cmdb-tree">
+					
+				</div>
+				<div class="modal-footer">
+					<button class="add-servers-ip btn btn-primary" data-msg="scriptonce" data-dismiss="modal">添加选中</button>
+					<button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+				</div>
+			</div>
+			<div class="tab-pane" id="fliter2">
+				<form class="form-horizontal fliter-select">
+					<div class="control-group">
+						<label class="control-label">产品：<span class="red">*</span></label>
+						<div class="controls">
+			                <select class="product-fliter">
+			                </select>
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">set：</label>
+						<div class="controls">
+			                <input class="set-fliter" type="text" value="">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">module：</label>
+						<div class="controls">
+			                <input class="module-fliter" type="text" value="">
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">已选set：<span class="red">*</span></label>
+						<div class="controls">
+			                <input class="set-value" type="text" value="" disabled>
+			                <button class="clear-fliter btn btn-default" data-msg="set" onclick="return false">清空</button>
+						</div>
+					</div>
+					<div class="control-group">
+						<label class="control-label">已选module：<span class="red">*</span></label>
+						<div class="controls">
+			                <input class="module-value" type="text" value="" disabled>
+			                <button class="clear-fliter btn btn-default" onclick="return false">清空</button>
+						</div>
+					</div>
+				</form>
+				<div class="modal-footer">
+					<button class="add-fliter btn btn-primary" data-msg="scriptonce" data-dismiss="modal">添加</button>
+					<button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+		     	</div>
+			</div>
+		</div>
+      </div>
+</div>		
+
+<!-- add account modal -->
+<div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="width:640px;">
+	{% include 'account/account_modal.html' %}
+</div>	
+
+<script type="text/javascript">
+		// codeMirror插件
+		var editor = CodeMirror.fromTextArea($("#script_once_code")[0], {
+	        lineNumbers: true,
+	        mode:"shell",
+	        lineWrapping:true,
+    	});
+
+		codeMirror(editor, $("#script_once_code"), $('#select'), $("#code2"), $(".ck-code"), "script_once_type1", "script_once_type2");
+
+    	function script_ajax_file_upload(){
+			var uploadfilename = $('#script_fileToUpload').val();
+
+			if (uploadfilename){
+				if(0){
+					jNotify('文件格式不对，请选择sh/bat/py/txt文件');
+					$("#textfield").val($("#script_fileToUpload").val()); 
+					return false;
+				}else{
+					$.ajaxFileUpload ({
+						type: 'POST',
+						url :'/script/ajax_script_upload/',
+						secureuri :false,
+						data : {'fileToUpload':'script_fileToUpload'},
+						fileElementId :'script_fileToUpload',
+						dataType : 'json',
+						success : function (data, status){
+							if(data.result==1){
+	    						editor.setValue(data.content);
+	    						$("#textfield").val($("#script_fileToUpload").val()); 
+					       	 	return true;
+					       	}
+					       	
+							jError('上传失败！');
+							$("#textfield").val($("#script_fileToUpload").val()); 
+						},
+						error: function (data, status, e){
+							jNotify('上传失败，请将文件转换为utf-8格式编码！');
+							$("#textfield").val($("#script_fileToUpload").val()); 
+						}
+					});
+				}
+			}else{
+				jNotify('请选择上传文件！');
+			}
+		}
+    	
+		$(".tooltips").tooltip();
+		
+		// 按钮样式
+		icheck($('.script-icheck input:radio,.script-icheck input:checkbox'));
+    
+    // 执行脚本
+	function execute_script(){
+	    var script_once_name = $('#script_once_name').val();
+        var script_once_type = $("input[name='script_once_type']:checked").val();
+        var file_content = editor.getValue();
+        var script_account = $("#script_account").val();
+        var script_once_timeout = $("#script_once_timeout").val();
+        var script_once_parameter = $("#script_once_parameter").val();
+		var ip_area_script_hide = $('#ip-area-script-hide').val();
+	    
+        if(!script_once_name){
+            jNotify('请输入脚本名称');
+            return false;
+        }
+        
+		if(!ip_area_script_hide){
+			jNotify('无有效的Agent状态的IP');
+			return false;
+		}
+		
+        if(!script_account){
+            jNotify('请选择执行账户');
+            return false;
+        }
+		
+		// 判断是否全部支持操作
+        var check=check_ip_support(ip_area_script_hide);
+
+        if(check==false) {
+        	return false;
+        }
+	    
+		$("#script_file_btn_start").button('loading');
+		
+		$.ajax({
+            type: 'POST',
+            url: '/script/script_execute/',
+            dataType: 'json',
+            data: {
+                    'script_once_name':script_once_name,
+            		'script_once_type':script_once_type,
+            		'file_content':file_content,
+                    'script_account':script_account,
+                    'script_once_timeout':script_once_timeout,
+                    'script_once_parameter':script_once_parameter,
+                    'ip-area-script-hide':ip_area_script_hide,
+            	  },
+            success: function (data){
+            	$("#script_file_btn_start").button('complete').html("<i class='icon-ok icon-white'></i>执行脚本");
+            	if(data.status==500){
+            		jError(data.result.msg);
+                }else{
+                    jSuccess("作业下发成功, 正在执行脚本...",{autoHide : true});
+                    show_result(data.result.history_id);
+				}
+            },
+            error:function (){
+                jError("作业下发失败!");
+            }
+        });
+		
+	};
+</script>

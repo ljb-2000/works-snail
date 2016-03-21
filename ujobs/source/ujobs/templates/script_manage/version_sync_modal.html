@@ -1,0 +1,38 @@
+<!-- 同步实例步骤弹框 -->
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    <h4 class="modal-title" id="select_example_header" style="font-size: 14px;line-height: 2px;">请选择同步的实例步骤（版本：{{version.name}} 备注：{{version.remarks|default_if_none:''}}）</h4>
+</div>
+<div class="modal-body">
+    <table class="table table-bordered table-hover table-striped updata-script-model-table">
+        <thead>
+            <tr>
+                <th style="width: 6%" class="text-center"><input class="update_step_checked_all_{{version.id}}" value="" type="checkbox"></th>
+                <th style="width: 16%">实例名</th>
+                <th>脚本版本</th>
+                <th style="width: 18%">步骤名称</th>
+                <th style="width: 18%">脚本名称</th>
+                <th style="width: 12%">版本备注</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for jobStepScript in jobStepScripts %}
+                <tr>
+                    <td class="text-center"><input class="update_step_checked_it_{{version.id}}" value="{{jobStepScript.id}}" type="checkbox"></th>
+                    <td>{{jobStepScript.step.job.name}}</th>
+                    <td>{{jobStepScript.version.name}}</th>
+                    <td>{{jobStepScript.step.name}}</th>
+                    <td>{{jobStepScript.version.script.name}}</th>
+                    <td>{{jobStepScript.version.remarkss}}</th>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary" onclick="version_job_sync_save({{version.id}});">
+        <i class="icon-ok icon-white"></i>
+        替换实例步骤版本
+    </button>
+    <button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+</div>

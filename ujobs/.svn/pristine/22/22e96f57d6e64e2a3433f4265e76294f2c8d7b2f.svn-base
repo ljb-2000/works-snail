@@ -1,0 +1,167 @@
+<!-- 复制并新建作业脚本 -->
+<div class="row-fluid copy-script-wrap">
+	<form action="javascript:void(0);" method="post" class="form-horizontal">{% csrf_token %}
+	   <div class="control-group">
+			<label class="control-label muted">脚本内容：<span class="red">*</span></label>
+			<div class="controls">
+				<label for="copy_script_handscript" style="display: inline;margin-left: 5px;" for="stype3" ><input id="copy_script_handscript_{{version_id}}" style="vertical-align:middle; margin-top:0;" type="radio" name="stype" checked="checked"> 手工录入 </label>
+				<label for="copy_script_localscript" style="display: inline;margin-left: 5px;" for="stype4" ><input id="copy_script_localscript_{{version_id}}" style="vertical-align:middle; margin-top:0;" type="radio" name="stype"> 本地脚本 </label>
+			</div>
+	   </div>
+	   <div id="copy_script_local_find_{{version_id}}" class="control-group hide">
+			<div class="controls">
+				<input type='text' name='copy_script_textfield_{{version_id}}' id='copy_script_textfield_{{version_id}}' class="copy_script_textfield" onfocus=this.blur() placeholder="请上传本地文件" /> &nbsp;
+                <button id='copy_script_find_{{version_id}}' type='button' value='浏览...' class='btn btn-default'>
+                    <i class="icon-folder-open"></i>
+                    浏览...
+                </button>&nbsp;
+                <button id='copy_script_upload_btn_{{version_id}}' type='button' value='导入' class='btn btn-default'>
+                    <i class="icon-arrow-up"></i>
+                    导入
+                </button>
+				<input style="opacity:0;filter:alpha(opacity:0);margin-left:-999%" id="copy_script_fileToUpload_{{version_id}}" class="copy_script_fileToUpload" name="copy_script_fileToUpload_{{version_id}}" type="file" size="28" />
+			</div>
+	   </div>
+	   <div class="control-group">
+			<label class="control-label muted">脚本类型：</label>
+			<div class="controls">
+				<label style="display: inline;margin-left: 5px;" for="copy_script_once_type1_{{version_id}}"><input class="copy-script-code" style="vertical-align:middle; margin-top:0;" type="radio" name="copy_script_once_type_{{version_id}}" id="copy_script_once_type1_{{version_id}}" value="1" disabled {% if script.script_type == 1 %}checked{% endif %}> shell</label>
+				<label style="display: inline;margin-left: 5px;" for="copy_script_once_type2_{{version_id}}"><input class="copy-script-code" style="vertical-align:middle; margin-top:0;" type="radio" name="copy_script_once_type_{{version_id}}" id="copy_script_once_type2_{{version_id}}" value="2" disabled {% if script.script_type == 2 %}checked{% endif %}> bat</label>
+				<label style="display: inline;margin-left: 5px;" for="copy_script_once_type3_{{version_id}}"><input class="copy-script-code" style="vertical-align:middle; margin-top:0;" type="radio" name="copy_script_once_type_{{version_id}}" id="copy_script_once_type3_{{version_id}}" value="3" disabled {% if script.script_type == 3 %}checked{% endif %}> python</label>
+			</div>
+	   </div>
+	   
+		<div class="control-group">
+			<label class="control-label">&nbsp;</label>
+			<div class="controls">
+				<p><select style="width: 200px;" id='copy_script_select_{{version_id}}' name="select">
+				    <option>default</option>
+				    <option>3024-night</option>
+				    <option selected>erlang-dark</option>
+				</select></p>
+				
+				<textarea id="copy_script_once_code_{{version_id}}" name="copy_script_once_code">{{ file_content }}</textarea>
+
+<textarea id="copy_script_code2_{{version_id}}" class="hide">
+</textarea>
+<textarea id="copy_script_code3_{{version_id}}" class="hide">
+@echo off
+set filename="tmp_run.vbs"
+echo set ws=WScript.CreateObject("WScript.Shell")> "%filename%"
+:: 调用脚本或执行一次的命令写在这里, 如开服脚本、exe之类的文件
+echo ws.Run "替换此处命令",0 >>"%filename%"
+call "%filename%"
+del "%filename%"
+</textarea>
+			</div>			  
+		
+		</div>
+		<br>
+		<div class="control-group">
+			<div class="controls">
+				<button class="btn btn-primary" style="width:120px;" onclick="javascript:version_copy_save({{version.id}})">
+                    <i class="icon-ok icon-white"></i>
+                    保存
+                </button>
+			</div>
+		</div>
+	</form>
+</div>
+<script>
+	// codeMirror
+	var copy_script_editor_{{version_id}}=CodeMirror.fromTextArea($("#copy_script_once_code_{{version_id}}")[0], {
+        lineNumbers: true,
+        mode:"shell",
+        lineWrapping:true,
+	});
+
+	codeMirror(copy_script_editor_{{version_id}},$("#copy_script_once_code_{{version_id}}"),$('#copy_script_select_{{version_id}}'),$("#copy_script_code2_{{version_id}}"),$("#copy_script_code3_{{version_id}}"),$(".copy-script-code"),'copy_script_once_type1_{{version_id}}','copy_script_once_type2_{{version_id}}');
+	
+    // 按钮样式
+	icheck($('.copy-script-wrap input:radio,.copy-script-wrap input:checkbox'));
+	
+	// 文件上传
+	$(document).on("click","#copy_script_find_{{version_id}}",function (){
+		flie_upload2($("#copy_script_fileToUpload_{{version_id}}"),$("#copy_script_textfield_{{version_id}}"));
+	});
+
+	$("#copy_script_localscript_{{version_id}}").bind("ifChecked",function (){
+    	$("#copy_script_local_find_{{version_id}}").removeClass("hide");
+    });
+
+   $("#copy_script_handscript_{{version_id}}").bind("ifChecked",function (){
+    	$("#copy_script_local_find_{{version_id}}").addClass("hide");
+    });
+    
+	// 脚本导入
+    $(document).off("click","#copy_script_upload_btn_{{version_id}}").on("click","#copy_script_upload_btn_{{version_id}}",function(){
+    	var uploadfilename = $("#copy_script_fileToUpload_{{version_id}}").val();
+
+		if (uploadfilename){
+			if(0){
+				jNotify('文件格式不对，请选择sh/bat/py/txt文件');
+				$("#copy_script_textfield_{{version_id}}").val($("#copy_script_fileToUpload_{{version_id}}").val()); 
+				return false;
+			}else{
+				$.ajaxFileUpload ({
+					type: 'POST',
+					url :'/script/ajax_script_upload/',
+					secureuri :false,
+					data : {'fileToUpload':'copy_script_fileToUpload_{{version_id}}'},
+					fileElementId :'copy_script_fileToUpload_{{version_id}}',
+					dataType : 'json',
+					success : function (data, status){
+						if(data.result==1){
+    						v2_editor_{{version_id}}.setValue(data.content);
+    						$("#copy_script_textfield_{{version_id}}").val($("#copy_script_fileToUpload_{{version_id}}").val()); 
+				       	 	return true;
+				       	}
+						jError('上传失败！');
+						$("#copy_script_textfield_{{version_id}}").val($("#copy_script_fileToUpload_{{version_id}}").val()); 
+					},
+					error: function (data, status, e){
+						jNotify('上传失败，请将文件转换为utf-8格式编码！');
+						$("#copy_script_textfield_{{version_id}}").val($("#copy_script_fileToUpload_{{version_id}}").val()); 
+					}
+				});
+			}
+		}else{
+			jNotify('请选择上传文件！');
+		}
+    });
+    
+    // 复制并新建版本
+    function version_copy_save(version_id){
+        var file_content = copy_script_editor_{{version_id}}.getValue();
+
+        $.ajax({
+            type: 'POST',
+            url: '/script/version_copy/',
+            data: {'version_id':version_id,'file_content':file_content},
+            dataType: 'json',
+            success: function (data){
+                if(data.status==500){
+                    jError('复制并新建版本失败!');
+                }else{
+                    if($('#li_script_view_'+data.script_id).length && $('#li_script_view_'+data.script_id).length>0){
+                        $('#script_view_'+data.script_id).empty();
+                        $('#script_view_'+data.script_id).html(data.html);
+                        $('#myTab a[aria-controls="script_view_'+data.script_id+'"]').tab('show');
+                    }else{
+                        var tabArr='script_view_'+data.script_id;
+                        var valueArr='查看脚本';
+                        var dataArr=data.html;
+                        
+                        tab_href(tabArr,valueArr,dataArr);
+                    }
+                    jSuccess('复制并新建版本成功!');
+                }
+            },
+            error: function (re, status){
+            }
+        });
+        
+        $('#li_version_copy_'+version_id+' i').trigger("click");
+    }
+    
+</script>

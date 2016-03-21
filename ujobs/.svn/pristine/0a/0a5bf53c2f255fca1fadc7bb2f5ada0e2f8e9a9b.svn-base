@@ -1,0 +1,106 @@
+<!-- 一键改密 -->
+<div class="row-fluid edit-pwd-wrap">
+	<form id="myform" action="javascript:void(0);" method="post" class="form-horizontal myform">{% csrf_token %}
+	   	<div class="control-group">
+	   		<label class="control-label">机器信息：</label>
+	   		<div class="controls">
+				<textarea id="ip-area4" rows="8" class="edit-pwd-ip-area txtstyle" placeholder="请输入机器IP和新密码，以‘空格’分隔操作多个机器以“回车”换行"></textarea>
+				<textarea id="modify_psw_hide" class="edit-pwd-ip-hide" style="display: none;"></textarea>
+			</div>
+		</div>
+	   <div class="controls">
+			<button id="ip-add4" type="button" class="ip-add-btn btn btn-default" data-msg="pwd" data-loading-text="ip检测中,请稍后..." autocomplete="off"><i class="icon-plus"></i>IP添加</button>
+			<button id="server_modal4" type="button" class="btn btn-default" data-toggle="modal" data-target="#serverModal4" data-loading-text="ip验证中,请稍后..." autocomplete="off" disabled><i class="icon-th-list"></i>选择目标机器 </button>
+	   </div>
+	   <div class="controls scroll-wrap4 edit-pwd-ip-wrap">
+	   		<b></b>
+	 		<ul id="ip-show4" class="ip-style edit-pwd-ip-result" data-msg="pwd">	
+	 		</ul>
+	 	</div>
+	 	<label class="control-label">一键操作：</label>
+	 	<div class="controls">
+	 		<button id="modify-btn" type="button" class="edit-pwd-save btn btn-primary" onclick="modify_pwd();" data-loading-text="密码修改中,请稍后..." autocomplete="off"><i class="icon-pencil icon-white"></i>一键改密码</button>
+	 		<button style="display:none;" id="confirm2" type="button" class="btn btn-primary" data-toggle="modal" data-target="#confirm_pwd"></button>
+	 	</div>
+	 	<br>
+	 	
+	 	<div class="controls">
+			<ul id="psw_result" class="ip-style2" name="psw_result" >
+				
+			</ul>
+	   </div>
+	</form>
+</div>
+
+<!-- modal two -->
+<div class="modal hide fade" id="confirm_pwd" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="pwd_header">操作提示</h4>
+      </div>
+      <div class="modal-body">
+        <p style="text-align: center;font-size:20px;">是否确认修改密码？</p>
+      </div>
+      <div class="modal-footer">
+		<button id="pwd-y" class="btn btn-primary model-close" data-dismiss="modal">确定</button>
+		<button type="button" class="btn btn-default model-close" data-dismiss="modal">取消</button>
+      </div>
+</div>		
+<script>
+
+// 一键改密码
+function modify_pwd(){
+	var modify_psw_hide = $('#modify_psw_hide').val();
+
+	// 判断是否全部支持操作
+    var check=check_ip_support(modify_psw_hide);
+
+    if(check==false) {
+    	return false;
+    }
+	
+    $("#confirm2").trigger("click");
+    
+	$("#pwd-y").bind("click",function (){
+		$("#pwd-y").unbind("click");
+		$("#psw_result").empty();
+		$("#modify-btn").button('loading');
+
+		var support=$("#ip-show4 li");
+
+        for(var i=0;i<support.length;i++) {
+        	var ip=support.eq(i).find(".ipconfig").text();
+
+        	$("#psw_result").append("<li><i class='ipconfig'>"+ip+"</i><i i class='loading'><img width='20px' src='/static/assets/img/loading.gif'></i></li>");
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '/usual/modify_pwd/',
+            dataType: 'json',
+            data: {'modify_psw_hide': modify_psw_hide},
+            success: function (data){
+            	$("#modify-btn").button('complete').html("<i class='icon-pencil icon-white'></i>一键改密码");
+                
+                if(data.status==200){
+                    jSuccess('一键改密码作业下发成功！');
+                    $("#ip-area4").val('');
+                    $("#modify_psw_hide").val('');
+                    $(".scroll-wrap4 b").empty();
+                    $("#ip-show4").empty();
+
+                    showPswResults(data.jid_list,data.ip_list,data.total);
+				}else{
+                    jError('一键改密码作业下发失败!');
+                }
+  		  	},
+  		  	error: function (){
+  		  		$("#modify-btn").button('complete').html("<i class='icon-pencil icon-white'></i>一键改密码");
+	            jError('一键改密码作业下发失败!');
+  		  	}
+		});
+	});
+
+}
+
+</script>

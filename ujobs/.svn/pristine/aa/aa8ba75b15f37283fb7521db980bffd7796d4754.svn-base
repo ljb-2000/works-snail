@@ -1,0 +1,82 @@
+<!--脚本主页-->
+<div class="row-fluid">
+	<form id="myform" class="form-horizontal myform">
+		<div class="control-group">
+			<label class="control-label muted">脚本名称：<span class="red">*</span></label>
+			<div class="controls">
+				<input id="script_manage_view_name_{{script.id}}" name="script_manage_view_name_{{script.id}}" type="text" value='{{script.name}}'>
+				<button class="btn btn-default" onclick="script_manage_edit({{script.id}});return false;"><i class="icon-ok"></i>保存脚本</button>
+			</div>
+		</div>
+		
+		<div class="control-group">
+            <label class="control-label muted">功能描述：</label>
+            <div class="controls">
+                <textarea id="script_manage_view_describe_{{script.id}}" name="script_manage_view_describe_{{script.id}}" rows="4" class="txtstyle" placeholder="请输入...">{{script.describe}}</textarea>
+            </div>
+        </div>
+		
+		<div class="control-group">
+			<label class="control-label muted">开发商：</label>
+			<div class="controls">
+				<span class="control-label" style="text-align:left;">{{script.create_user}}</span>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label muted">脚本类型：</label>
+			<div class="controls">
+				<span class="control-label" style="text-align:left;">{{script_type_display}}</span>
+			</div>
+		</div>
+		<table class="table table-hover table-striped table-bordered" id="script_view_table">
+			 <thead>
+				<tr>
+					<th>版本号</th>
+					<th>脚本描述</th>
+					<th>版本备注</th>
+					<th>创建时间</th>
+					<th>操作</th>
+					<th>发布</th>
+				</tr>
+			 </thead>
+			 <tbody>
+			    {% for version in version_list %}
+				<tr>
+					<td><a href="javascript:show_version_detail({{version.id}})">{{version.name}}</a></td>
+					<td>{{script.describe|default_if_none:''}}</td>
+					<td>{{version.remarks|default_if_none:''}}</td>
+					<td>{{version.created|date:"Y-m-d H:i:s"}}</td>
+					<td><a href="javascript:version_copy({{version.id}})">复制并新建</a>&nbsp;<a href="javascript:version_delete({{version.id}})">删除</a>&nbsp;<a href="javascript:version_remarks_edit({{version.id}})">编辑备注</a></td>
+					<td><a href="javascript:version_sync_v2({{version.id}})">同步</a></td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</form>
+</div>
+
+<!--version remarks edit modal-->
+<div class="modal hide fade" id="edit_remarks" name="edit_remarks" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+</div>
+
+<script type="text/javascript">
+$(function(){	
+	$('#script_view_table').dataTable({
+		 "sDom": 'lfrtip',
+		 "bLengthChange":false,
+		 "iDisplayLength":10,
+		 "aoColumnDefs": [{ "bSortable": false, "aTargets": [4,5] }],
+		 "aaSorting": [[ 3, "desc" ]],
+	     "bProcessing": false,
+	     "bServerSide": false,
+	     "bPaginate": true,
+         "bInfo": false,
+         "bAutoWidth":false,
+	     "sPaginationType": "full_numbers",
+	     "bFilter":false,
+		 "oLanguage":{
+		 	   "sUrl":'/static/tool_js/data_table/cn/jquery.dataTable.cn.txt'
+	         }
+	});
+});
+</script>

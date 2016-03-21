@@ -1,0 +1,1019 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+#--------------------------------
+# Author: shenjh@snail.com
+# Date: 2015-05-19
+# Usage:
+#--------------------------------
+
+import os, sys
+from django.contrib.auth.models import User
+from apps.accounts.models import Perm
+
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+import logging
+# from utils.saltclient import client
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json, traceback, datetime
+import platform
+from utils.redisclient import rc
+from releaseinfo import STATUS_RESULT_KEY, IP_KEY_PREFIX
+from service import _salt, _user
+import time
+from utils.utils import format_bytes,send_single_api_request
+from utils.decorator import login_required
+import urllib, urllib2
+from releaseinfo import CMDB_NODE_URL, CMDB_SUBNODE_URL, CMDB_PRODUCT_URL, CMDB_IPVALID_URL, CMDB_QUERYSET_URL, CMDB_QUERYIP_URL
+from service import _template, _job, _history, _script
+from enums import enum_template, enum_history
+from apps.history.models import RunningResult
+import simplejson
+from settings import SPECIAL_USERS
+from releaseinfo import MINIONS_UP_SET_KEY, DETAIL_KEY_PREFIX,YW_DEPT_CODE,YW_DEPT_OA_URL
+import suds.client
+import suds_requests
+import pprint
+from enums.enum_account import PERM_PTYPE_MAP, PERM_PTYPE_TEMPLATE, PERM_PTYPE_JOB, PERM_PTYPE_SCRIPT
+
+logger = logging.getLogger('logger_usual')
+
+# Create your views here.
+
+@login_required
+@csrf_exempt
+def reboot(request):
+    '''
+        reboot given ips or all machines.
+    '''
+    logger.debug('#### start reboot salt-minions...')
+    user = request.user
+    now = datetime.datetime.now()
+    name = 'reboot-%s'%(datetime.datetime.strftime(now,'%Y%m%d%H%M%S'))
+    code = 500
+    result={}
+    msg=''
+    jid = 0
+    total = 0
+    data = request.POST
+    ips_valid = str(data.get('ips','')).strip()
+
+    logger.debug('#### content is %s'%(ips_valid))
+    if ips_valid:
+        minion_info_dict = json.loads(ips_valid)
+        ip_set = set()
+        total_ip_set = set()
+        for (item, minion_info) in minion_info_dict.items():
+            if item == 'total' or item == 'num':
+                total = minion_info
+                continue
+            ip_str = minion_info[3]
+            ip_list = ip_str.split('<br>')
+            minion_ip = ip_list[0]
+            ip_set.add(minion_ip)
+            total_ip_set.add(minion_ip)
+
+        template = _template.get_or_create_template_by_params(name=u'批量重启模板')[0]
+        template.template_type = enum_template.TEMPLATE_TYPE97
+        template.target = json.dumps(list(ip_set))
+        template.save()
+
+        templateStep = _template.get_or_create_templateStep_by_params(template=template,name=name)[0]
+        templateStep.step_type = enum_template.STEP_TYPE_RESTART
+        templateStep.order = 1
+        templateStep.target = json.dumps(list(ip_set))
+        templateStep.save()
+
+        job = _job.get_or_create_job_by_params(template=template,name=name,create_user=user)[0]
+        job.update_user = user
+        job.target = json.dumps(list(ip_set))
+        job.save()
+
+        jobStep = _job.get_or_create_jobStep_by_params(job=job,template_step=templateStep,name=u'批量重启操作')[0]
+        jobStep.step_type = enum_template.STEP_TYPE_RESTART
+        jobStep.order = 1
+        jobStep.target = json.dumps(list(ip_set))
+        jobStep.save()
+
+        history = _history.get_or_create_history_by_params(job=job,user=user)[0]
+        history.name = job.name
+        history.status = enum_history.STATUS_PROCESSING
+        history.start_time = datetime.datetime.now()
+        history.target = json.dumps(list(ip_set))
+        history.save()
+
+        history_step = _history.get_or_create_historyStep_by_params(history=history,jobstep=jobStep)[0]
+        history_step.name = jobStep.name
+        history_step.start_time = datetime.datetime.now()
+        history_step.result = enum_history.RESULT_PROCESSING
+        history_step.target = json.dumps(list(ip_set))
+        history_step.order = jobStep.order
+        history_step.save()
+
+        try:
+            target_ips = 'S@' + ' or S@'.join(list(ip_set))
+            logger.debug('##ice# target ips is:%s ' % (target_ips))
+            # jid = client.cmd_async(target_ips,'system.reboot,expr_form='compound')
+            status_ok,jid = send_single_api_request(target_ips,'test.ping',expr_form='compound',async=True)
+
+            logger.debug('#### jid is %s'%(jid))
+            code = 200
+            result.update({
+                'jid':jid,
+                'ip_list':list(ip_set)
+            })
+
+        except:
+            error = traceback.format_exc()
+            logger.error('#### reboot fail! info: %s'%(error))
+
+    else:
+        msg = 'ips is empty!'
+        logger.debug(msg)
+        logger.debug('#### reboot cmd end!')
+
+    success_ips_set = set()
+    retry = 5
+    while retry>0:
+        time.sleep(5)
+        result_bool = True
+        for minion_ip in list(total_ip_set):
+            minion_id = rc.get(IP_KEY_PREFIX+minion_ip)
+            salt_return = _salt.get_saltReturn_by_params(jid=jid,minion_id=minion_id)
+            if not salt_return:
+                result_bool = False
+            else:
+                if salt_return.result == "":
+                    success_ips_set.add(minion_ip)
+                    RunningResult.objects.create(ip=minion_ip,step=history_step,content=u"agent重启成功",progress=100)
+                total_ip_set.remove(minion_ip)
+        if result_bool:
+            retry = -1
+        else:
+            retry -= 1
+
+    fail_ips_set = ip_set.difference(success_ips_set)
+    for fail_ip in list(fail_ips_set):
+        RunningResult.objects.create(ip=fail_ip,step=history_step,content=u"agent重启失败",progress=100)
+
+    history.end_time = datetime.datetime.now()
+    delta = history.end_time - history.start_time
+    history.delta_time = delta.seconds
+
+    history_step.total_ips = json.dumps(list(ip_set))
+    if len(fail_ips_set) > 0:
+        history_step.result = enum_history.RESULT_FAIL
+        history_step.fail_ips = json.dumps(list(fail_ips_set))
+        history.status = enum_history.STATUS_FAIL
+    else:
+        history_step.result = enum_history.RESULT_SUCCESS
+        history.status = enum_history.STATUS_SUCCESS
+
+    history_step.end_time = datetime.datetime.now()
+    history_step.delta_time = (history_step.end_time - history_step.start_time).seconds
+    history_step.success_ips = json.dumps(list(success_ips_set))
+    history_step.save()
+    history.save()
+
+    result.update({
+        'status':code,
+        'msg':msg,
+        'jid':jid,
+        'total':total
+    })
+    return HttpResponse(json.dumps(result))
+
+@login_required
+@csrf_exempt
+def modify_pwd(request):
+    '''
+        @author: wx
+        modify password
+    '''
+    result_dict={}
+    code = 500
+    modify_psw_hide = request.POST.get('modify_psw_hide')
+    minion_info_dict = json.loads(modify_psw_hide)
+    user = request.user
+    now = datetime.datetime.now()
+    name = 'password-%s'%(datetime.datetime.strftime(now,'%Y%m%d%H%M%S'))
+
+    if minion_info_dict: 
+        template = _template.get_or_create_template_by_params(name=u'批量改密模板')[0]
+        template.template_type = enum_template.TEMPLATE_TYPE98
+        template.save()
+
+        templateStep = _template.get_or_create_templateStep_by_params(template=template,name=name)[0]
+        templateStep.step_type = enum_template.STEP_TYPE_CHANGE_PWD
+        templateStep.order = 1
+        templateStep.save()
+
+        job = _job.get_or_create_job_by_params(template=template,name=name,create_user=user)[0]
+        job.update_user = user
+        job.save()
+
+        jobStep = _job.get_or_create_jobStep_by_params(job=job,template_step=templateStep,name=u'批量改密操作')[0]
+        jobStep.step_type = enum_template.STEP_TYPE_CHANGE_PWD
+        jobStep.order = 1
+        jobStep.save()
+
+        history = _history.get_or_create_history_by_params(job=job,user=user)[0]
+        history.name = job.name
+        history.status = enum_history.STATUS_PROCESSING
+        history.start_time = datetime.datetime.now()
+        history.save()
+
+        history_step = _history.get_or_create_historyStep_by_params(history=history,jobstep=jobStep)[0]
+        history_step.name = jobStep.name
+        history_step.start_time = datetime.datetime.now()
+        history_step.result = enum_history.RESULT_PROCESSING
+        history_step.order = jobStep.order
+        history_step.save()
+
+        jid_list = []
+        ip_set = set()
+        minion_ip_id_jid_dict = {}
+        for (item, minion_info) in minion_info_dict.items():
+            if item == 'total' or item == 'num':
+                total = minion_info
+                continue
+
+            minion_id = item
+            ip_str = minion_info[3]
+            ip_list = ip_str.split('<br>')
+            minion_ip = ip_list[0]
+            ip_set.add(minion_ip)
+            
+            minion_psw_new = minion_info[1]
+            logger.debug('#### start modify password...')
+            try:
+                # jid = client.cmd_async(minion_ip, 'ujobs.modify_pwd', [minion_psw_new], expr_form='ipcidr')
+                status_ok,jid = send_single_api_request(minion_ip, 'ujobs.modify_pwd', [minion_psw_new], expr_form='ipcidr',async=True)
+                if not status_ok:
+                    raise Exception(jid)
+                logger.debug('#### jid is %s'%(jid))
+                code = 200
+                logger.debug('#### modify password end!')
+                jid_list.append(jid)
+                minion_ip_id_jid_dict[minion_ip] = [minion_id,jid]
+            except:
+                error = traceback.format_exc()
+                logger.error('#### modify password fail! info: %s'%(error))
+
+        success_ips_set = set()
+        retry = 5
+        while retry>0:
+            time.sleep(5)
+            result_bool = True
+            for minion_ip,info_list in minion_ip_id_jid_dict.items():
+                minion_id = info_list[0]
+                jid = info_list[1]
+                salt_return = _salt.get_saltReturn_by_params(jid=jid,minion_id=minion_id)
+                if not salt_return:
+                    result_bool = False
+                else:
+                    if salt_return.result == '0':
+                        success_ips_set.add(minion_ip)
+                        RunningResult.objects.create(ip=minion_ip,step=history_step,content=u"修改密码成功",progress=100)
+                    del minion_ip_id_jid_dict[minion_ip]
+            if result_bool:
+                retry = -1
+            else:
+                retry -= 1
+
+        fail_ips_set = ip_set.difference(success_ips_set)
+        for fail_ip in list(fail_ips_set):
+            RunningResult.objects.create(ip=fail_ip,step=history_step,content=u"修改密码失败",progress=100)
+
+        template.target = json.dumps(list(ip_set))
+        template.save()
+        
+        templateStep.target = json.dumps(list(ip_set))
+        templateStep.save()
+        
+        job.target = json.dumps(list(ip_set))
+        job.save()
+        
+        jobStep.target = json.dumps(list(ip_set))
+        jobStep.save()
+        
+        history.target = json.dumps(list(ip_set))
+        history.end_time = datetime.datetime.now()
+        delta = history.end_time - history.start_time
+        history.delta_time = delta.seconds
+        
+        history_step.target = json.dumps(list(ip_set))
+        history_step.total_ips = json.dumps(list(ip_set))
+        if len(fail_ips_set) > 0:
+            history_step.result = enum_history.RESULT_FAIL
+            history_step.fail_ips = json.dumps(list(fail_ips_set))
+            history.status = enum_history.STATUS_FAIL
+        else:
+            history_step.result = enum_history.RESULT_SUCCESS
+            history.status = enum_history.STATUS_SUCCESS
+
+        history_step.end_time = datetime.datetime.now()
+        history_step.delta_time = (history_step.end_time - history_step.start_time).seconds
+        history_step.success_ips = json.dumps(list(success_ips_set))
+        history_step.save()
+        history.save()
+
+        result_dict.update({
+            'status':code,
+            'jid_list':jid_list,
+            'ip_list':list(ip_set),
+            'total':total,
+        })
+    return HttpResponse(json.dumps(result_dict))
+
+@login_required
+@csrf_exempt
+def show_status(request):
+    '''
+        get selected status.
+    '''
+    result = {}
+    res = {}
+    code = 500
+    logger.debug('#### start get status info...')
+    data = request.POST
+    types = data.get('type','').strip(',').split(',')
+    ips = data.get('ips', "")
+    logger.debug("## hidden status input:%s"%(ips))
+    ips_info_dict = json.loads(ips)
+    ips_list = []
+    for (item, minion_info) in ips_info_dict.items():
+        if item == 'total' or item == 'num':
+            continue
+        # add ip to list.
+        ip_str = minion_info[3]
+        ip_list = ip_str.split('<br>')
+        minion_ip = ip_list[0]
+        
+        ips_list.append(minion_ip)
+    if len(ips_list) == 0:
+        return HttpResponse(json.dumps({
+            'status': code,
+            'msg': u'支持的机器列表为空'
+        }))
+
+    if len(types) == 0:
+        return HttpResponse(json.dumps({
+            'status': code,
+            'msg': u'查看状态类型不能为空'
+        }))
+
+    # print data,type
+#    cmd = ''
+    r_cache = rc.get(STATUS_RESULT_KEY)
+    cache = json.loads(r_cache) if r_cache else {}
+    agents = cache.get('up',[])
+    ips_list = [ip for ip in ips_list if rc.get(IP_KEY_PREFIX+ip) in agents]
+    up_agents = []
+    format_res = {}
+    try:
+        if ips_list:
+            [up_agents.append({'ip':ip,'minion_id':rc.get(IP_KEY_PREFIX+ip)}) for ip in ips_list]
+            target_ips = '( S@' + ' or S@'.join(ips_list)+' )'
+            # res = client.cmd(target_ips,'ujobs.status_info',[','.join(types)],expr_form='compound')
+            _,res = send_single_api_request(target_ips,'ujobs.status_info',[','.join(types)],expr_form='compound')
+
+            logger.debug(res)
+            for minion_id,status_info in res.iteritems():
+                if not isinstance(status_info,dict):
+                    format_res.setdefault(minion_id,{}).update({
+                        'cpu': status_info,
+                        'memory': status_info,
+                        'disk': status_info
+                    })
+                    continue
+                for key,value in status_info.iteritems():
+                    info = str(value).replace("\r\n","<br>").replace("\n","<br>").replace(" ","&nbsp;") if value else value
+                    format_res.setdefault(minion_id,{}).update({key:info})
+            logger.debug('#### end get agent status!')
+            code = 200
+        else:
+            result.update({
+                'msg':u'无up状态的机器,请检查输入'
+            })
+
+    except:
+        error = traceback.format_exc()
+        logger.error('#### get status fail! info: %s'%(error))
+        result.update({
+            'msg':u'处理过程出错'
+        })
+
+    result.update({
+        'status':code,
+        'result':format_res,
+        'agents':up_agents,
+        'status_types':types
+    })
+    return HttpResponse(json.dumps(result))
+
+@login_required
+@csrf_exempt
+def ajax_get_reboot_returns(request):
+    '''
+        @author: wx
+        get reboot returns by jid_list
+    '''
+    result={}
+    res = []
+    jid = request.POST.get('jid')
+    ip_list = request.POST.getlist('ip_list[]')
+    id_ip_dict = {}
+    for ip in ip_list:
+        id_ip_dict.update({
+            rc.get(IP_KEY_PREFIX+ip):ip
+        })
+    logger.debug('#### start get reboot returns...')
+    saltReturn_list = _salt.get_saltReturns_by_params(jid=jid)
+    for saltReturn in saltReturn_list:
+        try:
+            minion_id = saltReturn.minion_id
+            # minion_ip = rc.hget(DETAIL_KEY_PREFIX+minion_id,'ip')
+            minion_ip = id_ip_dict.get(minion_id)
+            result_str = u'成功'
+            #            result_dict_str = saltReturn.full_result
+            #            result_dict = json.loads(result_dict_str)
+            #            result_bool = result_dict.get('success',False)
+            #            if result_bool:
+            #                result_str = u'成功'
+            #            else:
+            #                result_str = u'失败'
+            obj = {'minion_ip':minion_ip,'result_str':result_str}
+            res.append(obj)
+        except:
+            error = traceback.format_exc()
+            logger.error('#### get reboot returns fail! info: %s'%(error))
+    result['res'] = res
+    return HttpResponse(json.dumps(result))
+
+@login_required
+@csrf_exempt
+def ajax_get_psw_returns(request):
+    '''
+        @author: wx
+        get modify password returns by jid_list
+    '''
+    result={}
+    res = []
+    jid_list = request.POST.getlist('jid_list[]')
+    ip_list = request.POST.getlist('ip_list[]')
+    id_ip_dict = {}
+    for ip in ip_list:
+        id_ip_dict.update({
+            rc.get(IP_KEY_PREFIX+ip):ip
+        })
+    logger.debug('#### start get psw returns...')
+    saltReturn_list = _salt.get_saltReturns_by_params(jid__in=jid_list)
+    for saltReturn in saltReturn_list:
+        try:
+            minion_id = saltReturn.minion_id
+            # minion_ip = rc.hget(DETAIL_KEY_PREFIX+minion_id,'ip')
+            minion_ip = id_ip_dict.get(minion_id)
+            if saltReturn.result == '0':
+                result_str = u'成功'
+            else:
+                result_str = u'失败'
+            obj = {'minion_ip':minion_ip,'result_str':result_str}
+            res.append(obj)
+        except:
+            error = traceback.format_exc()
+            logger.error('#### get psw returns fail! info: %s'%(error))
+    result['res'] = res
+    return HttpResponse(json.dumps(result))
+
+@login_required
+@csrf_exempt
+def ajax_get_cmdb_node_returns(request):
+    '''
+        @author: wx
+        get cmdb returns by username
+    '''
+    
+    user = request.user
+    nodeid = request.GET.get('nodeid')
+    if nodeid == '#':
+        nodeid = 0
+    username = user.first_name
+    if user.username in SPECIAL_USERS:
+        username = u'张延礼'
+    data = {'username':username,
+            'nodeid':nodeid
+            }
+
+    req = urllib2.Request(CMDB_NODE_URL)
+    params = urllib.urlencode(data)
+    
+    try:
+        response = urllib2.urlopen(req, params)
+        jsonText = response.read()
+        jsonUnicode = json.loads(jsonText)
+        jsonList = json.loads(jsonUnicode)
+    except:
+        jsonList = []
+
+    return HttpResponse(json.dumps(jsonList), content_type="application/json")
+
+@login_required
+@csrf_exempt
+def ajax_get_cmdb_subnode_returns(request):
+    '''
+        @author: wx
+        get cmdb sub returns by username
+    '''
+
+    nodeid_list = request.POST.getlist('nodeid[]')
+    if not nodeid_list:
+        data = {}
+    else:
+        nodeid_str = ','.join(nodeid_list)
+        data = {'nodeid':'[\"%s\"]'%(nodeid_str)}
+    req = urllib2.Request(CMDB_SUBNODE_URL)
+    params = urllib.urlencode(data)
+    
+    try:
+        response = urllib2.urlopen(req, params)
+        jsonText = response.read()
+    except:
+        jsonText = ''
+
+    return HttpResponse(jsonText)  
+
+@login_required
+@csrf_exempt
+def ajax_get_cmdb_product_returns(request):
+    '''
+        @author: wx
+        get cmdb product returns by username
+    '''
+    
+    user = request.user
+    username = user.first_name
+    if user.username in SPECIAL_USERS:
+        username = u'张延礼'
+    data = {'username':username}
+    req = urllib2.Request(CMDB_PRODUCT_URL)
+    params = urllib.urlencode(data)
+    
+    try:  
+        response = urllib2.urlopen(req, params, timeout=1)
+    except urllib2.URLError, e:
+        response =  HttpResponse(json.dumps([]), content_type="application/json")
+        response.status_code=408
+        return response
+    
+    jsonText = response.read()
+    jsonList = json.loads(jsonText)
+    return HttpResponse(json.dumps(jsonList), content_type="application/json")
+
+@login_required
+@csrf_exempt
+def ajax_get_cmdb_ipvalid_returns(request):
+    '''
+        @author: wx
+        get cmdb ip valid result
+    '''
+    # iplist = request.POST.getlist('iplist[]')
+    # jsondict = {}
+    # if "117.121.19.137" in iplist:
+    #     jsondict.update({'117.121.19.137':[1,'','linux']})
+    # if "117.121.19.131" in iplist:
+    #     jsondict.update({'117.121.19.131':[1,'','windows']})
+    # return HttpResponse(json.dumps(jsondict), content_type="application/json")
+
+    user = request.user
+    username = user.first_name
+    if user.username in SPECIAL_USERS:
+        username = u'张延礼'
+    iplist = request.POST.getlist('iplist[]')
+    iplist_str = json.dumps(iplist)
+    data = {
+            'username':username,
+            'iplist':iplist_str
+            }
+    req = urllib2.Request(CMDB_IPVALID_URL)
+    params = urllib.urlencode(data)
+
+    try:
+        response = urllib2.urlopen(req, params)
+        jsonText = response.read()
+        jsonunicode = json.loads(jsonText)
+        jsondict = json.loads(jsonunicode)
+    except:
+        jsondict = {}
+
+    minions_ups = rc.smembers(MINIONS_UP_SET_KEY)
+    for minion_ip,minion_info in jsondict.items():
+        if minion_info[0] == 0:
+            #agent未安装
+            if not rc.exists(IP_KEY_PREFIX+minion_ip):
+                minion_info[0] = -99
+                jsondict[minion_ip] = minion_info
+                continue
+            minion_id = rc.get(IP_KEY_PREFIX+minion_ip)
+            #agent异常
+            if minion_id not in list(minions_ups):
+                minion_os = rc.hget(DETAIL_KEY_PREFIX+minion_id,'kernel')
+                minion_info[0] = -2
+                minion_info[2] = minion_os
+                jsondict[minion_ip] = minion_info
+            else:
+                minion_os = rc.hget(DETAIL_KEY_PREFIX+minion_id,'kernel')
+                minion_info[2] = minion_os
+                minion_info[0] = 1
+                jsondict[minion_ip] = minion_info
+
+    return HttpResponse(json.dumps(jsondict), content_type="application/json")
+
+@login_required
+@csrf_exempt
+def ajax_get_cmdb_ipvalid_returns_v2(request):
+    '''
+        @author: wx
+        get cmdb ip valid result
+    '''
+
+    user = request.user
+    username = user.first_name
+    if user.username in SPECIAL_USERS:
+        username = u'张延礼'
+    iplist = request.POST.getlist('iplist[]')
+    iplist_str = json.dumps(iplist)
+    data = {
+            'username':username,
+            'iplist':iplist_str
+            }
+    req = urllib2.Request(CMDB_IPVALID_URL)
+    params = urllib.urlencode(data)
+
+    try:
+        response = urllib2.urlopen(req, params)
+        jsonText = response.read()
+        jsonunicode = json.loads(jsonText)
+        jsondict = json.loads(jsonunicode)
+    except:
+        jsondict = {}
+
+    check_dict = {}
+    minions_ups = rc.smembers(MINIONS_UP_SET_KEY)
+    minion_id_list = []
+    for minion_ip,minion_info in jsondict.items():
+        #agent未安装
+        if not rc.exists(IP_KEY_PREFIX+minion_ip):
+            minion_info[0] = -99
+            minion_info.append(minion_ip)
+            check_dict[minion_ip] = minion_info
+            continue
+
+        minion_id = rc.get(IP_KEY_PREFIX+minion_ip)
+        minion_os = rc.hget(DETAIL_KEY_PREFIX+minion_id,'kernel')
+        #有权限
+        if minion_info[0] == 0:
+            #id未重复
+            if minion_id not in check_dict.keys():
+                #agent异常
+                minion_info[2] = minion_os
+                minion_info.append(minion_ip)
+                if minion_id not in list(minions_ups):
+                    minion_info[0] = -2
+                else:
+                    minion_info[0] = 1
+                check_dict[minion_id] = minion_info
+            #id重复
+            else:
+                minion_info_old = check_dict[minion_id]
+                minion_ip_old = minion_info_old[3]
+                minion_info_old[3] = minion_ip_old+'<br>'+minion_ip
+                #agent异常
+                if minion_id not in list(minions_ups):
+                    minion_info_old[0] = -2
+                else:
+                    minion_info_old[0] = 1
+                check_dict[minion_id] = minion_info_old
+            minion_id_list.append(minion_id_list)
+        #无权限
+        else:
+            #id未重复
+            if minion_id not in check_dict.keys():
+                minion_info[2] = minion_os
+                minion_info.append(minion_ip)
+                check_dict[minion_id] = minion_info
+            #id重复
+            else:
+                minion_info_old = check_dict[minion_id]
+                minion_ip_old = minion_info_old[3]
+                minion_info_old[3] = minion_ip_old+'<br>'+minion_ip
+                check_dict[minion_id] = minion_info_old
+                
+    return HttpResponse(json.dumps(check_dict), content_type="application/json")
+
+@login_required
+@csrf_exempt
+def ajax_get_cmdb_set_or_module(request):
+    '''
+        @author: wx
+        get cmdb sets or modules
+    '''
+    productid = request.POST.get('productid',0)
+    stype = request.POST.get('type')
+    value = request.POST.get('value')
+    data = {'productid':int(productid),'type':stype,'value':value}
+    
+    req = urllib2.Request(CMDB_QUERYSET_URL)
+    params = urllib.urlencode(data)
+    
+    try:
+        response = urllib2.urlopen(req, params)
+        jsonText = response.read()
+        json_unicode = json.loads(jsonText)
+        json_dict = json.loads(json_unicode)
+    except:
+        json_dict = {}
+    return HttpResponse(json.dumps(json_dict), content_type="application/json")
+
+@login_required
+@csrf_exempt
+def ajax_get_cmdb_ip_by_expression(request):
+    '''
+        @author: wx
+        get_cmdb_ip_by_expression
+    '''
+    productid = request.POST.get('productid',0)
+    sset = request.POST.get('set')
+    module = request.POST.get('module')
+    data = {'productid':int(productid),'set':sset,'module':module}
+    
+    req = urllib2.Request(CMDB_QUERYIP_URL)
+    params = urllib.urlencode(data)
+    
+    try:
+        response = urllib2.urlopen(req, params)
+        jsonText = response.read()
+        json_unicode = json.loads(jsonText)
+        jsondict = json.loads(json_unicode)
+    except:
+        jsondict = {}
+    
+    minions_ups = rc.smembers(MINIONS_UP_SET_KEY)
+    for minion_ip,minion_info in jsondict.items():
+        if minion_info[0] == 0:
+            #agent未安装
+            if not rc.exists(IP_KEY_PREFIX+minion_ip):
+                minion_info[0] = -99
+                jsondict[minion_ip] = minion_info
+                continue
+            minion_id = rc.get(IP_KEY_PREFIX+minion_ip)
+            #agent异常
+            if minion_id not in list(minions_ups):
+                minion_os = rc.hget(DETAIL_KEY_PREFIX+minion_id,'kernel')
+                minion_info[0] = -2
+                minion_info[2] = minion_os
+                jsondict[minion_ip] = minion_info
+            else:
+                minion_os = rc.hget(DETAIL_KEY_PREFIX+minion_id,'kernel')
+                minion_info[2] = minion_os
+                minion_info[0] = 1
+                jsondict[minion_ip] = minion_info
+
+    return HttpResponse(json.dumps(jsondict), content_type="application/json")
+
+@login_required
+@csrf_exempt
+def ajax_get_cmdb_ip_by_expression_v2(request):
+    '''
+        @author: wx
+        get_cmdb_ip_by_expression_v2
+    '''
+    productid = request.POST.get('productid',0)
+    sset = request.POST.get('set')
+    module = request.POST.get('module')
+    data = {'productid':int(productid),'set':sset,'module':module}
+    
+    req = urllib2.Request(CMDB_QUERYIP_URL)
+    params = urllib.urlencode(data)
+    
+    try:
+        response = urllib2.urlopen(req, params)
+        jsonText = response.read()
+        json_unicode = json.loads(jsonText)
+        jsondict = json.loads(json_unicode)
+    except:
+        jsondict = {}
+    
+    check_dict = {}
+    minions_ups = rc.smembers(MINIONS_UP_SET_KEY)
+    for minion_ip,minion_info in jsondict.items():
+        if minion_info[0] == 0:
+            #agent未安装
+            if not rc.exists(IP_KEY_PREFIX+minion_ip):
+                minion_info[0] = -99
+                minion_info.append(minion_ip)
+                check_dict[minion_ip] = minion_info
+                continue
+            minion_id = rc.get(IP_KEY_PREFIX+minion_ip)
+            minion_os = rc.hget(DETAIL_KEY_PREFIX+minion_id,'kernel')
+            
+            #id未重复
+            if minion_id not in check_dict.keys():
+                #agent异常
+                if minion_id not in list(minions_ups):
+                    minion_info[0] = -2
+                    minion_info[2] = minion_os
+                    minion_info.append(minion_ip)
+                    check_dict[minion_id] = minion_info
+                else:
+                    minion_info[0] = 1
+                    minion_info[2] = minion_os
+                    minion_info.append(minion_ip)
+                    check_dict[minion_id] = minion_info
+            #id重复
+            else:
+                minion_info_old = check_dict[minion_id]
+                minion_ip_old = minion_info_old[3]
+                minion_info_old[3] = minion_ip_old+'<br>'+minion_ip
+                #agent异常
+                if minion_id not in list(minions_ups):
+                    minion_info_old[0] = -2
+                else:
+                    minion_info_old[0] = 1
+                check_dict[minion_id] = minion_info_old
+    return HttpResponse(json.dumps(check_dict), content_type="application/json")
+
+@login_required
+@csrf_exempt
+def ajax_get_auth_emp_list_returns(request):
+
+    user = request.user
+    data=[]
+    try:
+        logger.debug("##start call to get emp list.... ")
+        req = request.GET
+        nodeid = req.get('nodeid',"")
+        auth_type = req.get('auth_type','template')
+        obj_ids = req.getlist('obj_list[]',[])
+        obj_id = obj_ids[0] if obj_ids and len(obj_ids)==1 else None
+        if auth_type not in PERM_PTYPE_MAP.keys():
+            raise Exception,u'参数错误'
+
+        req_type = PERM_PTYPE_MAP.get(auth_type)
+        to_users = Perm.objects.filter(object_id=obj_id,is_delete=False,ptype=req_type).values_list('to_user__username') if obj_id else []
+        to_users_names = [i[0] for i in to_users]
+        logger.debug("selected users for {0}_{1}: {2}".format(auth_type,obj_id,to_users_names))
+        code = YW_DEPT_CODE
+        if nodeid != '#':
+            code = nodeid.split("_")[1]
+
+        client = suds.client.Client(YW_DEPT_OA_URL,transport=suds_requests.RequestsTransport())
+        dept_result=json.loads(client.service.GetGreenofficeSubDeptList(code))
+        emp_result=json.loads(client.service.GetGreenOfficeEmpListByDeptCode(code))
+
+        # parent_id : [subs]
+        dept_dict = {}
+        node = None
+        for depart in dept_result:
+            parent_id = depart['parent_id']
+            dept_id = depart['dept_id']
+            index = depart['label_index']
+            if str(depart['status']).lower() != 'y':
+                logger.warning("##### depart status not valid,skip,{0}".format(depart))
+                continue
+            dept_code = depart["dept_code"]
+            if dept_code == code:
+                node = depart
+            dept_dict.setdefault(parent_id,[]).append(depart)
+
+        def get_children(depart):
+            '''
+                here iterate to get all children.
+            '''
+            children = []
+            dept_id = depart['dept_id']
+            subs = dept_dict.get(dept_id) or []
+            # get direct employee of depart
+            subs = sorted(subs,key=lambda item:item['label_index'])
+            for item in emp_result:
+                if item['STATUS'] == 'y' and item['dept_id'] == depart['dept_id']:
+                    username = item["NTAccount"]
+                    if username == user.username:
+                        continue
+                    u,is_new = _user.get_or_create_user_by_params(username=username)
+                    if is_new:
+                        u.set_password(username)
+                    u.first_name=item['emp_name']
+                    u.save()
+                    children.append({
+                        "text": item['emp_name'],
+                        "id": "emp_"+username,
+                        "state": {
+                            "selected": True if u.username in to_users_names else False,
+                        },
+                        "children":False
+                    })
+            # get children of sub depart.
+            [children.append({
+                "text": sub['dept_name'],
+                "id": "dept_"+sub["dept_code"],
+                "state": {
+                    "selected": False
+                },
+                "children":get_children(sub)
+            }) for sub in subs]
+            return children
+
+        data = []
+        data.append({
+            "text": node['dept_name'],
+            "id": "dept_"+node["dept_code"],
+            "state": {
+                "opened": True,
+                "selected": False
+            },
+            "children":get_children(node)
+        })
+        response = HttpResponse(json.dumps(data), content_type="application/json")
+    except:
+        print traceback.format_exc()
+        response =  HttpResponse(json.dumps([]), content_type="application/json")
+        response.status_code=408
+    logger.debug("##end call to get emp list.")
+    return response
+
+@login_required
+@csrf_exempt
+def update_auth(request):
+    '''
+        更新用户授权.
+    '''
+    result = {}
+    status = 500
+    data = {}
+    msg = ''
+    try:
+        user = request.user
+        req = request.POST
+        req_type = req.get("auth_type","")
+        obj_ids = req.getlist('obj_list[]',[])
+        select_ids = req.getlist("user_list[]",[])
+        logger.debug("start update auth, auth_type:{0}, obj_ids:{1}, user_names:{2}".format(req_type,','.join(obj_ids),','.join(select_ids)))
+        if req_type not in PERM_PTYPE_MAP.keys():
+            msg = u'授权类型错误'
+            raise Exception,msg
+        if not obj_ids or not isinstance(obj_ids,list):
+            msg = u'未勾选或所选对象类型错误'
+            raise Exception, msg
+        user_names = []
+        logger.debug("request:{0}".format(req))
+        auth_type = PERM_PTYPE_MAP.get(req_type)
+        msg = u'不允许二次授权,请重新选择'
+        for obj_id in obj_ids:
+            if auth_type == PERM_PTYPE_TEMPLATE and _template.get_template_by_params(id=obj_id).create_user!=user:
+                raise Exception,msg
+            if auth_type == PERM_PTYPE_JOB and _job.get_job_by_params(id=obj_id).create_user!=user:
+                raise Exception,msg
+            if auth_type == PERM_PTYPE_SCRIPT and _script.get_script_by_params(id=obj_id).create_user!=user:
+                raise Exception,msg
+        msg=""
+        for select_id in select_ids:
+            if str(select_id).startswith('emp_'):
+                user_names.append(select_id.split('_')[1])
+        for obj_id in obj_ids:
+            logger.debug("==> start update perm for object id:{0}".format(obj_id))
+            old_perms = Perm.objects.filter(ptype=PERM_PTYPE_MAP[req_type],object_id=obj_id,is_delete=False).values_list('id')
+            old_perm_ids = [i[0] for i in old_perms]
+            new_perm_ids = set()
+            for user_name in user_names:
+                to_user = User.objects.get(username=user_name)
+                p,is_create = Perm.objects.get_or_create(ptype=PERM_PTYPE_MAP[req_type],object_id=obj_id,is_delete=False,create_user=user,to_user=to_user)
+                new_perm_ids.add(p.id)
+                if is_create:
+                    logger.debug('perm of user:{0} to {1}_id:{2} is created'.format(user_name,req_type,obj_id))
+                else:
+                    logger.debug('perm of user:{0} to {1}_id:{2} already exists.'.format(user_name,req_type,obj_id))
+
+            discard_perms = set(old_perm_ids).difference(new_perm_ids)
+            if discard_perms:
+                names = [i[0] for i in Perm.objects.filter(id__in=discard_perms).values_list('to_user__username')]
+                logger.debug("drop perms of {0} to {1}_id:{2}".format(','.join(names),req_type,obj_id))
+                Perm.objects.filter(id__in=discard_perms).update(is_delete=True)
+            logger.debug("==> update perm successfully!\n")
+        msg = u'授权更新成功'
+        status = 200
+        logger.debug("## All perm update successfully!\n")
+    except Exception,e:
+        msg = u'授权更新失败' if not msg else msg
+        error = traceback.format_exc()
+        print error
+        logger.error(error)
+
+    data['msg']=msg
+    result.update({
+        'status': status,
+        'result':data
+    })
+    return HttpResponse(json.dumps(result))

@@ -1,0 +1,287 @@
+<!--编辑作业-->
+<div class="row-fluid edit-md-wrap">
+    <form class="form-horizontal" id="edit_template_form_{{ template.id }}" >
+        <input type="hidden" name="template.id" value="{{ template.id }}">
+        <div class="control-group">
+            <label class="control-label muted">创建人：</label>
+            <div class="controls">
+                <label class="control-label" style="text-align:left;">{{ template.create_user.username }}</label>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label muted">作业实例名称：<span class="red">*</span></label>
+            <div class="controls">
+                {{ templateForm.name }}
+                <span style="display: inline-block;color:#999">{{templateForm.name.errors}}</span>
+                <span class="help-block"></span>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label muted">作业实例类型：</label>
+            <div class="controls">
+                {{ templateForm.template_type }}
+                <span style="display: inline-block;color:#999">{{templateForm.template_type.errors}}</span>
+                <span class="help-block"></span>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label muted">所属业务：<span>&nbsp;&nbsp;</span></label>
+            <div class="controls">
+                <select style="width:684px;" class="work_type_{{ template.id }}" id="work_type" name="work_type">
+                    <option value="">未分类</option>
+                </select>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label muted">备注：<span class="red">*</span></label>
+            <div class="controls">
+                {{ templateForm.remarks }}
+                <span style="display: inline-block;color:#999">{{templateForm.remarks.errors}}</span>
+                <span class="help-block"></span>
+            </div>
+        </div>
+        <div class="control-group" style="margin-left: 149px;">
+            <span>提示：支持上下拖动排序</span>
+        </div>
+        <table class="table table-hover table-striped table-bordered edit_md_table table-link" id="edit_md_table_{{ template.id }}" style="width:682px;margin-left:150px;">
+             <thead>
+                <tr>
+                    <th class="text-center"><input value="0" class="jobview-checked-all-{{ template.id }}" type="checkbox"></th>
+                    <th>执行步骤</th>
+                    <th width=200px>步骤名</th>
+                    <th>步骤类型</th>
+                    <th width=200px>操作</th>
+                </tr>
+             </thead>
+             <tbody template_id="{{ template.id }}">
+                {% for templateStep in templateStep_list %}
+                <tr {% if templateStep.is_checked %}class='checknow'{% endif %}>
+                    <td class="text-center"><input value="{{templateStep.id}}" class="jobview-checked-it-{{ template.id }}" type="checkbox" {% if templateStep.is_checked %}checked{% endif %}></td>
+                    <td>第{{templateStep.order}}步</td>
+                    <td><a href="javascript:void(0)" onclick="template_step_edit_v2('{{templateStep.id}}',{% if templateStep.step_type == 1 %}'script'{% else %}''{% endif %});">{{templateStep.name}}</a></td>
+                    <td>{{templateStep.get_step_type_display}}</td>
+                    <td><div class='btn-group'><a class='dropdown-toggle' data-toggle='dropdown' href='#'>增加步骤</a><ul class='dropdown-menu add-step-list'><li value='1'><a>执行脚本</a></li><li value='2'><a>分发文件</a></li><li value='3'><a>拉取文件</a></li><li value='4'><a>文本步骤</a></li></ul></div>&nbsp;&nbsp;<a href='javascript:void(0)' class='remove-step' step_id="{{templateStep.id}}">删除</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+    <div style="margin-left: 149px;">
+        <div class="btn-group">
+            <button class="btn btn-info dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-plus icon-white"></i>增加步骤
+                <span class="caret"></span>
+            </button>
+            <ul class="add_step_choose dropdown-menu">
+                <li value="1"><a>执行脚本</a></li>
+                <li value="2"><a>分发文件</a></li>
+                <li value="3"><a>拉取文件</a></li>
+                <li value="4"><a>文本步骤</a></li>
+            </ul>
+        </div>
+        <button class="btn btn-info" onclick="submit_edit_template_v2({{ template.id }});"><i class="icon-ok icon-white"></i>保存作业</button>
+        <button class="btn btn-success" onclick="job_start_now_v2({{ template.id }},this);return false;" data-loading-text="启动中..." autocomplete="off"><i class="icon-play icon-white"></i>立即启动</button>
+        <button class="btn btn-success" data-toggle="modal" data-target="#set_timing_{{ template.id }}" onclick="show_schedule_new_v2({{ template.id }})"><i class="icon-time icon-white"></i>定时启动</button>
+        <button class="full-set btn btn-success" data-msg="edit-md-wrap"><i class="icon-edit icon-white"></i>全程设定</button>
+        <button class="btn btn-warning"><i class="icon-repeat icon-white"></i>清空配置</button>
+    </div>
+    <br><br><br><br><br><br>
+</div>
+
+<!--modal one-->
+<div class="modify-timing-modal modal hide fade" id="set_timing_{{ template.id }}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+</div>
+
+<!--全程设定-->
+<div class="full-set-wrap edit-fullset-wrap row-fluid hide">
+    <form  id="edit_template_form_settings_{{ template.id }}" class="form-horizontal">{% csrf_token %}
+        <div class="control-group">
+            <label class="control-label muted">执行模式：</label>
+            <div class="controls">
+                <label class="radio">
+                    <input type="radio" name="mode" value="1" {% if template.mode == 1 %}checked="checked"{% endif %}>无人模式 （作业启动后，按步骤顺序执行，出现错误才会停止）
+                </label>
+                <label class="radio">
+                    <input type="radio" name="mode" value="2" {% if template.mode == 2 %}checked="checked"{% endif %}>单步模式 （作业启动后，每个步骤均需由作业启动人点击“执行”按钮方会执行）
+                </label>
+                <label class="radio">
+                    <input type="radio" name="mode" value="3" {% if template.mode == 3 %}checked="checked"{% endif %}>混合模式 （作业启动后，遇到文本步骤或出现错误才会停止）
+                </label>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label muted">目标机器：</label>
+            <div class="controls">
+                <textarea class="txtstyle full-set-ip edit-fullset-ip-area" rows="5" placeholder="请输入机器IP，操作多个机器以“回车”换行"></textarea>
+                <textarea id="full_settings_ips_hide" name="full_settings_ips_hide" class="edit-fullset-ip-hide" style="display: none;">{{ hide_ip_json }}</textarea>
+                <button type="button" class="ip-add-btn add-btn-status btn btn-default" data-msg="fullset" data-loading-text="ip检测中,请稍后..." autocomplete="off"><i class="icon-plus"></i>IP添加</button>               
+                <button type="button" class="select-servers btn btn-default" data-msg="full-set-wrap" data-toggle="modal" data-target="#selectServer_{{ template.id }}"><i class="icon-th-list"></i>选择目标机器 </button>
+            </div>
+            <div class="controls edit-fullset-ip-wrap  {% if not target_ips or target_ips|length == 0 %}hide{% endif %}">
+                <b>{% if target_ips|length > 0 %}涉及服务器[{{ target_ips|length }}]台，仅[{{ hide_ip_dict.num }}]台支持操作{% endif %}</b>
+                <ul class="edit-fullset-ip-result ip-style" data-msg="fullset">
+                    {% for key,value in hide_ip_dict.items %}
+                        {% if key != 'num' and key != 'total' %}
+                            <li class="clearfix">
+                                <i class="ipconfig" id="{{ key }}">{{ value.3 }}</i>
+                                <i class="os">{{ value.2 }}</i>
+                                <i class="status1">agent{% if value.0 == 1 %}
+                                    正常{% elif value.0 == -1 %}异常{% elif value.0 == -99 %}不存在
+                                {% endif %} </i>
+                                <i class="status2">支持操作</i>
+                                <span>删除</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>  
+        </div>
+        <div class="control-group">
+            <label class="control-label muted">执行账户：<span class="red">*</span></label>
+            <div class="controls">
+                <select id="template_account" name="template_account" class="reg-val account-msg" style="width: 434px;">
+                    {% for account in accounts %}
+                    <option value="{{account.id}}" {% if account_id == account.id%}selected{% endif %}>{{account.name}}&nbsp;&nbsp;账号:{{account.name_abbr}}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-default reg-user" data-toggle="modal" data-target="#myModal2_{{ template.pk }}"><i class="icon-plus"></i>登记账户</button>
+                <button type="button" class="btn btn-default reg-user" onclick="refresh_accounts(this);return false;"><i class="icon-refresh"></i>刷新</button>
+            </div>
+        </div>
+        <br>
+        <div class="control-group">
+            <div class="controls">
+                <button onclick="template_full_setting_save({{ template.pk }});return false;" class="edit-fullset-save btn btn-primary"><i class="icon-ok icon-white"></i>保存全程设置</button>
+                <button class="full-set-back btn btn-success" data-msg="edit-md-wrap"><i class="icon-share-alt icon-white"></i>返回</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- add account modal -->
+<div class="modal fade" id="myModal2_{{ template.pk }}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="width:640px;">
+    {% include 'account/account_modal.html' %}
+</div>
+
+<!--modal one-->
+<div class="set-model modal hide fade" id="selectServer_{{ template.id }}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="selectServerLabel">选择目标服务器</h4>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" style="margin-bottom: 10px;">
+          <li class="active"><a href="#md_text_view" data-toggle="tab">配置中心  - CMDB</a></li>
+          <li class="fliter-tab"><a href="#md_fliter" data-toggle="tab">条件选择</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane active" id="md_text_view">
+                <div class="ujobs-cmdb-tree">
+                    
+                </div>
+                <div class="modal-footer">
+                    <button class="add-servers-ip btn btn-primary" data-msg="fullset" data-dismiss="modal">添加选中</button>
+                    <button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+            <div class="tab-pane" id="md_fliter">
+                <form class="form-horizontal fliter-select">
+                    <div class="control-group">
+                        <label class="control-label">产品：<span class="red">*</span></label>
+                        <div class="controls">
+                            <select class="product-fliter">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">set：</label>
+                        <div class="controls">
+                            <input class="set-fliter" type="text" value="">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">module：</label>
+                        <div class="controls">
+                            <input class="module-fliter" type="text" value="">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">已选set：<span class="red">*</span></label>
+                        <div class="controls">
+                            <input class="set-value" type="text" value="" disabled>
+                            <button class="clear-fliter btn btn-default" data-msg="set" onclick="return false">清空</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">已选module：<span class="red">*</span></label>
+                        <div class="controls">
+                            <input class="module-value" type="text" value="" disabled>
+                            <button class="clear-fliter btn btn-default" onclick="return false">清空</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button class="add-fliter btn btn-primary" data-msg="fullset" data-dismiss="modal">添加</button>
+                    <button type="button" class="btn btn-default model-close" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+      </div>
+</div>
+<script type="text/javascript">
+    //所属业务拉取
+    var e=$(".work_type_{{ template.id }}");
+    product_from(e,'')
+
+    var template_steps_table = null;
+    $(function () {
+        template_steps_table = $('#edit_md_table_{{ template.pk }}').dataTable({
+             "sDom": 'lfrtip',
+             "bLengthChange":false,
+             "iDisplayLength":10,
+             "aoColumnDefs": [{ "bSortable": false, "aTargets": [0,1,2,3] }],
+             "bProcessing": false,
+             "bServerSide": false,
+             "bPaginate": false,
+             "bAutoWidth":false,
+             "bInfo": false,
+             "sPaginationType": "full_numbers",
+             "bFilter":false,
+             "bRetrieve":true,
+             "bDestroy":true,
+             "oLanguage":{
+                   "sUrl":'/static/tool_js/data_table/cn/jquery.dataTable.cn.txt'
+                 }
+        });
+        
+        //按钮样式
+        icheck($(".full-set-wrap input:radio"));
+       $('#edit_template_form_{{ template.pk }} #work_type').val("{{ template.work_type }}");
+
+        //全选全不选
+        var checked_all=".jobview-checked-all-{{ template.id }}";
+        var checked_it=".jobview-checked-it-{{ template.id }}";
+        check_all(checked_all,checked_it);
+
+        if($("#edit_md_table_{{ template.id }} tbody tr").length == $("#edit_md_table_{{ template.id }} tbody :checked").length ) {
+            $(".jobview-checked-all-{{ template.id }}").prop("checked",true);
+        }
+    });
+
+    //步骤拖动排序
+    $("#edit_md_table_{{ template.id }} tbody").sortable({
+        axis:'y',
+        containment:$("#edit_md_table_{{ template.id }} tbody"),   
+        cursor: "row-resize",
+        update: function( event, ui ) {
+            var step_id=$(this).find(".remove-step");
+            var id_list_arr=[];
+            for(var i=0,step_length=step_id.length;i<step_length;i++){
+                var id=step_id.eq(i).attr("step_id");
+                id_list_arr.push(id);
+            }
+            var id_list=id_list_arr.join(",");
+            sort_step2($(this),{{ template.id }},id_list);
+        }
+    });
+    
+</script>
