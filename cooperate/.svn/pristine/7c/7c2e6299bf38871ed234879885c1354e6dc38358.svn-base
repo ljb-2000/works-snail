@@ -1,0 +1,57 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version department.html
+ */
+
+var vm = new Vue({
+    el: '#department_box',
+    data: {
+        user: '',
+        workList: []
+    },
+    methods: {
+        getList: function() {
+            this.workList = [{
+                id: '1',
+                content: 'ujobs项目上线测试完成',
+                author: 'luozh',
+                time: '2016-01-05'
+            }, {
+                id: '2',
+                content: '新版监控前端开发',
+                author: 'luozh',
+                time: '2016-01-11'
+            }, {
+                id: '3',
+                content: '游戏数据统计',
+                author: 'admin',
+                time: '2016-01-20'
+            }];
+
+            this.user = 'luozh';
+        },
+        saveData: function(index) {
+
+            // TODO AJAX
+            var id = this.workList[index].id;
+        },
+        deleteData: function(index) {
+            this.workList.splice(index, 1);
+        },
+        addData: function() {
+            var date = new Date();
+
+            this.workList.unshift({
+                id: '',
+                content: '-',
+                author: this.user,
+                time: date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate()
+            });
+        }
+    }
+});
+
+// 渲染事务列表
+vm.getList();

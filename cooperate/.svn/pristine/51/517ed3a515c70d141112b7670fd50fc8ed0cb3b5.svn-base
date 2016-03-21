@@ -1,0 +1,116 @@
+#! /bin/env python
+# -*- coding: utf-8 -*-
+
+import pymssql
+import time
+import urllib, urllib2, json
+
+def test():
+    PLATFORM_HOST = "http://10.103.4.19"
+    ACCOUNT_AUTH_URL = PLATFORM_HOST + '/service/AccountHandler.ashx'
+    sysid = 16
+    uid = 1
+    data = {'action':'getfuncjson1','SysId':sysid,'UID':uid}
+    req = urllib2.Request(ACCOUNT_AUTH_URL)
+    
+    params = urllib.urlencode(data)
+    response = urllib2.urlopen(req, params)
+    jsonText = response.read()
+    json_dict = json.loads(jsonText)
+    userinfo_list = json_dict.get('userinfo',[])
+    print userinfo_list
+    for info in userinfo_list:
+        print info.get('sFunctionName')
+
+
+class MSSQL:
+    """
+    对pymssql的简单封装
+  pymssql库，该库到这里下载：http://www.lfd.uci.edu/~gohlke/pythonlibs/#pymssql
+    使用该库时，需要在Sql Server Configuration Manager里面将TCP/IP协议开启
+    """
+
+    def __init__(self,host,user,pwd):
+        self.host = host
+        self.user = user
+        self.pwd = pwd
+
+    def __GetConnect(self):
+        """
+        得到连接信息
+        返回: conn.cursor()
+        """
+        self.conn = pymssql.connect(host=self.host,user=self.user,password=self.pwd,charset="utf8")
+        cur = self.conn.cursor()
+        if not cur:
+            print u"连接数据库失败"
+            return None
+        else:
+            return cur
+
+    def ExecQuery(self,sql):
+        """
+        执行查询语句
+        返回的是一个包含tuple的list，list的元素是记录行，tuple的元素是每行记录的字段
+
+        调用示例：
+                ms = MSSQL(host="localhost",user="sa",pwd="123456",db="PythonWeiboStatistics")
+                resList = ms.ExecQuery("SELECT id,NickName FROM WeiBoUser")
+                for (id,NickName) in resList:
+                    print str(id),NickName
+        """
+        cur = self.__GetConnect()
+        cur.execute(sql)
+#        resList = cur.fetchall()
+        res = cur.fetchone()
+
+        #查询完毕后必须关闭连接
+        self.conn.close()
+        return res
+
+    def ExecNonQuery(self,sql):
+        """
+        执行非查询语句
+
+        调用示例：
+            cur = self.__GetConnect()
+            cur.execute(sql)
+            self.conn.commit()
+            self.conn.close()
+        """
+        cur = self.__GetConnect()
+        cur.execute(sql)
+        self.conn.commit()
+        self.conn.close()
+
+def pa():
+    result =  [1,2,3]
+    print result
+    
+if __name__ == '__main__':
+#     test()
+#     pa()
+
+    host = '10.103.4.3'
+    user = 'newmonitor'
+    pwd = 'Snail@123'
+    ms = MSSQL(host=host, user=user, pwd=pwd)
+    
+    sql = 'select p.IP,c.NAME from IM_MONITOR_IDC_IP p left join IDC c on c.IDC_ID=p.IDC_ID'
+    ret = ms.ExecQuery(sql)
+    print ret
+    
+    
+# wget -O /etc/yum.repos.d/PUIAS_6_computational.repo https://gitlab.com/gitlab-org/gitlab-recipes/raw/master/install/centos/PUIAS_6_computational.repo
+# 
+# wget -O /etc/pki/rpm-gpg/RPM-GPG-KEY-puias http://springdale.math.ias.edu/data/puias/6/x86_64/os/RPM-GPG-KEY-puias && rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-puias
+# 
+# rpm -qa gpg*
+# 
+# yum repolist
+# 
+# yum --enablerepo=PUIAS_6_computational install git
+
+
+
+

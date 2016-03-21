@@ -1,0 +1,73 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version 公用js
+ */
+
+// 替换Vue默认界定符
+Vue.config.delimiters = ['[[', ']]'];
+Vue.config.unsafeDelimiters = ['[[[', ']]]'];
+
+// 导航数据
+var nav = new Vue({
+    el: '#side_bar',
+    data: {
+        menus: [{
+            header: '首页/报告',
+            icon: 'glyphicon-th-large',
+            list: [{
+                name: '首页',
+                link: '/index/'
+            }, {
+                name: '周报管理',
+                link: '/report/weekly/'
+            }, {
+                name: '月报管理',
+                link: '/report/monthly/'
+            }]
+        }, {
+            header: '部门/组织',
+            icon: 'glyphicon-inbox',
+            list: [{
+                name: '组织架构',
+                link: '/group/system/'
+            }, {
+                name: '部门事务',
+                link: '/group/department/'
+            }]
+        }, {
+            header: '项目/会议',
+            icon: 'glyphicon-list-alt',
+            list: [{
+                name: '项目管理',
+                link: '/project/task/'
+            }, {
+                name: '会议模式',
+                link: '/project/meeting/'
+            }]
+        }, {
+            header: '配置/录入',
+            icon: 'glyphicon-random',
+            list: [{
+                name: '文档管理',
+                link: '/input/upload/'
+            }, {
+                name: '问题录入',
+                link: '/input/issue/'
+            }]
+        }]
+    },
+    methods: {
+        isActive: function (link) {
+            var path = window.location.pathname;
+
+            if (link === path) {
+                return 'selected';
+            }
+        }
+    }
+});
+
+// 导航高亮
+nav.isActive();

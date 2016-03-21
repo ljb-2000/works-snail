@@ -1,0 +1,23 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version task.html
+ */
+
+ $(function () {
+
+    // datetime
+    $('.date-step-one').datetimepicker({
+        weekStart: 1,
+        /*endDate: '2016-01-20',*/
+        todayBtn: 1,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        minView: 2,
+        forceParse: 0,
+        linkField: "mirror_field",
+        pickerPosition: "bottom-left"
+    });
+ });

@@ -1,0 +1,66 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version monthly.html
+ */
+
+// datetime
+$('.monthtime-from').datetimepicker({
+    weekStart: 1,
+    todayBtn: 1,
+    autoclose: 1,
+    todayHighlight: 1,
+    startView: 3,
+    minView: 3,
+    forceParse: 0,
+    linkField: "mirror_field",
+    pickerPosition: "bottom-left"
+});
+
+var vm = new Vue({
+    el: '#month_box',
+    data: {
+        curSelected: '',
+        departments: [],
+        selectMonth: '',
+        monthData: []
+    },
+    methods: {
+        getDateTime: function() {
+            var date = new Date(),
+                curMonth = date.getMonth() + 1;
+
+            curMonth < 10 ? curMonth = '0' + curMonth : '';
+
+            this.selectMonth = date.getFullYear() + '-' + curMonth;
+        },
+        getMonthData: function() {
+            $.ajax({
+                url: '/report/ajax_get_monthlys/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    department_name: vm.curSelected,
+                    time_filter: vm.selectMonth
+                }
+            })
+            .done(function(data) {
+                vm.monthData = data.list;
+                vm.departments = data.department;
+
+                vm.curSelected === '' ? vm.curSelected = vm.departments[0] : '';
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            }); 
+        }
+    }
+});
+
+// 获取年月
+vm.getDateTime();
+
+// 渲染月报数据
+vm.getMonthData();
+

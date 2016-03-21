@@ -1,0 +1,79 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import logging
+import traceback
+import json
+from service import _report, _group
+
+logger = logging.getLogger("logger")
+
+@login_required
+@csrf_exempt
+@render_to('group/system.html')
+def system_index(request):
+    return locals()
+
+@login_required
+@csrf_exempt
+@render_to('group/department.html')
+def department_index(request):
+    return locals()
+
+@csrf_exempt
+def ajax_get_routines(request):
+    result = {}
+    result['user'] = request.user.username
+    
+    departments = _report.get_departments_by_params()
+    result['department'] = [d.name for d in departments]
+        
+    routine_list = []
+    for department in departments:
+        routines = _group.get_routines_by_params(department=department)
+        for routine in routines:
+            id = routine.id
+            content = routine.content
+            author = routine.update_user.username
+            time = routine.time
+            routine_list.append({'id':id, 'department':department.name, 'content':content, 'author': author, 'time':time})
+    result['list'] = routine_list
+    
+    return HttpResponse(json.dumps(routine_list), content_type="application/json")
+
+@csrf_exempt
+def ajax_edit_routine(request):
+    user = request.user
+    sdicts = {'result':0}
+    department_name = request.POST.get("department_name",'')
+    content = request.POST.get("content",'')
+    department = _report.get_department_by_params(name=department_name)
+    if department:
+        try:
+            rule,create = _report.get_or_create_rule_by_params(department=department)
+            if create:
+                rule.create_user = user
+            rule.update_user = user
+            rule.content = content
+            rule.save()
+            sdicts["result"] = 1
+        except Exception,e:
+            print e
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^group/system/$', system_index, name='system_index'),
+    
+    url(r'^group/department/$', department_index, name='department_index'),
+    url(r'^group/ajax_get_routines/$', ajax_get_routines, name='ajax_get_routines'),
+    url(r'^group/ajax_edit_routine/$', ajax_edit_routine, name='ajax_edit_routine'),
+#     url(r'^group/ajax_delete_routine/$', ajax_delete_routine, name='ajax_delete_routine'),
+    
+)

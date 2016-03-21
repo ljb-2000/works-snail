@@ -1,0 +1,503 @@
+#!/usr/bin/python
+# -*- coding:utf-8 -*-
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
+from apps.report.models import Department, Product, Rule, Weekly, WeeklyProgress, WeeklyPlan, Monthly, MonthlyInfo, \
+TaskPeriod, TaskCircle, TaskInfo
+
+import logging
+logger = logging.getLogger('logger')
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_department_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return Department.objects.create(**kwargs)
+
+def get_or_create_department_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return Department.objects.get_or_create(**kwargs)
+
+def get_department_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return Department.objects.get(**kwargs)
+    except Department.DoesNotExist:
+        logger.error(u"Department对象不存在（%s）" % kwargs)
+    except Department.MultipleObjectsReturned:
+        logger.error(u"Department对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_departments_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return Department.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_product_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return Product.objects.create(**kwargs)
+
+def get_or_create_product_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return Product.objects.get_or_create(**kwargs)
+
+def get_product_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return Product.objects.get(**kwargs)
+    except Product.DoesNotExist:
+        logger.error(u"Product对象不存在（%s）" % kwargs)
+    except Product.MultipleObjectsReturned:
+        logger.error(u"Product对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_products_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return Product.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_rule_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return Rule.objects.create(**kwargs)
+
+def get_or_create_rule_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return Rule.objects.get_or_create(**kwargs)
+
+def get_rule_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return Rule.objects.get(**kwargs)
+    except Rule.DoesNotExist:
+        logger.error(u"Rule对象不存在（%s）" % kwargs)
+    except Rule.MultipleObjectsReturned:
+        logger.error(u"Rule对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_rules_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return Rule.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_weekly_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return Weekly.objects.create(**kwargs)
+
+def get_or_create_weekly_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return Weekly.objects.get_or_create(**kwargs)
+
+def get_weekly_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return Weekly.objects.get(**kwargs)
+    except Weekly.DoesNotExist:
+        logger.error(u"Weekly对象不存在（%s）" % kwargs)
+    except Weekly.MultipleObjectsReturned:
+        logger.error(u"Weekly对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_weeklys_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return Weekly.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_weeklyProgress_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return WeeklyProgress.objects.create(**kwargs)
+
+def get_or_create_weeklyProgress_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return WeeklyProgress.objects.get_or_create(**kwargs)
+
+def get_weeklyProgress_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return WeeklyProgress.objects.get(**kwargs)
+    except WeeklyProgress.DoesNotExist:
+        logger.error(u"WeeklyProgress对象不存在（%s）" % kwargs)
+    except WeeklyProgress.MultipleObjectsReturned:
+        logger.error(u"WeeklyProgress对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_weeklyProgresss_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return WeeklyProgress.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_weeklyPlan_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return WeeklyPlan.objects.create(**kwargs)
+
+def get_or_create_weeklyPlan_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return WeeklyPlan.objects.get_or_create(**kwargs)
+
+def get_weeklyPlan_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return WeeklyPlan.objects.get(**kwargs)
+    except WeeklyPlan.DoesNotExist:
+        logger.error(u"WeeklyPlan对象不存在（%s）" % kwargs)
+    except WeeklyPlan.MultipleObjectsReturned:
+        logger.error(u"WeeklyPlan对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_weeklyPlans_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return WeeklyPlan.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_monthly_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return Monthly.objects.create(**kwargs)
+
+def get_or_create_monthly_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return Monthly.objects.get_or_create(**kwargs)
+
+def get_monthly_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return Monthly.objects.get(**kwargs)
+    except Monthly.DoesNotExist:
+        logger.error(u"Monthly对象不存在（%s）" % kwargs)
+    except Monthly.MultipleObjectsReturned:
+        logger.error(u"Monthly对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_monthlys_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return Monthly.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_weeklyPlan_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return WeeklyPlan.objects.create(**kwargs)
+
+def get_or_create_weeklyPlan_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return WeeklyPlan.objects.get_or_create(**kwargs)
+
+def get_weeklyPlan_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return WeeklyPlan.objects.get(**kwargs)
+    except WeeklyPlan.DoesNotExist:
+        logger.error(u"WeeklyPlan对象不存在（%s）" % kwargs)
+    except WeeklyPlan.MultipleObjectsReturned:
+        logger.error(u"WeeklyPlan对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_weeklyPlans_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return WeeklyPlan.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_monthlyInfo_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return MonthlyInfo.objects.create(**kwargs)
+
+def get_or_create_monthlyInfo_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return MonthlyInfo.objects.get_or_create(**kwargs)
+
+def get_monthlyInfo_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return MonthlyInfo.objects.get(**kwargs)
+    except MonthlyInfo.DoesNotExist:
+        logger.error(u"MonthlyInfo对象不存在（%s）" % kwargs)
+    except MonthlyInfo.MultipleObjectsReturned:
+        logger.error(u"MonthlyInfo对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_monthlyInfos_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return MonthlyInfo.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_taskPeriod_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return TaskPeriod.objects.create(**kwargs)
+
+def get_or_create_taskPeriod_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return TaskPeriod.objects.get_or_create(**kwargs)
+
+def get_taskPeriod_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return TaskPeriod.objects.get(**kwargs)
+    except TaskPeriod.DoesNotExist:
+        logger.error(u"TaskPeriod对象不存在（%s）" % kwargs)
+    except TaskPeriod.MultipleObjectsReturned:
+        logger.error(u"TaskPeriod对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_taskPeriods_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return TaskPeriod.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_taskCircle_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return TaskCircle.objects.create(**kwargs)
+
+def get_or_create_taskCircle_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return TaskCircle.objects.get_or_create(**kwargs)
+
+def get_taskCircle_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return TaskCircle.objects.get(**kwargs)
+    except TaskCircle.DoesNotExist:
+        logger.error(u"TaskCircle对象不存在（%s）" % kwargs)
+    except TaskCircle.MultipleObjectsReturned:
+        logger.error(u"TaskCircle对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_taskCircles_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return TaskCircle.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_taskInfo_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return TaskInfo.objects.create(**kwargs)
+
+def get_or_create_taskInfo_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return TaskInfo.objects.get_or_create(**kwargs)
+
+def get_taskInfo_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return TaskInfo.objects.get(**kwargs)
+    except TaskInfo.DoesNotExist:
+        logger.error(u"TaskInfo对象不存在（%s）" % kwargs)
+    except TaskInfo.MultipleObjectsReturned:
+        logger.error(u"TaskInfo对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_taskInfos_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return TaskInfo.objects.filter(**kwargs)

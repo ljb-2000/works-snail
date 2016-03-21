@@ -1,0 +1,163 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version weekly.html
+ */
+
+$(function() {
+
+    // datetime
+    $('.datetime-from, .datetime-to, .weektime-to, .weektime-from').datetimepicker({
+        weekStart: 1,
+        /*endDate: '2016-01-20',*/
+        todayBtn: 1,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        minView: 2,
+        forceParse: 0,
+        linkField: "mirror_field",
+        pickerPosition: "bottom-left"
+    });
+
+    // Vue对象
+    var vm = new Vue({
+        el: '#week_box',
+        data: {
+            startTime: '',
+            endTime: '',
+            searchStart: '',
+            searchEnd: '',
+            weekList: [],
+            progressValue: '',
+            planValue: '',
+            progressGroup: [],
+            planGroup: []
+        },
+        methods: {
+            getList: function() {
+                this.weekList = [{
+                    progress: [{
+                        content: '完成了ujobs项目前端功能'
+                    }, {
+                        content: '新版监控大图页界面修改'
+                    }, {
+                        content: '运维协同平台子页面详细设计（首页、周报、月报、项目、会议模式等）'
+                    }],
+                    plan: [{
+                        content: '运维协同平台部分js功能实现'
+                    }, {
+                        content: '新版监控大图页新增对比历史功能'
+                    }],
+                    name: 'luozh',
+                    time: '2016-01-22',
+                    editable: true
+                }, {
+                    progress: [{
+                        content: '新版监控常用监控项页面实现'
+                    }, {
+                        content: '运维协同平台前端目录创建（文件目录、文件名）'
+                    }],
+                    plan: [{
+                        content: '运维协同平台前端总体框架构建（布局、配色）'
+                    }, {
+                        content: '解决作业实例详情页表格宽度丢失问题'
+                    }],
+                    name: 'luozh',
+                    time: '2016-01-15',
+                    editable: false
+                }];
+            },
+            getMonday: function() {
+                var date = new Date(),
+                    year = date.getFullYear(),
+                    month = date.getMonth() + 1,
+                    day = date.getDate(),
+                    week = date.getDay() - 1;
+
+                if (week === -1) {
+                    week = 6;
+                }
+
+                var startDay = date.setDate(day - week),
+                    startDate = new Date(startDay),
+                    curMonth = startDate.getMonth() + 1,
+                    curDate = startDate.getDate();
+
+                curMonth < 10 ? curMonth = '0' + curMonth : '';
+                curDate < 10 ? curDate = '0' + curDate : '';
+                month < 10 ? month = '0' + month : '';
+                day < 10 ? day = '0' + day : '';
+
+
+                var startTime = startDate.getFullYear() + '-' + curMonth + '-' + curDate,
+                    endTime = year + '-' + month + '-' + day;
+
+                this.startTime = startTime;
+                this.endTime = endTime;
+                this.searchStart = startTime;
+                this.searchEnd = endTime;
+            },
+            addProgress: function() {
+                this.progressGroup.push({
+                    value: ''
+                });
+            },
+            removeProgress: function(index) {
+                this.progressGroup.splice(index, 1);
+            },
+            addPlan: function() {
+                this.planGroup.push({
+                    value: ''
+                });
+            },
+            removePlan: function(index) {
+                this.planGroup.splice(index, 1);
+            },
+            comfirm: function() {
+                var progressArr = this.progressGroup,
+                    planArr = this.planGroup,
+                    progressData = [],
+                    planData = [];
+
+                this.progressValue.trim() !== '' ? progressData.push(this.progressValue) : '';
+                this.planValue.trim() !== '' ? planData.push(this.planValue) : '';
+
+                progressArr.forEach(function(e) {
+                    if (e.value.trim() !== '') {
+                        progressData.push(e.value);
+                    }
+                });
+
+                planArr.forEach(function(e) {
+                    if (e.value.trim() !== '') {
+                        planData.push(e.value);
+                    }
+                });
+
+                if (progressData.length && planData.length && this.startTime && this.endTime) {
+
+                    // DOTO AJAX
+                    console.log(progressData);
+                    console.log(planData);
+                    
+                    this.progressGroup = [];
+                    this.planGroup = [];
+                    this.progressValue = '';
+                    this.planValue = '';
+
+                    showAlert('jSuccess', '提交成功 :)', true);
+                } else {
+                    showAlert('jNotify', '有尚未填写的输入项，请检查 :(', true);
+                }
+            }
+        }
+    });
+
+    // 渲染周报列表
+    vm.getList();
+
+    // 获取当前日期及周一日期
+    vm.getMonday();
+});

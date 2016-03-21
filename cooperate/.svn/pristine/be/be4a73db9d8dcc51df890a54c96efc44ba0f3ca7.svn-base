@@ -1,0 +1,74 @@
+/**
+ * 
+ * @authors Your Name (you@example.org)
+ * @date    2016-01-21 11:53:46
+ * @version $Id$
+ */
+
+var vm = new Vue({
+    el: '#meeting_box',
+    data: {
+        curSelected: '',
+        departments: [],
+        weekLists: [],
+        products: {},
+        startTime: '',
+        endTime: '',
+        periods: ['研发', 'CB1', 'CBN', '不删档', 'OB']
+    },
+    methods: {
+
+        // 获取初始数据
+        getList: function() {
+            $.ajax({
+                url: '/project/ajax_get_weeklys/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    department_name: vm.curSelected
+                }
+            })
+            .done(function(data) {
+                vm.weekLists = data.list;
+                vm.departments = data.department;
+                vm.curSelected === '' ? vm.curSelected = vm.departments[0] : '';
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            });   
+        },
+
+        // 获取产品列表
+        getProducts: function(key) {
+            $.ajax({
+                url: '/project/ajax_get_tasks/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_name: key || '',
+                }
+            })
+            .done(function(data) {
+                if (!key) {
+                    data.product.forEach(function(e) {
+                        Vue.set(vm.products, e, {});
+                    });
+                } else {
+                    Vue.set(vm.products[key], 'list', data.list);
+                    Vue.set(vm.products[key], 'ontime', data.ontime);
+                    vm.startTime = data.start_time;
+                    vm.endTime = data.end_time;
+                }
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            });
+        }
+    }
+});
+
+// 加载数据
+vm.getList();
+
+// 加载产品列表
+vm.getProducts();

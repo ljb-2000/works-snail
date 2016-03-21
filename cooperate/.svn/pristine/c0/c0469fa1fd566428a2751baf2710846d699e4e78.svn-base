@@ -1,0 +1,53 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version monthly.html
+ */
+
+$(function () {
+
+    // datetime
+    $('.monthtime-from').datetimepicker({
+        weekStart: 1,
+        todayBtn: 1,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 3,
+        minView: 3,
+        forceParse: 0,
+        linkField: "mirror_field",
+        pickerPosition: "bottom-left"
+    });
+
+    var vm = new Vue({
+        el: '#month_box',
+        data: {
+            monthData: []
+        },
+        methods: {
+            getMonthData: function () {
+                this.monthData = [
+                    {
+                        name: 'luozh',
+                        list: [
+                            {time: '2016-01', product: '音乐侠国内', hardware: '2', software: '1', human: '0', safe: '3', serviceNum: '5', serviceTime: '46h', area: '4', contain: '15%', machine: '13'},
+                            {product: '音乐侠泰国', hardware: '2', software: '1', human: '0', safe: '3', serviceNum: '5', serviceTime: '46h', area: '4', contain: '15%', machine: '13'}
+                        ]
+                    },
+                    {
+                        name: 'luozh',
+                        time: '2016-01-05',
+                        list: [
+                            {time: '2015-12', product: '音乐侠国内', hardware: '2', software: '1', human: '0', safe: '3', serviceNum: '5', serviceTime: '46h', area: '4', contain: '15%', machine: '13'},
+                            {product: '音乐侠泰国', hardware: '2', software: '1', human: '0', safe: '3', serviceNum: '5', serviceTime: '46h', area: '4', contain: '15%', machine: '13'}
+                        ]
+                    }
+                ]
+            }
+        }
+    });
+    
+    // 渲染月报数据
+    vm.getMonthData();
+});

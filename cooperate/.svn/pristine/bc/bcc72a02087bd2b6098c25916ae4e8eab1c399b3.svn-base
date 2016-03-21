@@ -1,0 +1,179 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version task.html
+ */
+
+var vm = new Vue({
+    el: '#task_box',
+    data: {
+        products: [],
+        productName: '',
+        ontime: ['', '', '', '', ''],
+        productTime: '',
+        dataArr: [],
+        statusNum: 0
+    },
+    methods: {
+
+        // 获取初始数据
+        getProducts: function() {
+            $.ajax({
+                    url: '/report/ajax_get_tasks/',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { 
+                        product_name: this.productName
+                    }
+                })
+                .done(function(data) {
+                    vm.dataArr = data.task_periods;
+                    vm.products = data.product;
+                    vm.productName = vm.products[0];
+                    vm.ontime = data.ontime;
+                    vm.productTime = data.start_time + ' - ' + data.end_time;
+                })
+                .fail(function() {
+                    showAlert('jError', '出错了 :(', false);
+                });
+        },
+
+        // 点击tab
+        isActive: function(index) {
+            this.productName = this.products[index];
+
+            this.getProducts();
+        },
+
+        // 获取当前阶段更多数据
+        getStages: function(index) {
+            var obj = vm.dataArr[vm.statusNum];
+
+            $.ajax({
+                url: '/report/ajax_get_more_tasks/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_name: vm.productName,
+                    status: vm.statusNum + 1,
+                    index: obj.more.length
+                }
+            })
+            .done(function(data) {
+                if ('list' in data) {
+                    obj.more.push(data);
+                } else {
+                    $('.load-data').eq(index).addClass('hide');
+                }
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            });
+        },
+
+        // 激活当前阶段
+        activeModule: function(index) {
+            this.statusNum = index;
+        },
+
+        // 删除行
+        deleteList: function(index) {
+            this.dataArr[this.statusNum].list.splice(index, 1);
+        },
+
+        // 添加行
+        addList: function() {
+            this.dataArr[this.statusNum].list.push({
+                content: '-',
+                rate: '-'
+            });
+        },
+
+        // 保存时间
+        saveTime: function(index) {
+            $.ajax({
+                url: '/report/ajax_edit_ontime/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_name: vm.productName,
+                    status: index + 1,
+                    ontime: vm.ontime[index]
+                }
+            })
+            .done(function(data) {
+                data.result === 1 ? '' : showAlert('jError', '保存失败 :(', false);
+            })
+            .fail(function() {
+                showAlert('jError', '保存失败 :(', false);
+            }); 
+        },
+
+        // 保存列表
+        saveList: function() {
+            var arr = [];
+
+            vm.dataArr.forEach(function(e) {
+                arr.push(e.list);
+            });
+
+            $.ajax({
+                url: '/report/ajax_edit_task/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_name: vm.productName,
+                    info_list: JSON.stringify(arr)
+                }
+            })
+            .done(function(data) {
+                data.result === 1 ? showAlert('jSuccess', '保存成功 :)', true) : showAlert('jError', '保存失败 :(', false);
+            })
+            .fail(function() {
+                showAlert('jError', '保存失败 :(', false);
+            });
+        },
+
+        // 计算周六至周五时间
+        getPeriod: function() {
+            var date = new Date(),
+                dateTime = date.getDate(),
+                week = date.getDay(),
+                sweek = week + 1,
+                eweek = 5 - week;
+
+            sweek === 7 ? sweek = 0 : '';
+            eweek === -1 ? eweek = 6 : '';
+
+            console.log(date);
+
+            var setsTime = date.setDate(dateTime - sweek),
+                seteTime = date.setDate(dateTime + eweek),
+                startTime = new Date(setsTime),
+                endTime = new Date(seteTime),
+                sYear = startTime.getFullYear(),
+                eYear = endTime.getFullYear(),
+                sMonth = startTime.getMonth() + 1,
+                eMonth = endTime.getMonth() + 1,
+                sDate = startTime.getDate(),
+                eDate = endTime.getDate();
+
+            console.log(new Date(setsTime));
+            console.log(new Date(seteTime));
+
+            sMonth < 10 ? sMonth = '0' + sMonth : '';
+            eMonth < 10 ? eMonth = '0' + eMonth : '';
+            sDate < 10 ? sDate = '0' + sDate : '';
+            eDate < 10 ? eDate = '0' + eDate : '';
+
+            var startStr = [sYear, sMonth, sDate].join('.'),
+                endStr = [eYear, eMonth, eDate].join('.');
+
+            this.productTime = startStr + ' - ' + endStr;
+        }
+    }
+});
+
+// 获取产品列表
+vm.getProducts();

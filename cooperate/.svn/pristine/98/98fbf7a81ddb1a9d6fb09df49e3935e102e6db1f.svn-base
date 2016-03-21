@@ -1,0 +1,33 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import logging
+import traceback
+
+logger = logging.getLogger("logger")
+
+@login_required
+@csrf_exempt
+@render_to('group/system.html')
+def system_index(request):
+    return locals()
+
+@login_required
+@csrf_exempt
+@render_to('group/department.html')
+def department_index(request):
+    return locals()
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^group/system/$', system_index, name='system_index'),
+    
+    url(r'^group/department/$', department_index, name='department_index'),
+    
+)

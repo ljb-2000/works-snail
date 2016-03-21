@@ -1,0 +1,98 @@
+/**
+ * 
+ * @authors Your Name (you@example.org)
+ * @date    2016-01-19 17:19:36
+ * @version $Id$
+ */
+
+var vm = new Vue({
+    el: '#upload_box',
+    data: {
+        searchDoc: '',
+        docs: [],
+        docPath: ''
+    },
+    methods: {
+
+        // 初始加载
+        getDocs: function() {
+            $.ajax({
+                    url: '/input/ajax_get_files/',
+                    type: 'POST',
+                    dataType: 'json'
+                })
+                .done(function(data) {
+                    vm.docs = data;
+                })
+                .fail(function() {
+                    showAlert('jError', '出错了 :(', false);
+                });
+        },
+
+        // 搜索文件
+        searchFn: function() {
+            $.ajax({
+                    url: '/input/ajax_get_files/',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { 
+                        textstr: vm.searchDoc 
+                    }
+                })
+                .done(function(data) {
+                    vm.docs = data;
+                })
+                .fail(function() {
+                    showAlert('jError', '出错了 :(', false);
+                });
+        },
+
+        // 选择文件
+        selectDocs: function() {
+            $('#upload_file').trigger('click');
+        },
+
+        // 获取路径
+        getPath: function() {
+            this.docPath = $('#upload_file').val();
+        },
+
+        // 文件上传
+        uploadFile: function() {
+            var formData = new FormData($('#file_form')[0]),
+                path = this.docPath;
+
+            if (this.docPath === '') {
+                showAlert('jNotify', '请先选择上传文件！', true);
+
+                return false;
+            }
+
+            $.ajax({
+                    url: '/input/ajax_upload_file/',
+                    type: 'POST',
+                    processData: false,
+                    contentType: false,
+                    dataType: 'JSON',
+                    data: formData
+                })
+                .done(function(data) {
+                    if (data.result === 1) {
+                        showAlert('jSuccess', '文件上传成功 :)', true);
+
+                        vm.docPath = '';
+
+                        vm.getDocs();
+                    } else {
+                        showAlert('jError', '文件上传失败 :(', false);
+                    }
+                })
+                .fail(function() {
+                    showAlert('jError', '文件上传失败 :(', false);
+                });
+        }
+    }
+});
+
+// 渲染文件列表
+vm.getDocs();

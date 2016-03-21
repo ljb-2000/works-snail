@@ -1,0 +1,16 @@
+<div id="side_bar" class="col-side">
+    <div class="menu-box">
+        <dl class="menu menu-extra" v-for="menu in menus">
+            <dt class="menu-title">
+                <span class="menu-icon glyphicon" v-bind:class="menu.icon"></span>
+                [[ menu.header ]]
+            </dt>
+            <dd class="menu-item" v-for="list in menu.list" v-bind:class="isActive(list.link)">
+                <a v-bind:href="list.link">[[ list.name ]]</a>
+            </dd>
+        </dl>
+    </div>
+    <div class="copyright">
+        技术支持：运维开发部
+    </div>
+</div>

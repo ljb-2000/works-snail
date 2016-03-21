@@ -1,0 +1,80 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import logging
+import traceback
+import json
+from service import _report
+
+logger = logging.getLogger("logger")
+
+@login_required
+@render_to("index.html")
+def index(request):
+    return locals()
+
+@csrf_exempt
+def ajax_get_departments(request):
+    department_list = []
+    
+    departments = _report.get_departments_by_params()
+        
+    for department in departments:
+        rule = _report.get_rules_by_params(department=department)
+        header = department.name
+        html = ''
+        if rule:
+            html = rule.content
+        department_list.append({'header':header, 'html': html})
+        
+    return HttpResponse(json.dumps(department_list), content_type="application/json")
+
+@csrf_exempt
+def ajax_edit_department(request):
+    user = request.user
+    sdicts = {'result':0}
+    department_name = request.POST.get("department_name",'')
+    content = request.POST.get("content",'')
+    department = _report.get_department_by_params(name=department_name)
+    if department:
+        try:
+            rule,create = _report.get_or_create_rule_by_params(department=department)
+            if create:
+                rule.create_user = user
+            rule.update_user = user
+            rule.content = content
+            rule.save()
+            sdicts["result"] = 1
+        except Exception,e:
+            print e
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+@login_required
+@csrf_exempt
+@render_to('report/weekly.html')
+def weekly_index(request):
+    return locals()
+
+@login_required
+@csrf_exempt
+@render_to('report/monthly.html')
+def monthly_index(request):
+    return locals()
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^index/$', index, name='index'),
+    url(r'^index/ajax_get_departments/$', ajax_get_departments, name='ajax_get_departments'),
+    url(r'^index/ajax_edit_department/$', ajax_edit_department, name='ajax_edit_department'),
+                    
+    url(r'^report/weekly/$', weekly_index, name='weekly_index'),
+    
+    url(r'^report/monthly/$', monthly_index, name='monthly_index'),
+    
+)

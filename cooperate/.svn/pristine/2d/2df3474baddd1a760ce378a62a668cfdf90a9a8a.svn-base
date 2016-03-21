@@ -1,0 +1,91 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version department.html
+ */
+
+var vm = new Vue({
+    el: '#department_box',
+    data: {
+        curSelected: '',
+        workList: [],
+        departments: [],
+        user: '',
+        len: '10'
+    },
+    methods: {
+
+        // 初次加载渲染
+        getList: function(departmentName, len) {
+            $.ajax({
+                url: '/group/ajax_get_routines/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    department_name: departmentName,
+                    length: len
+                }
+            })
+            .done(function(data) {
+                vm.workList = data.list;
+                vm.departments = data.department;
+                vm.user = data.user;
+                vm.curSelected === '' ? vm.curSelected = vm.departments[0] : '';
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            });
+            
+        },
+
+        // 保存事务
+        saveData: function(index, id) {
+            var obj = $('#department_table tbody tr').eq(index);
+
+            $.ajax({
+                url: '/group/ajax_edit_routine/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    id: this.workList[index].id,
+                    department_name: vm.curSelected,
+                    content: obj.find('td').eq(1).html(),
+                    time : obj.find('td').eq(3).html()
+                }
+            })
+            .done(function(data) {
+                showAlert('jSuccess', '保存成功 :)', true);
+            })
+            .fail(function() {
+                showAlert('jError', '保存失败 :(', false);
+            });
+            
+        },
+
+        // 删除事务
+        deleteData: function(index, id) {
+            this.workList.splice(index, 1);
+        },
+
+        // 添加事务
+        addData: function() {
+            var date = new Date(),
+                curMonth = date.getMonth() + 1,
+                curDate = date.getDate();
+
+            curMonth < 10 ? curMonth = '0' + curMonth : '';
+            curDate < 10 ? curDate = '0' + curDate : '';
+
+            this.workList.unshift({
+                id: '',
+                content: '',
+                author: this.user,
+                time: date.getFullYear() + '-' + curMonth + '-' + curDate
+            });
+        }
+    }
+});
+
+// 渲染事务列表
+vm.getList('', '10');

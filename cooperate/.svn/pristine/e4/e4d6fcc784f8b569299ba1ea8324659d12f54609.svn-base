@@ -1,0 +1,146 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version task.html
+ */
+
+var vm = new Vue({
+    el: '#task_box',
+    data: {
+        products: [],
+        productName: '',
+        ontime: ['', '', '', '', ''],
+        productTime: '',
+        dataArr: [],
+        statusNum: 0
+    },
+    methods: {
+        getProducts: function() {
+            $.ajax({
+                    url: '/report/ajax_get_tasks/',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { 
+                        product_name: '' 
+                    }
+                })
+                .done(function(data) {
+                    vm.dataArr = data.task_periods;
+                    vm.products = data.product;
+                    vm.productName = vm.products[0];
+                    vm.ontime = data.ontime;
+                })
+                .fail(function() {
+                    showAlert('jError', '出错了 :(', false);
+                });
+        },
+
+        // 点击tab
+        isActive: function(index) {
+            this.productName = this.products[index];
+
+            // TODO AJAX
+        },
+
+        // 获取当前阶段更多数据
+        getStages: function() {
+            /*this.dataArr[this.statusNum].more = [{
+                time: '2016.01.16 - 2016.01.22',
+                list: [{
+                    content: '机器申请已到位，完成验收。',
+                    rate: '70%'
+                }, {
+                    content: '服务端已完成搭建3个大区，待运营侧测试验收。',
+                    rate: '80%'
+                }, {
+                    content: '登录器、gmcc、极效等周边环境已接入完成，待运营测试验收',
+                    rate: '90%'
+                }, {
+                    content: '监控已接入，etl已接入',
+                    rate: '100%'
+                }]
+            }];*/
+
+            $.ajax({
+                url: '/report/ajax_get_more_tasks/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_name: vm.productName,
+                    status: vm.statusNum + 1,
+                    index: vm.dataArr[vm.statusNum].more.length
+                }
+            })
+            .done(function(data) {
+                this.dataArr[this.statusNum].more.push(data);
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            });
+            
+        },
+
+        // 激活当前阶段
+        activeModule: function(index) {
+            this.statusNum = index;
+        },
+
+        // 删除行
+        deleteList: function(index) {
+            this.dataArr[this.statusNum].list.splice(index, 1);
+        },
+
+        // 添加行
+        addList: function() {
+            this.dataArr[this.statusNum].list.push({
+                content: '-',
+                rate: '-'
+            });
+        },
+
+        // 提交列表
+        saveList: function(index) {
+
+        },
+
+        // 计算时间段
+        getPeriod: function() {
+            var date = new Date(),
+                dateTime = date.getDate(),
+                week = date.getDay(),
+                sweek = week + 1,
+                eweek = 5 - week;
+
+            sweek === 7 ? sweek = 0 : '';
+            eweek === -1 ? eweek = 6 : '';
+
+            var setsTime = date.setDate(dateTime - sweek),
+                seteTime = date.setDate(dateTime + eweek),
+                startTime = new Date(setsTime),
+                endTime = new Date(seteTime),
+                sYear = startTime.getFullYear(),
+                eYear = endTime.getFullYear(),
+                sMonth = startTime.getMonth() + 1,
+                eMonth = endTime.getMonth() + 1,
+                sDate = startTime.getDate(),
+                eDate = endTime.getDate();
+
+            sMonth < 10 ? sMonth = '0' + sMonth : '';
+            eMonth < 10 ? eMonth = '0' + eMonth : '';
+            sDate < 10 ? sDate = '0' + sDate : '';
+            eDate < 10 ? eDate = '0' + eDate : '';
+
+            var startStr = [sYear, sMonth, sDate].join('.'),
+                endStr = [eYear, eMonth, eDate].join('.');
+
+            this.productTime = startStr + ' - ' + endStr;
+        }
+    }
+});
+
+// 获取产品列表
+vm.getProducts();
+
+// 获取当前时间段
+vm.getPeriod();

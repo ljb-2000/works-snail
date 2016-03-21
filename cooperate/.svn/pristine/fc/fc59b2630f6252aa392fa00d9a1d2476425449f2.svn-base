@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>运维协同平台</title>
+<link href="/static/src/tool/summernote/summernote.css" rel="stylesheet">
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="/static/css/font-awesome.min.css" rel="stylesheet">
+<link href="/static/src/tool/boot_datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+<link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body>
+    {% include "header.html" %}
+    <div class="main-box">
+        <div class="main-inner">
+            {% include "left.html" %}
+            <div class="col-main">
+                <h2 class="main-title">组织架构</h2>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="first active">
+                        <a href="#tab_one" aria-controls="tab-one" role="tab" data-toggle="tab">架构列表</a>
+                    </li>
+                    <!-- <li role="presentation">
+                        <a href="#tab_two" aria-controls="tab-two" role="tab" data-toggle="tab">新建架构</a>
+                    </li> -->
+                </ul>
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="tab_one">
+                        <img src="/static/images/system.jpg" height="483" width="900">
+                    </div>
+                    <!-- <div role="tabpanel" class="tab-pane" id="tab_two">
+                        <div id="j_editbox">
+                    
+                        </div>
+                        <button class="btn btn-primary btn-input">
+                            提交
+                        </button>
+                    </div> -->
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "importjs.html" %}
+    <script type="text/javascript" src="/static/src/tool/summernote/summernote.min.js"></script>
+    <script type="text/javascript" src="/static/src/jq/group/system.js"></script>
+</body>
+</html>

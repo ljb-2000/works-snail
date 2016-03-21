@@ -1,0 +1,509 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.db.transaction import commit_on_success
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import logging
+import traceback
+import json
+from service import _report
+import datetime
+from releaseinfo import SPECIAL_USERS, SPECIAL_USER_NAME
+from utils.util import get_product_list_by_user
+
+logger = logging.getLogger("logger")
+
+@login_required
+@render_to("index.html")
+def index(request):
+    return locals()
+
+@csrf_exempt
+def ajax_get_departments(request):
+    department_list = []
+    
+    departments = _report.get_departments_by_params(id=3)
+        
+    for department in departments:
+        rule = _report.get_rule_by_params(department=department)
+        header = department.name
+        html = ''
+        if rule:
+            html = rule.content
+        department_list.append({'header':header, 'html': html})
+        
+    return HttpResponse(json.dumps(department_list), content_type="application/json")
+
+@csrf_exempt
+@commit_on_success
+def ajax_edit_department(request):
+    user = request.user
+    sdicts = {'result':0}
+    department_name = request.POST.get("department_name",'')
+    content = request.POST.get("content",'')
+    department = _report.get_department_by_params(name=department_name)
+    if department:
+        try:
+            rule,create = _report.get_or_create_rule_by_params(department=department)
+            if create:
+                rule.create_user = user
+            rule.update_user = user
+            rule.content = content
+            rule.save()
+            sdicts["result"] = 1
+        except Exception,e:
+            print e
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+@login_required
+@csrf_exempt
+@render_to('report/weekly.html')
+def weekly_index(request):
+    return locals()
+
+@csrf_exempt
+def ajax_get_weeklys(request):
+    user = request.user
+    result = {}
+    
+    today = datetime.date.today()
+    #本周一
+    monday = today - datetime.timedelta(today.weekday())
+    #本周五
+    friday = today + datetime.timedelta(4 - today.weekday())
+    
+    departments = _report.get_departments_by_params(id=3)
+    result['department'] = [d.name for d in departments]
+        
+    department_name = request.POST.get('department_name','')
+    start_time = request.POST.get('start_time','')
+    end_time = request.POST.get('end_time','')
+    
+    weekly_list = []
+    if departments:
+        if department_name:
+            department = _report.get_department_by_params(name=department_name)
+        else:
+            department = departments[0]
+    
+        weeklys = _report.get_weeklys_by_params(department=department).order_by('-id')
+        if start_time:
+            start_time = datetime.datetime.strptime(start_time,'%Y-%m-%d')
+            weeklys = weeklys.filter(start_time__gte=start_time)
+        else:
+            weeklys = weeklys.filter(start_time__gte=monday)
+        if end_time:
+            end_time = datetime.datetime.strptime(end_time,'%Y-%m-%d')
+            weeklys = weeklys.filter(end_time__lte=end_time)
+        else:
+            weeklys = weeklys.filter(end_time__lte=friday)
+        for weekly in weeklys:
+            editable = False
+            if user == weekly.user:
+                editable = True
+            id = weekly.id
+            author = weekly.user.username
+            time = datetime.datetime.strftime(weekly.updated,'%Y-%m-%d')
+            
+            weekly_progress_list = _report.get_weeklyProgresss_by_params(weekly=weekly)
+            weekly_plan_list = _report.get_weeklyPlans_by_params(weekly=weekly)
+            progress_list = [progress.content for progress in weekly_progress_list]
+            plan_list = [plan.content for plan in weekly_plan_list]
+            weekly_list.append({'id':id, 'progress':progress_list, 'plan':plan_list, 'author': author, 'time':time, 'editable':editable})
+    
+    result['list'] = weekly_list
+    
+    result['start_time'] = datetime.datetime.strftime(monday,'%Y-%m-%d')
+    result['end_time'] = datetime.datetime.strftime(friday,'%Y-%m-%d')
+    
+    return HttpResponse(json.dumps(result), content_type="application/json")
+
+@csrf_exempt
+@commit_on_success
+def ajax_edit_weekly(request):
+    user = request.user
+    sdicts = {'result':0}
+    weekly_id = request.POST.get("id",'')
+    department_name = request.POST.get("department_name",'')
+    start_time = request.POST.get("start_time")
+    end_time = request.POST.get("end_time")
+    progress_list = request.POST.getlist("progress_list[]",[])
+    plan_list = request.POST.getlist("plan_list[]",[])
+    
+    department = _report.get_department_by_params(name=department_name)
+    if department:
+        try:
+            #修改
+            if weekly_id:
+                weekly = _report.get_weekly_by_params(id=int(weekly_id))
+                
+                weekly_progress_list =  _report.get_weeklyProgresss_by_params(weekly=weekly)
+                weekly_plan_list =  _report.get_weeklyPlans_by_params(weekly=weekly)
+                for w_progress in weekly_progress_list:
+                    w_progress.delete()
+                for w_plan in weekly_plan_list:
+                    w_plan.delete()
+                
+            #新建    
+            else:
+                weekly = _report.create_weekly_by_params(department=department,user=user)
+                
+            weekly.start_time = datetime.datetime.strptime(start_time,'%Y-%m-%d')
+            weekly.end_time = datetime.datetime.strptime(end_time,'%Y-%m-%d')
+            weekly.save()
+                
+            for progress in progress_list:
+                weekly_progress =  _report.create_weeklyProgress_by_params(weekly=weekly)
+                weekly_progress.content = progress
+                weekly_progress.save()
+            
+            for plan in plan_list:
+                weekly_plan =  _report.create_weeklyPlan_by_params(weekly=weekly)
+                weekly_plan.content = plan
+                weekly_plan.save()
+            
+            sdicts["result"] = 1
+        except Exception,e:
+            print e
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+@csrf_exempt
+@commit_on_success
+def ajax_delete_weekly(request):
+    sdicts = {'result':0}
+    weekly_id = request.POST.get("id",'')
+    
+    if weekly_id:
+        try:
+            weekly = _report.get_weekly_by_params(id=int(weekly_id))
+                
+            weekly_progress_list =  _report.get_weeklyProgresss_by_params(weekly=weekly)
+            weekly_plan_list =  _report.get_weeklyPlans_by_params(weekly=weekly)
+            for w_progress in weekly_progress_list:
+                w_progress.delete()
+            for w_plan in weekly_plan_list:
+                w_plan.delete()
+                
+            weekly.delete()
+            sdicts["result"] = 1
+        except Exception,e:
+            print e
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+
+@login_required
+@csrf_exempt
+@render_to('report/monthly.html')
+def monthly_index(request):
+    return locals()
+
+@csrf_exempt
+def ajax_get_monthlys(request):
+    user = request.user
+    result = {}
+    
+    today = datetime.date.today()
+    result['time'] = datetime.datetime.strftime(today,'%Y-%m')
+    
+    departments = _report.get_departments_by_params(id=3)
+    result['department'] = [d.name for d in departments]
+    
+    cnname = user.first_name
+    if user.username in SPECIAL_USERS:
+        cnname = SPECIAL_USER_NAME
+    product_names = get_product_list_by_user(cnname)
+    products = _report.get_products_by_params(name__in=product_names)
+    result['product'] = [p.name for p in products]
+        
+    department_name = request.POST.get('department_name','')
+    time_filter = request.POST.get('time_filter','')
+    
+    monthly_list = []
+    if departments:
+        if department_name:
+            department = _report.get_department_by_params(name=department_name)
+        else:
+            department = departments[0]
+    
+        monthlys = _report.get_monthlys_by_params(department=department, time__year=today.year, time__month=today.month)
+        if time_filter:
+            time_filter_list = time_filter.split('-')
+            year = int(time_filter_list[0])
+            month = int(time_filter_list[1])
+            monthlys =  _report.get_monthlys_by_params(department=department, time__year=year, time__month=month)
+        for monthly in monthlys:
+            editable = False
+            if user == monthly.user:
+                editable = True
+            id = monthly.id
+            author = monthly.user.username
+            time = datetime.datetime.strftime(monthly.time,'%Y-%m')
+            
+            monthly_info_list = []
+            monthly_infos = _report.get_monthlyInfos_by_params(monthly=monthly)
+            length = len(monthly_infos)
+            for monthly_info in monthly_infos:
+                monthly_info_dict = {}
+                
+                monthly_info_dict['product'] = monthly_info.product.name
+                monthly_info_dict['hardware'] = monthly_info.hard_num
+                monthly_info_dict['software'] = monthly_info.soft_num
+                monthly_info_dict['human'] = monthly_info.human_num
+                monthly_info_dict['safe'] = monthly_info.safe_num
+                monthly_info_dict['serviceNum'] = monthly_info.service_num
+                monthly_info_dict['serviceTime'] = monthly_info.service_time
+                monthly_info_dict['area'] = monthly_info.server_num
+                monthly_info_dict['contain'] = monthly_info.space_percent
+                monthly_info_dict['machine'] = monthly_info.machine_num
+                
+                monthly_info_list.append(monthly_info_dict)
+                
+            monthly_list.append({
+                                 'id':id, 
+                                 'author': author, 
+                                 'time':time, 
+                                 'editable':editable,
+                                 'length':length,
+                                 'list':monthly_info_list, 
+                                 })
+    
+    result['list'] = monthly_list
+
+    return HttpResponse(json.dumps(result), content_type="application/json")
+
+@csrf_exempt
+@commit_on_success
+def ajax_edit_monthly(request):
+    user = request.user
+    sdicts = {'result':0}
+    
+    today = datetime.date.today()
+    
+    monthly_id = request.POST.get("id",'')
+    department_name = request.POST.get("department_name",'')
+
+    info_list = request.POST.get('info_list','')
+        
+    department = _report.get_department_by_params(name=department_name)
+    if department:
+        try:
+            #修改
+            if monthly_id:
+                monthly = _report.get_monthly_by_params(id=int(monthly_id))
+                
+            #新建    
+            else:
+                monthly = _report.get_or_create_monthly_by_params(department=department,user=user,time = datetime.datetime(today.year,today.month,1))[0]
+            monthly.save()
+            
+            monthly_info_list =  _report.get_monthlyInfos_by_params(monthly=monthly)
+            for m_info in monthly_info_list:
+                m_info.delete()
+            
+            if info_list:
+                info_list = json.loads(info_list)
+                for info in info_list:
+                    product_name = info.get('product')
+                    product = _report.get_product_by_params(name=product_name)
+                    
+                    monthly_info =  _report.create_monthlyInfo_by_params(monthly=monthly,product=product)
+                    monthly_info.hard_num = info.get('hardware')
+                    monthly_info.soft_num = info.get('software')
+                    monthly_info.human_num = info.get('human')
+                    monthly_info.safe_num = info.get('safe')
+                    monthly_info.service_num = info.get('serviceNum')
+                    monthly_info.service_time = info.get('serviceTime')
+                    monthly_info.server_num = info.get('area')
+                    monthly_info.space_percent = info.get('contain')
+                    monthly_info.machine_num = info.get('machine')
+                    
+                    monthly_info.save()
+            
+            sdicts["result"] = 1
+        except Exception,e:
+            print e
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+@login_required
+@csrf_exempt
+@render_to('report/task.html')
+def task_index(request):
+    return locals()
+
+
+@csrf_exempt
+def ajax_get_tasks(request):
+    user = request.user
+    result = {}
+    
+    today = datetime.date.today()
+    #上周六
+    saturday = today - datetime.timedelta(2 + today.weekday())
+    #本周五
+    friday = today + datetime.timedelta(4 - today.weekday())
+    
+    cnname = user.first_name
+    if user.username in SPECIAL_USERS:
+        cnname = SPECIAL_USER_NAME
+    product_names = get_product_list_by_user(cnname)
+    products = _report.get_products_by_params(name__in=product_names)
+    result['product'] = [p.name for p in products]
+        
+    product_name = request.POST.get('product_name','')
+    
+    if product_name:
+        product = _report.get_product_by_params(name=product_name)
+    else:
+        product = products[0]
+    
+    ontime = []
+    taskPeriods = _report.get_taskPeriods_by_params(product=product).order_by('period')
+    for task_period in taskPeriods:
+        time = ''
+        if task_period.time:
+            time =task_period.time
+        ontime.append(time)
+    result['ontime'] = ontime
+    
+    list = []
+    taskCircles = _report.get_taskCircles_by_params(product=product, start_time=saturday, end_time=friday)
+    if taskCircles:
+        task_circle = taskCircles[0]
+        taskInfos = _report.get_taskInfos_by_params(task_circle=task_circle)
+        for task_info in taskInfos:
+            list.append({'content':task_info.content, 'rate': task_info.rate})
+    else:
+        list.append({'content':'-', 'rate': '-'})
+    
+    result['list'] = list
+    result['more'] = [] 
+    
+    result['start_time'] = datetime.datetime.strftime(saturday,'%Y-%m-%d')
+    result['end_time'] = datetime.datetime.strftime(friday,'%Y-%m-%d')
+    
+    return HttpResponse(json.dumps(result), content_type="application/json")
+
+@csrf_exempt
+def ajax_get_more_tasks(request):
+    result = {}
+    today = datetime.date.today()
+    saturday = today - datetime.timedelta(2 + today.weekday())
+        
+    product_name = request.POST.get('product_name', '')
+    index = int(request.POST.get('index', 0))
+    
+    try:
+        product = _report.get_product_by_params(name=product_name)
+        taskCircles = _report.get_taskCircles_by_params(product=product, start_time__lt=saturday).order_by('-id')
+        
+        if index < len(taskCircles):
+            task_circle = taskCircles[index]
+            result['start_time'] = datetime.datetime.strftime(task_circle.start_time,'%Y.%m.%d'), 
+            result['end_time'] = datetime.datetime.strftime(task_circle.end_time,'%Y.%m.%d'), 
+            
+            list = []
+            taskInfos = _report.get_taskInfos_by_params(task_circle=task_circle)
+            if task_circle.start_time != saturday:
+                for task_info in taskInfos:
+                    list.append({
+                                 'content':task_info.content, 
+                                 'rate': task_info.rate
+                                })
+            result['list'] = list
+    except Exception,e:
+        print e
+
+    return HttpResponse(json.dumps(result), content_type="application/json")
+
+@csrf_exempt
+@commit_on_success
+def ajax_edit_task(request):
+    user = request.user
+    sdicts = {'result':0}
+    
+    today = datetime.date.today()
+    #上周六
+    saturday = today - datetime.timedelta(2 + today.weekday())
+    #本周五
+    friday = today + datetime.timedelta(4 - today.weekday())
+    
+    product_name = request.POST.get('product_name','')
+    info_lists = request.POST.get('info_list','')
+    info_lists = json.loads(info_lists)
+    try:
+        product = _report.get_product_by_params(name=product_name)
+        task_periods = _report.get_taskPeriods_by_params(product=product)
+        
+        for index, task_period in enumerate(task_periods):
+            task_circle = _report.get_or_create_taskCircle_by_params(task_period=task_period, start_time=saturday, end_time=friday)[0]
+            
+            task_infos =  _report.get_taskInfos_by_params(task_circle=task_circle)
+            for t_info in task_infos:
+                t_info.delete()
+                
+            task_circle.user = user
+            task_circle.save()
+            
+            info_list = info_lists[index]
+            for info in info_list:
+                task_info =  _report.create_taskInfo_by_params(task_circle=task_circle)
+                task_info.content = info.get('content')
+                task_info.rate = info.get('rate')
+                task_info.save()
+        
+        sdicts["result"] = 1
+    except Exception,e:
+        print e
+    
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+@csrf_exempt
+@commit_on_success
+def ajax_edit_ontime(request):
+    user = request.user
+    sdicts = {'result':0}
+    
+    product_name = request.POST.get('product_name','')
+    status = request.POST.get('status')
+    ontime = request.POST.get('ontime','')
+    
+    try:
+        product = _report.get_product_by_params(name=product_name)
+        task_period = _report.get_taskPeriod_by_params(product=product, period=int(status))
+        if task_period and ontime:
+            task_period.user = user
+            task_period.time = ontime
+            task_period.save()
+        
+        sdicts["result"] = 1
+    except Exception,e:
+        print e
+    
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^index/$', index, name='index'),
+    url(r'^index/ajax_get_departments/$', ajax_get_departments, name='ajax_get_departments'),
+    url(r'^index/ajax_edit_department/$', ajax_edit_department, name='ajax_edit_department'),
+                    
+    url(r'^report/weekly/$', weekly_index, name='weekly_index'),
+    url(r'^report/ajax_get_weeklys/$', ajax_get_weeklys, name='ajax_get_weeklys'),
+    url(r'^report/ajax_edit_weekly/$', ajax_edit_weekly, name='ajax_edit_weekly'),
+    url(r'^report/ajax_delete_weekly/$', ajax_delete_weekly, name='ajax_delete_weekly'),
+    
+    url(r'^report/monthly/$', monthly_index, name='monthly_index'),
+    url(r'^report/ajax_get_monthlys/$', ajax_get_monthlys, name='ajax_get_monthlys'),
+    url(r'^report/ajax_edit_monthly/$', ajax_edit_monthly, name='ajax_edit_monthly'),
+    
+    url(r'^report/task/$', task_index, name='task_index'),
+    url(r'^report/ajax_get_tasks/$', ajax_get_tasks, name='ajax_get_tasks'),
+    url(r'^report/ajax_get_more_tasks/$', ajax_get_more_tasks, name='ajax_get_more_tasks'),
+    url(r'^report/ajax_edit_task/$', ajax_edit_task, name='ajax_edit_task'),
+    url(r'^report/ajax_edit_ontime/$', ajax_edit_ontime, name='ajax_edit_ontime'),
+)

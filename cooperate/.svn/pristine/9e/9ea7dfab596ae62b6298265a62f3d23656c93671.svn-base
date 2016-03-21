@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>运维协同平台</title>
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body>
+    {% include "header.html" %}
+    <div class="main-box">
+        <div class="main-inner">
+            {% include "left.html" %}
+            <div class="col-main">
+                <h2 class="main-title">文档管理</h2>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="first active">
+                        <a href="#tab_one" aria-controls="tab-one" role="tab" data-toggle="tab">文档列表</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#tab_two" aria-controls="tab-two" role="tab" data-toggle="tab">上传文档</a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="tab_one">
+                        <div class="col-sm-5 doc-search">
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="" placeholder="标题/作者">
+                                    <div class="input-group-addon">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <ul class="doc-box mt20">
+                            <li class="doc-list clearfix">
+                                <h5 class="pull-left m0">文档1111</h5>
+                                <dl class="pull-right">
+                                    <dd>luozh</dd>
+                                    <dd>2016-01-20</dd>
+                                    <dd>
+                                        <a class="pointer">下载</a>
+                                    </dd>
+                                </dl>
+                            </li>
+                            <li class="doc-list clearfix">
+                                <h5 class="pull-left m0">文档1111</h5>
+                                <dl class="pull-right">
+                                    <dd>luozh</dd>
+                                    <dd>2016-01-20</dd>
+                                    <dd>
+                                        <a class="pointer">下载</a>
+                                    </dd>
+                                </dl>
+                            </li>
+                            <li class="doc-list clearfix">
+                                <h5 class="pull-left m0">文档1111</h5>
+                                <dl class="pull-right">
+                                    <dd>luozh</dd>
+                                    <dd>2016-01-20</dd>
+                                    <dd>
+                                        <a class="pointer">下载</a>
+                                    </dd>
+                                </dl>
+                            </li>
+                        </ul>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="tab_two">
+                        <form class="form-inline form-upload">
+                            <div class="form-group">
+                                <label class="control-label text-muted">选择文件：</label>
+                                <input type="text" class="form-control" style="width:315px;" disabled>
+                                <button class="btn btn-default btn-input" type="button">
+                                    选择
+                                </button>
+                                <button class="btn btn-primary btn-input" type="button">
+                                    上传
+                                </button>
+                                <input id="j_upload_file" type="file" name="j_upload_file" style="position:absolute;opacity:0;filter:alpha(opacity:0);left:-999%" size="28">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/static/src/tool/jquery/jquery.min.js"></script>
+    <script type="text/javascript" src="/static/src/tool/bootstrap/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/static/src/jq/input/upload.js"></script>
+</body>
+</html>

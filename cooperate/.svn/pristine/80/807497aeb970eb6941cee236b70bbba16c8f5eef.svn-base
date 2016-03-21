@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>运维协同平台</title>
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="/static/src/tool/boot_datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+<link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body>
+    {% include "header.html" %}
+    </div>
+    <div class="main-box">
+        <div class="main-inner">
+            {% include "left.html" %}
+            <div class="col-main">
+                <h2 class="main-title">周报管理</h2>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="first active">
+                        <a href="#tab_one" aria-controls="tab-one" role="tab" data-toggle="tab">周报列表</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#tab_two" aria-controls="tab-two" role="tab" data-toggle="tab">新建周报</a>
+                    </li>
+                </ul>
+                <div id="week_box" class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="tab_one">
+                        <form class="form-inline" onsubmit="return false">
+                            <div class="form-group">
+                                <div class="input-group date weektime-from col-md-8" data-date="" data-date-format="yyyy-mm-dd" data-link-field="dtp_input3" data-link-format="yyyy-mm-dd">
+                                    <input id="start_time" class="form-control" v-model="searchStart" size="16" type="text" placeholder="开始时间" style="width:140px;" readonly>
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-remove"></span>
+                                    </span>
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-th"></span>
+                                    </span>
+                                </div>
+                                <input type="hidden" id="dtp_input3" value=""><br>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group date weektime-to col-md-8" data-date="" data-date-format="yyyy-mm-dd" data-link-field="dtp_input4" data-link-format="yyyy-mm-dd">
+                                    <input id="end_time" class="form-control" v-model="searchEnd" size="16" type="text" placeholder="结束时间" style="width:140px;" readonly>
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-remove"></span>
+                                    </span>
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-th"></span>
+                                    </span>
+                                </div>
+                                <input type="hidden" id="dtp_input4" value=""><br>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-primary btn-input">
+                                    <span class="glyphicon glyphicon-search"></span>
+                                    搜索
+                                </button>
+                            </div>
+                        </form>
+                        <br>
+                        <div class="list-box" v-for="list in weekList">
+                            <div class="list-body">
+                                <dl>
+                                    <dt>“本周工作进展</dt>
+                                    <dd v-for="item in list.progress">[[ item.content ]]</dd>
+                                    <dt>“下周工作计划</dt>
+                                    <dd v-for="item in list.plan">[[ item.content ]]</dd>
+                                </dl>
+                            </div>
+                            <div class="list-footer">
+                                <span class="list-author">[[ list.name ]]</span>，&nbsp;
+                                <span class="list-date">[[ list.time ]]</span>
+                                &nbsp;&nbsp;&nbsp;
+                                <span class="list-edit pointer" v-if="list.editable">编辑周报</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="tab_two">
+                        <form class="common-form datetime-form form-horizontal" onsubmit="return false">
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label text-muted">时间范围：<span class="red">*</span></label>
+                                <div class="input-group date datetime-from col-sm-2" data-date="" data-date-format="yyyy-mm-dd" data-link-field="dtp_input1" data-link-format="yyyy-mm-dd">
+                                    <input id="start_time" class="form-control" v-model="startTime" size="16" type="text" placeholder="开始时间" style="width:140px;" readonly>
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-remove"></span>
+                                    </span>
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-th"></span>
+                                    </span>
+                                </div>
+                                <input type="hidden" id="dtp_input1" value="">
+
+                                <div class="input-group date datetime-to col-sm-2" data-date="" data-date-format="yyyy-mm-dd" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd">
+                                    <input id="end_time" class="form-control" v-model="endTime" size="16" type="text" placeholder="结束时间" style="width:140px;" readonly>
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-remove"></span>
+                                    </span>
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-th"></span>
+                                    </span>
+                                </div>
+                                <input type="hidden" id="dtp_input2" value="">
+                            </div>
+                            <div class="j-progress">
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label text-muted">本周工作进展：<span class="red">*</span></label>
+                                    <div class="col-sm-6">
+                                        <input type="text" class="form-control" v-model="progressValue">
+                                    </div>
+                                    <span class="add glyphicon glyphicon-plus pointer" v-on:click="addProgress()"></span>
+                                </div>
+                                <div class="form-group" v-for="group in progressGroup">
+                                    <div class="col-sm-6 col-sm-offset-2">
+                                        <input type="text" class="form-control" v-model="group.value">
+                                    </div>
+                                    <span class="remove glyphicon glyphicon-remove pointer" v-on:click="removeProgress($index)"></span>
+                                </div>
+                            </div>
+                            <div class="j-plan">
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label text-muted">下周工作计划：<span class="red">*</span></label>
+                                    <div class="col-sm-6">
+                                        <input type="text" class="form-control" v-model="planValue">
+                                    </div>
+                                    <span class="add glyphicon glyphicon-plus pointer" v-on:click="addPlan()"></span>
+                                </div>
+                                <div class="form-group" v-for="group in planGroup">
+                                    <div class="col-sm-6 col-sm-offset-2">
+                                        <input type="text" class="form-control" v-model="group.value">
+                                    </div>
+                                    <span class="remove glyphicon glyphicon-remove pointer" v-on:click="removePlan($index)"></span>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="form-group">
+                                <div class="col-sm-9 text-center">
+                                    <button class="btn btn-primary btn-input" v-on:click="comfirm">
+                                        提交
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "importjs.html" %}
+    <script type="text/javascript" src="/static/src/tool/boot_datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+    <script type="text/javascript" src="/static/src/jq/report/weekly.js"></script>
+</body>
+</html>

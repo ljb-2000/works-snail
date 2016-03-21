@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+import json
+import time
+import datetime
+import requests
+import traceback
+from releaseinfo import PRODUCT_URL
+
+def get_product_list_by_user(cnname):
+    """
+        get cn product list of user's cnname.
+    """
+    p_list = []
+    if cnname:
+        try:
+            resp = requests.post(PRODUCT_URL,data={
+                "username":cnname
+            }).json()
+            p_list=[item['productname'] for item in resp]
+        except Exception,e:
+            error = traceback.format_exc()
+            print error
+    return p_list

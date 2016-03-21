@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>运维协同平台</title>
+<link href="../static/src/tool/summernote/summernote.css" rel="stylesheet">
+<link href="../static/css/bootstrap.min.css" rel="stylesheet">
+<link href="../static/css/font-awesome.min.css" rel="stylesheet">
+<link href="../static/css/main.css" rel="stylesheet">
+</head>
+<body>
+	<div class="container-fluid">
+		<div class="header row">
+			<div class="inner-header">
+				<h1 class="logo">
+					<a href="index.html" title="运维协同平台">
+						<img class="logo-img" src="../static/images/logo.png" height="60" width="60">
+						<span class="logo-text">运维 · 协同平台<span>
+					</a>
+				</h1>
+				<div class="account">
+					<span class="username">luozh</span>
+					<a class="exit">退出</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="main-box">
+		<div class="main-inner">
+			<div class="col-side">
+				<div class="menu-box">
+					<dl class="menu menu-extra">
+						<dt class="menu-title">
+							<span class="menu-icon glyphicon glyphicon-th-large"></span>
+							首页/报告
+						</dt>
+						<dd class="menu-item selected">
+							<a href="index.html">首页</a>
+						</dd>
+						<dd class="menu-item">
+							<a href="report/weekly.html">周报管理</a>
+						</dd>
+						<dd class="menu-item">
+							<a href="report/monthly.html">月报管理</a>
+						</dd>
+					</dl>
+					<dl class="menu">
+						<dt class="menu-title">
+							<span class="menu-icon glyphicon glyphicon-inbox"></span>
+							部门/组织
+						</dt>
+						<dd class="menu-item">
+							<a href="group/system.html">组织架构</a>
+						</dd>
+						<dd class="menu-item">
+							<a href="group/department.html">部门事务</a>
+						</dd>
+					</dl>
+					<dl class="menu">
+						<dt class="menu-title">
+							<span class="menu-icon glyphicon glyphicon-list-alt"></span>
+							项目/会议
+						</dt>
+						<dd class="menu-item">
+							<a href="project/task.html">项目管理</a>
+						</dd>
+						<dd class="menu-item">
+							<a href="project/meeting.html">会议模式</a>
+						</dd>
+					</dl>
+					<dl class="menu">
+						<dt class="menu-title">
+							<span class="menu-icon glyphicon glyphicon-random"></span>
+							配置/录入
+						</dt>
+						<dd class="menu-item">
+							<a href="input/upload.html">文档管理</a>
+						</dd>
+						<dd class="menu-item">
+							<a href="input/issue.html">问题录入</a>
+						</dd>
+					</dl>
+				</div>
+				<div class="copyright">
+					技术支持：运维开发部
+				</div>
+			</div>
+			<div class="col-main">
+				<h2 class="main-title">首页</h2>
+				<ul class="nav nav-tabs" role="tablist">
+					<li role="presentation" class="first active">
+						<a href="#tab_one" aria-controls="tab-one" role="tab" data-toggle="tab">部门章程</a>
+					</li>
+					<li role="presentation">
+						<a href="#tab_two" aria-controls="tab-two" role="tab" data-toggle="tab">新建章程</a>
+					</li>
+				</ul>
+				<div class="tab-content">
+					<div role="tabpanel" class="tab-pane active" id="tab_one">
+						<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+							<div class="panel panel-default">
+								<div class="panel-heading" role="tab" id="headingOne">
+									<h4 class="panel-title">
+										<a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+											项目二部
+										</a>
+									</h4>
+								</div>
+								<div id="collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+									<div class="panel-body">
+										<h5><h4>一、日常工作制度</h4>1、考勤制度<ul><li>严格遵守公司的考勤制度</li></ul><ul><li>请假、调休半天及以上需提前向上级申请，不能影响项目进度</li></ul><ul><li>如有紧急情况，不能提前申请的，需电话和上级沟通，并在休假后补办请假手续</li></ul>2、周报制度<ul><li>每周五 13:00 前OA或邮件提交，详细描述本周完成哪些工作，下周准备完成哪些工作</li></ul>3、部门例会<ul><li>采取不定期的方式</li></ul><ul><li>有问题随时沟通</li></ul></h5><div><br></div><h4>二、部门结构和岗位制度</h4><div>1、开发部经理</div><ul><li>制定产品目标</li><li>制定各个工作的详细任务表，跟踪这些任务的执行情况，进行控制</li><li>组织会议对程序进行评审</li><li>综合具体情况，对各种不同的方案进行取舍并做出决定</li><li>协调各项目参与人员之间的关系</li></ul><div>2、开发工程师</div><ul><li>根据项目具体需求，承担开发任务，按计划完成任务目标</li><li>配合系统分析人员完成软甲系统及模块的需求调研与需求分析</li><li>配合系统分析人员完成软件系统及模块的设计</li><li>独立完成软件系统及模块的编码</li><li>负责编制与项目相关的技术文档</li></ul><div><br></div><h4>三、项目管理</h4><div>1、开发管理</div><ul><li>严格遵守软件开发流程：立项、需求采集、总体设计、原型设计、版本开发、测试、上线</li><li>遵守各语言的编码规范</li><li>制定里程碑，保证工作进度、质量</li><li>各阶段完成，进行阶段总结</li><li>遇到问题及时沟通。技术类问题，进行总结，上传至知识库</li></ul>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div role="tabpanel" class="tab-pane" id="tab_two">
+						<form class="form-inline" onsubmit="return false">
+							<div class="form-group mb20">
+								<label class="control-label">所属部门：</label>
+								<select class="form-control" disabled>
+									<option value=''>项目二部</option>
+								</select>
+							</div>
+							<div id="j_editbox">
+								
+							</div>
+							<button class="btn btn-primary btn-input">
+								提交
+							</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script type="text/javascript" src="../static/src/tool/jquery/jquery.min.js"></script>
+	<script type="text/javascript" src="../static/src/tool/bootstrap/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../static/src/tool/summernote/summernote.min.js"></script>
+	<script type="text/javascript" src="../static/src/jq/index/index.js"></script>
+</body>
+</html>

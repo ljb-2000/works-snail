@@ -1,0 +1,70 @@
+/**
+ * 
+ * @authors Your Name (you@example.org)
+ * @date    2016-01-19 17:19:36
+ * @version $Id$
+ */
+
+var vm = new Vue({
+    el: '#upload_box',
+    data: {
+        searchDoc: '',
+        docs: [],
+        docPath: ''
+    },
+    methods: {
+        getDocs: function() {
+            this.docs = [{
+                id: '1',
+                name: '文档1111',
+                author: 'luozh',
+                time: '2016-01-20'
+            }, {
+                id: '2',
+                name: '这是一个文档',
+                author: 'wx',
+                time: '2016-01-18'
+            }, {
+                id: '3',
+                name: '开服数据',
+                author: 'admin',
+                time: '2016-01-15'
+            }, {
+                id: '4',
+                name: '测试文档',
+                author: 'luozh',
+                time: '2016-01-06'
+            }];
+        },
+        selectDocs: function () {
+            $('#j_upload_file').trigger('click');
+        },
+        uploadFile: function () {
+            var formData =  new FormData($('#file_form')[0]);
+
+            if (this.docPath === '') {
+                showAlert('jNotify', '请先选择上传文件！', true);
+
+                return false;
+            }
+
+            $.ajax({
+                    url: '/input/file_upload/',
+                    type: 'POST',
+                    processData : false,
+                    contentType : false,
+                    dataType: 'JSON',
+                    data: formData
+                })
+                .done(function (data) {
+                    console.log(111);
+                })
+                .fail(function () {
+                    showAlert('jError', '上传失败！', false);
+                });
+        }   
+    }
+});
+
+// 渲染文件列表
+vm.getDocs();

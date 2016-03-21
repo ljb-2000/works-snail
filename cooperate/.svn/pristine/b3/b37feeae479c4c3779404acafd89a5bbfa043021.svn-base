@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>部门管理系统</title>
+<link href="/static/src/tool/summernote/summernote.css" rel="stylesheet">
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="/static/css/font-awesome.min.css" rel="stylesheet">
+<link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body>
+	{% include "header.html" %}
+	<div class="main-box">
+		<div class="main-inner">
+			{% include "left.html" %}
+			<div class="col-main">
+				<h2 class="main-title">首页</h2>
+				<ul class="nav nav-tabs" role="tablist">
+					<li role="presentation" class="first active">
+						<a href="#tab_one" aria-controls="tab-one" role="tab" data-toggle="tab">部门章程</a>
+					</li>
+					<li role="presentation">
+						<a href="#tab_two" aria-controls="tab-two" role="tab" data-toggle="tab">新建章程</a>
+					</li>
+				</ul>
+				<div id="index_box" class="tab-content">
+					<div role="tabpanel" class="tab-pane active" id="tab_one">
+						<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+							<div class="panel panel-default" v-for="list in lists">
+								<div class="panel-heading" role="tab">
+									<h4 class="panel-title">
+										<a role="button" data-toggle="collapse" data-parent="#accordion" v-bind:href="'#collapse' + $index" v-text="list.header" aria-expanded="true">
+										</a>
+									</h4>
+								</div>
+								<div v-bind:id="'collapse' + $index" v-bind:class="$index === 0 ? 'in' : ''" class="panel-collapse collapse" role="tabpanel">
+									<div class="panel-body" v-html="list.html">
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="file-empty" v-if="!lists.length" v-cloak>
+						    暂无部门章程
+						</div>
+					</div>
+					<div role="tabpanel" class="tab-pane" id="tab_two">
+						<form class="form-inline" onsubmit="return false">
+							<div class="form-group mb20">
+								<label class="control-label">所属部门：</label>
+								<select class="form-control" v-on:change="selectDepartment" v-model="selectedName">
+									<option v-for="department in lists" v-text="department.header" v-bind:value="department.header"></option>
+								</select>
+							</div>
+							<div id="summernote">
+								
+							</div>
+							<button class="btn btn-primary btn-input" v-on:click="submitFn">
+								提交
+							</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	{% include "importjs.html" %}
+	<script type="text/javascript" src="/static/src/tool/summernote/summernote.min.js"></script>
+	<script src="/static/src/tool/summernote/lang/summernote-zh-CN.js"></script>
+	<script type="text/javascript" src="/static/src/jq/index/index.js?v=201603021348"></script>
+</body>
+</html>

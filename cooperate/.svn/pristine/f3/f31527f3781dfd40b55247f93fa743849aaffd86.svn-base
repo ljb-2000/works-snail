@@ -1,0 +1,89 @@
+#!/usr/bin/python
+# -*- coding:utf-8 -*-
+from apps.report.models import Department, Rule
+
+import logging
+logger = logging.getLogger('logger')
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_department_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return Department.objects.create(**kwargs)
+
+def get_or_create_department_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return Department.objects.get_or_create(**kwargs)
+
+def get_department_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return Department.objects.get(**kwargs)
+    except Department.DoesNotExist:
+        logger.error(u"Department对象不存在（%s）" % kwargs)
+    except Department.MultipleObjectsReturned:
+        logger.error(u"Department对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_departments_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return Department.objects.filter(**kwargs)
+
+#===============================================================================
+# Model的直接操作方法，get_or_create、get、filter 等。
+#===============================================================================
+def create_rule_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 创建  对象
+    '''
+    return Rule.objects.create(**kwargs)
+
+def get_or_create_rule_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: 元组(obj,boolean)
+    @note: 获取或创建  对象
+    '''
+    return Rule.objects.get_or_create(**kwargs)
+
+def get_rule_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: obj或None
+    @note: 获取  对象
+    '''
+    try:
+        return Rule.objects.get(**kwargs)
+    except Rule.DoesNotExist:
+        logger.error(u"Rule对象不存在（%s）" % kwargs)
+    except Rule.MultipleObjectsReturned:
+        logger.error(u"Rule对象存在多条记录（%s）" % kwargs)
+    return None
+
+def get_rules_by_params(**kwargs):
+    '''
+    @param kwargs: key=value 的键值对
+    @return: [obj,]
+    @note: 获取  对象列表
+    '''
+    return Rule.objects.filter(**kwargs)
+

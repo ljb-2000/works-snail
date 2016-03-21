@@ -1,0 +1,16 @@
+<div class="container-fluid">
+    <div class="header row">
+        <div class="inner-header">
+            <h1 class="logo">
+                <a href="/index/" title="运维协同平台">
+                    <img class="logo-img" src="/static/images/logo.png" height="60" width="60">
+                    <span class="logo-text">运维 · 协同平台<span>
+                </a>
+            </h1>
+            <div class="account">
+                <span class="username">{{request.user.username}}</span>
+                <a href="/logout/" class="exit">退出</a>
+            </div>
+        </div>
+    </div>
+</div>

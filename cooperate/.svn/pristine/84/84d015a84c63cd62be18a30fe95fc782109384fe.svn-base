@@ -1,0 +1,147 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version monthly.html
+ */
+
+// datetime
+$('.monthtime-from').datetimepicker({
+    weekStart: 1,
+    todayBtn: 1,
+    autoclose: 1,
+    todayHighlight: 1,
+    startView: 3,
+    minView: 3,
+    forceParse: 0,
+    linkField: "mirror_field",
+    pickerPosition: "bottom-left"
+});
+
+var vm = new Vue({
+    el: '#month_box',
+    data: {
+        curSelected: '',
+        curDepartment: '',
+        departments: [],
+        selectMonth: '',
+        monthData: [],
+        creatData: [],
+        product: [],
+        productLen: '',
+        datatime: '',
+        monthlyId: ''
+    },
+    methods: {
+
+        // 获取当前月份
+        /*getDateTime: function() {
+            var date = new Date(),
+                curMonth = date.getMonth() + 1;
+
+            curMonth < 10 ? curMonth = '0' + curMonth : '';
+
+            this.datatime = this.selectMonth = date.getFullYear() + '-' + curMonth;
+        },*/
+
+        // 获取初始数据
+        getMonthData: function() {
+            $.ajax({
+                url: '/report/ajax_get_monthlys/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    department_name: vm.curSelected,
+                    time_filter: vm.selectMonth
+                }
+            })
+            .done(function(data) {
+                vm.monthData = data.list;
+                vm.departments = data.department;
+                vm.product = data.product;
+                vm.productLen = data.product.length;
+                vm.curDepartment = vm.departments[0];
+                vm.creatData = [];
+
+                vm.curSelected === '' ? vm.curSelected = vm.departments[0] : '';
+                vm.selectMonth === '' ? vm.selectMonth = data.time : '';
+                vm.datatime = data.time;
+
+                vm.product.forEach(function(e) {
+                    vm.creatData.push({
+                        'product': e,
+                        'hardware': '-',
+                        'software': '-',
+                        'human': '-',
+                        'safe': '-',
+                        'serviceNum': '-',
+                        'serviceTime': '-',
+                        'area': '-',
+                        'contain': '-',
+                        'machine': '-'
+                    })
+                });
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            }); 
+        },
+
+        // 提交月报
+        submitFn: function() {  
+            var obj = JSON.stringify(vm.creatData);
+
+            $.ajax({
+                url: '/report/ajax_edit_monthly/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    time: vm.datatime,
+                    id: vm.monthlyId,
+                    department_name: vm.curDepartment,
+                    info_list: obj
+                }
+            })
+            .done(function() {
+                vm.creatData = [];
+
+                vm.getMonthData();
+
+                showAlert('jSuccess', '提交成功 :)', true);
+            })
+            .fail(function() {
+                showAlert('jError', '提交失败了 :(', false);
+            });
+        },
+
+        // 编辑月报
+        editFn: function(index) {
+            var obj = JSON.stringify(vm.monthData[index].list);
+
+            $.ajax({
+                url: '/report/ajax_edit_monthly/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    time: vm.datatime,
+                    id: vm.monthData[index].id,
+                    department_name: vm.curDepartment,
+                    info_list: obj
+                }
+            })
+            .done(function() {
+                vm.getMonthData();
+
+                showAlert('jSuccess', '保存成功 :)', true);
+            })
+            .fail(function() {
+                showAlert('jError', '保存失败 :(', false);
+            });
+            
+        }
+    }
+});
+
+// 渲染月报数据
+vm.getMonthData();
+

@@ -1,0 +1,58 @@
+<div class="col-side">
+    <div class="menu-box">
+        <dl class="menu menu-extra">
+            <dt class="menu-title">
+                <span class="menu-icon glyphicon glyphicon-th-large"></span>
+                首页/报告
+            </dt>
+            <dd class="menu-item">
+                <a href="/index/">首页</a>
+            </dd>
+            <dd class="menu-item selected">
+                <a href="/report/weekly/">周报管理</a>
+            </dd>
+            <dd class="menu-item">
+                <a href="/report/monthly/">月报管理</a>
+            </dd>
+        </dl>
+        <dl class="menu">
+            <dt class="menu-title">
+                <span class="menu-icon glyphicon glyphicon-inbox"></span>
+                部门/组织
+            </dt>
+            <dd class="menu-item">
+                <a href="/group/system/">组织架构</a>
+            </dd>
+            <dd class="menu-item">
+                <a href="/group/department/">部门事务</a>
+            </dd>
+        </dl>
+        <dl class="menu">
+            <dt class="menu-title">
+                <span class="menu-icon glyphicon glyphicon-list-alt"></span>
+                项目/会议
+            </dt>
+            <dd class="menu-item">
+                <a href="/project/task/">项目管理</a>
+            </dd>
+            <dd class="menu-item">
+                <a href="/project/meeting/">会议模式</a>
+            </dd>
+        </dl>
+        <dl class="menu">
+            <dt class="menu-title">
+                <span class="menu-icon glyphicon glyphicon-random"></span>
+                配置/录入
+            </dt>
+            <dd class="menu-item">
+                <a href="/input/upload/">文档管理</a>
+            </dd>
+            <dd class="menu-item">
+                <a href="/input/issue/">问题录入</a>
+            </dd>
+        </dl>
+    </div>
+    <div class="copyright">
+        技术支持：运维开发部
+    </div>
+</div>

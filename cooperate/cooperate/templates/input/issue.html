@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>部门管理系统</title>
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body>
+    {% include "header.html" %}
+    <div class="main-box">
+        <div class="main-inner">
+            {% include "left.html" %}
+            <div class="col-main">
+                <h2 class="main-title">问题录入</h2>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="first active">
+                        <a href="#tab_one" aria-controls="tab-one" role="tab" data-toggle="tab">录入界面</a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="tab_one" ng-app="myIssue">
+                        <form class="common-form i-inputform form-horizontal" name="issueInput" ng-controller="ModalInstanceCtrl">  
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label text-muted">所属业务：<span class="red">*</span></label>
+                                <div class="col-sm-6">
+                                  <select class="form-control" ng-init="issue.selectedId = issue.selectedId || ''" ng-model="issue.selectedId" required>
+                                        <option value="">--请选择所属业务--</option>
+                                        {% for product in products %}
+                                            <option value="{{ product.name }}">{{ product.name }}</option>
+                                        {% endfor %}
+                                  </select>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label class="col-sm-2 control-label text-muted mt20">发现时间：<span class="red">*</span></label>
+                                <div class="col-sm-4 mt20">
+                                    <p class="input-group">
+                                      <input type="text" class="form-control" ng-focus="opendate($event)" uib-datepicker-popup="{[format]}" ng-model="dt" is-open="status.opened" min-date="minDate" max-date="maxDate" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" style="position: initial;">
+                                      <span class="input-group-btn">
+                                        <button type="button" class="btn btn-default" ng-click="opendate($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                                      </span>
+                                    </p>
+                                </div>
+                                <div class="col-sm-2" style="margin-top:-15px;">
+                                    <uib-timepicker ng-model="mytime" hour-step="hstep" minute-step="mstep" show-meridian="!ismeridian"></uib-timepicker>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label text-muted">状态：<span class="red">*</span></label>
+                                <div class="col-sm-6">
+                                    <div class="btn-group">
+                                        <label class="btn btn-default" ng-model="radioStatus" uib-btn-radio="'0'" uncheckable>open</label>
+                                        <label class="btn btn-default" ng-model="radioStatus" uib-btn-radio="'1'" uncheckable>close</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label text-muted">级别：<span class="red">*</span></label>
+                                <div class="col-sm-6">
+                                    <div class="btn-group">
+                                        <label class="btn btn-default" ng-model="radioSteps" uib-btn-radio="'1'" uncheckable>严重</label>
+                                        <label class="btn btn-default" ng-model="radioSteps" uib-btn-radio="'2'" uncheckable>一般</label>
+                                        <label class="btn btn-default" ng-model="radioSteps" uib-btn-radio="'3'" uncheckable>轻微</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label text-muted">类型：<span class="red">*</span></label>
+                                <div class="col-sm-8">
+                                    <div class="btn-group">
+                                        <label class="btn btn-default" ng-model="radioTypes" uib-btn-radio="'1'" uncheckable>硬件</label>
+                                        <label class="btn btn-default" ng-model="radioTypes" uib-btn-radio="'2'" uncheckable>IDC环境</label>
+                                        <label class="btn btn-default" ng-model="radioTypes" uib-btn-radio="'3'" uncheckable>系统及软件</label>
+                                        <label class="btn btn-default" ng-model="radioTypes" uib-btn-radio="'4'" uncheckable>应用程序</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label text-muted">标题：<span class="red">*</span></label>
+                                <div class="col-sm-6">
+                                    <input type="text" class="form-control" name="title" ng-model="issue.title" placeholder="限制50字符，必填" ng-maxlength="50" required>
+                                </div>
+                                <span class="pass glyphicon glyphicon-ok" ng-show="issueInput.title.$dirty && issueInput.title.$valid"></span>
+                                <span class="inpass glyphicon glyphicon-remove" ng-show="issueInput.title.$dirty && issueInput.title.$invalid"></span>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label text-muted">问题描述：<span class="red">*</span></label>
+                                <div class="col-sm-6">
+                                    <textarea class="form-control h75" name="description" ng-model="issue.description" placeholder="限制1500字符，必填" ng-maxlength="1500" required></textarea>
+                                </div>
+                                <span class="pass glyphicon glyphicon-ok" ng-show="issueInput.description.$dirty && issueInput.description.$valid"></span>
+                                <span class="inpass glyphicon glyphicon-remove" ng-show="issueInput.description.$dirty && issueInput.description.$invalid"></span>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label text-muted">问题原因：<span class="red" ng-show="radioStatus == '1'">*</span></label>
+                                <div class="col-sm-6">
+                                    <textarea class="form-control h75" name="reason" ng-model="issue.reason" placeholder="限制1500字符，状态为close时必填" ng-maxlength="1500" ng-required="radioStatus == '1'"></textarea>
+                                </div>
+                                <span class="pass glyphicon glyphicon-ok" ng-show="issueInput.reason.$dirty && issueInput.reason.$valid"></span>
+                                <span class="inpass glyphicon glyphicon-remove" ng-show="issueInput.reason.$dirty && issueInput.reason.$invalid"></span>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label text-muted">解决措施：<span class="red" ng-show="radioStatus == '1'">*</span></label>
+                                <div class="col-sm-6">
+                                    <textarea class="form-control h75" name="result" ng-model="issue.result" placeholder="限制1500字符，状态为close时必填" ng-maxlength="1500" ng-required="radioStatus == '1'"></textarea>
+                                </div>
+                                <span class="pass glyphicon glyphicon-ok" ng-show="issueInput.result.$dirty && issueInput.result.$valid"></span>
+                                <span class="inpass glyphicon glyphicon-remove" ng-show="issueInput.result.$dirty && issueInput.result.$invalid"></span>
+                            </div>
+                            <div class="form-group mt30">
+                                <button class="btn btn-primary m-btn btn-input" type="button" ng-disabled="issueInput.$invalid || !radioStatus || !radioSteps || !radioTypes" ng-click="ok()">
+                                    <span class="glyphicon glyphicon-ok"></span>
+                                    提交
+                                </button>
+                                <button class="btn btn-warning btn-input" type="button" ng-click="clear()">
+                                    <span class="glyphicon glyphicon-repeat"></span>
+                                    清空
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "importjs.html" %}
+    <script type="text/javascript" src="/static/src/tool/angular/angular.min.js"></script>
+    <script type="text/javascript" src="/static/src/tool/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script type="text/javascript" src="/static/src/jq/input/issue.js?v=201603021348"></script>
+</body>
+</html>

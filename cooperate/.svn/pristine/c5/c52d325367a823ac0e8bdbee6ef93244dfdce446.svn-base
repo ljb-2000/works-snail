@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>运维协同平台</title>
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="/static/src/tool/boot_datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+<link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body>
+    {% include "header.html" %}
+    <div class="main-box">
+        <div class="main-inner">
+            {% include "left.html" %}
+            <div class="col-main">
+                <h2 class="main-title">月报管理</h2>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="first active">
+                        <a href="#tab_one" aria-controls="tab-one" role="tab" data-toggle="tab">月报列表</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#tab_two" aria-controls="tab-two" role="tab" data-toggle="tab">新建月报</a>
+                    </li>
+                </ul>
+                <div id="month_box" class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="tab_one">
+                        <form class="form-inline" onsubmit="return false">
+                            <div class="form-group">
+                                <select class="form-control" v-model="curSelected" v-on:change="getMonthData">
+                                    <option v-for="department in departments" v-bind:value='department' v-text="department"></option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group date monthtime-from col-md-8" data-date="" data-date-format="yyyy-mm" data-link-field="dtp_input1" data-link-format="yyyy-mm">
+                                    <input id="start_time" class="form-control" v-model="selectMonth" size="16" type="text" placeholder="选择月份" style="width:140px;" readonly>
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-remove"></span></span>
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-th"></span></span>
+                                </div>
+                                <input type="hidden" id="dtp_input1" value=""><br>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-primary btn-input" v-on:click="getMonthData">
+                                    <span class="glyphicon glyphicon-search"></span>
+                                    搜索
+                                </button>
+                            </div>
+                        </form>
+                        <br>
+                        <div class="panel panel-default" v-for="data in monthData">
+                            <div class="panel-heading clearfix">
+                                <h4 class="panel-title pull-left" v-cloak>[[ data.author ]]</h4>
+                                <span class="pointer pull-right icon-save icon-block" v-if="data.editable === true" v-on:click="editFn($index)"></span>
+                            </div>
+                            <table class="table table-straped table-bordered table-center">
+                                <thead>
+                                    <tr>
+                                        <th>时间</th>
+                                        <th>业务</th>
+                                        <th>硬件故障数</th>
+                                        <th>软件故障数</th>
+                                        <th>人为事故(次)</th>
+                                        <th>安全事件数</th>
+                                        <th>服务次数</th>
+                                        <th>服务时长(h)</th>
+                                        <th>区服数量</th>
+                                        <th>容量利用(%)</th>
+                                        <th>机器数量</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="list in data.list">
+                                        <td v-bind:rowspan="data.length" v-if="$index === 0"><input class="input-td" type="text" v-model="data.time" v-bind:disabled="data.editable === true ? false : true"></td>
+                                        <td><input class="input-td" type="text" v-model="list.product" disabled></td>
+                                        <td><input class="input-td" type="text" v-model="list.hardware" v-bind:disabled="data.editable === true ? false : true"></td>
+                                        <td><input class="input-td" type="text" v-model="list.software" v-bind:disabled="data.editable === true ? false : true"></td>
+                                        <td><input class="input-td" type="text" v-model="list.human" v-bind:disabled="data.editable === true ? false : true"></td>
+                                        <td><input class="input-td" type="text" v-model="list.safe" v-bind:disabled="data.editable === true ? false : true"></td>
+                                        <td><input class="input-td" type="text" v-model="list.serviceNum" v-bind:disabled="data.editable === true ? false : true"></td>
+                                        <td><input class="input-td" type="text" v-model="list.serviceTime" v-bind:disabled="data.editable === true ? false : true"></td>
+                                        <td><input class="input-td" type="text" v-model="list.area" v-bind:disabled="data.editable === true ? false : true"></td>
+                                        <td><input class="input-td" type="text" v-model="list.contain" v-bind:disabled="data.editable === true ? false : true"></td>
+                                        <td><input class="input-td" type="text" v-model="list.machine" v-bind:disabled="data.editable === true ? false : true"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="file-empty" v-if="!monthData.length" v-cloak>
+                            暂无月报内容
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="tab_two">
+                        <form class="form-inline clearfix">
+                            <select class="form-control pull-left" v-model="curDepartment" style="width:200px;">
+                                <option v-for="department in departments" v-bind:value='department' v-text="department"></option>
+                            </select>
+                            <p class="mini-tips pull-right">
+                                <span class="glyphicon glyphicon-info-sign text-muted"></span>
+                                <span class="text-muted">请填写表格中' - ' 部分</span>
+                            </p>
+                        </form>
+                        <table class="table table-straped table-bordered table-center mt20">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>业务</th>
+                                    <th>硬件故障数</th>
+                                    <th>软件故障数</th>
+                                    <th>人为事故(次)</th>
+                                    <th>安全事件数</th>
+                                    <th>服务次数</th>
+                                    <th>服务时长(h)</th>
+                                    <th>区服数量</th>
+                                    <th>容量利用(%)</th>
+                                    <th>机器数量</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="list in creatData">
+                                    <td v-bind:rowspan="productLen" v-if="$index === 0">
+                                        <input class="input-td" type="text" v-model="datatime">
+                                    </td>
+                                    <td><input class="input-td" type="text" v-model="list.product" disabled></td>
+                                    <td><input class="input-td" type="text" v-model="list.hardware"></td>
+                                    <td><input class="input-td" type="text" v-model="list.software"></td>
+                                    <td><input class="input-td" type="text" v-model="list.human"></td>
+                                    <td><input class="input-td" type="text" v-model="list.safe"></td>
+                                    <td><input class="input-td" type="text" v-model="list.serviceNum"></td>
+                                    <td><input class="input-td" type="text" v-model="list.serviceTime"></td>
+                                    <td><input class="input-td" type="text" v-model="list.area"></td>
+                                    <td><input class="input-td" type="text" v-model="list.contain"></td>
+                                    <td><input class="input-td" type="text" v-model="list.machine"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <br>
+                        <div class="text-center">
+                            <button class="btn btn-primary btn-input" v-on:click="submitFn">
+                                提交
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "importjs.html" %}
+    <script type="text/javascript" src="/static/src/tool/boot_datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+    <script type="text/javascript" src="/static/src/jq/report/monthly.js?v=201602241035"></script>
+</body>
+</html>

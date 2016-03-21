@@ -1,0 +1,108 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version issue.html
+ */
+
+ var myIssue = angular.module('myIssue',["ui.bootstrap"]);
+
+ myIssue.config(['$interpolateProvider', function($interpolateProvider) {
+     $interpolateProvider.startSymbol('{[');
+     $interpolateProvider.endSymbol(']}');
+ }]);
+
+ // 问题录入控制器
+ myIssue.controller('ModalInstanceCtrl', ['$scope','$http',function($scope, $http) {
+     var transform = function(data){
+         return $.param(data);
+     };
+
+     $scope.radioStatus = '0';
+     $scope.products = [
+         {
+             'id':'001',
+             'name':'关云长'
+         },
+         {
+             'id':'002',
+             'name':'太极熊猫'
+         }
+     ];
+
+     $scope.ok = function () {
+         var date = $scope.dt;
+         var year = date.getFullYear();
+         var month = date.getMonth() + 1;
+         var day = date.getDate();
+         var time = $scope.mytime;
+         var hour = time.getHours();
+         var min = time.getMinutes();
+         var dt = year + "-" + month + "-" + day + " " + hour + ":" + min;
+         if($scope.issueInput.$valid) {
+             $http({
+                     method:"POST",
+                     url:"/input/ajax_add_issue/",
+                     data: {
+                         'product_name': $scope.issue.selectedId,
+                         'qtime': dt,
+                         'status': $scope.radioStatus,
+                         'level': $scope.radioSteps,
+                         'qtype': $scope.radioTypes,
+                         'title': $scope.issue.title,
+                         'describe': $scope.issue.description,
+                         'reason': $scope.issue.reason,
+                         'solution': $scope.issue.result
+                     },
+                     headers: {'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},
+                     transformRequest: transform
+                 }).success(function(data){
+                     alert('录入成功 :)');
+                 }).error(function(){
+                     alert('录入失败 :(');
+                 });
+         }
+     };
+
+   $scope.clear = function () {
+     $scope.issue.selectedId = '';
+     $scope.dt = new Date();
+     $scope.radioStatus = '0';
+     $scope.radioSteps = null;
+     $scope.radioTypes = null;
+     $scope.issue.title = '';
+     $scope.issue.description = '';
+     $scope.issue.reason = '';
+     $scope.issue.result = '';
+     $scope.mytime = new Date();
+   };
+
+   //日期选择
+   $scope.dt = new Date();
+   $scope.maxDate = new Date(2020, 5, 22);
+
+   $scope.opendate = function($event) {
+     $scope.status.opened = true;
+   };
+
+   $scope.dateOptions = {
+     formatYear: 'yy',
+     startingDay: 1
+   };
+
+   $scope.format = 'yyyy-MM-dd';
+
+   $scope.status = {
+     opened: false
+   };
+
+   //时间选择
+   $scope.mytime = new Date();
+
+   $scope.hstep = 1;
+   $scope.mstep = 1;
+
+   $scope.ismeridian = true;
+
+}]);
+

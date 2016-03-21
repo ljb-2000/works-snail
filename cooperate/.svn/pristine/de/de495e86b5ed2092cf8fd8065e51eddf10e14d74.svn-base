@@ -1,0 +1,132 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version 公用js
+ */
+
+// 替换Vue默认界定符
+Vue.config.delimiters = ['[[', ']]'];
+Vue.config.unsafeDelimiters = ['[[[', ']]]'];
+
+// 导航数据
+var nav = new Vue({
+    el: '#side_bar',
+    data: {
+        menus: [{
+            header: '首页/管理',
+            icon: 'glyphicon-th-large',
+            list: [{
+                name: '首页',
+                link: '/index/'
+            }, {
+                name: '周报管理',
+                link: '/report/weekly/'
+            }, {
+                name: '月报管理',
+                link: '/report/monthly/'
+            }, {
+                name: '项目管理',
+                link: '/report/task/'
+            }]
+        }, {
+            header: '部门/组织',
+            icon: 'glyphicon-inbox',
+            list: [{
+                name: '组织架构',
+                link: '/group/system/'
+            }, {
+                name: '部门事务',
+                link: '/group/department/'
+            }]
+        }, {
+            header: '会议/模式',
+            icon: 'glyphicon-list-alt',
+            list: [{
+                name: '会议模式',
+                link: '/project/meeting/'
+            }]
+        }, {
+            header: '文档/问题',
+            icon: 'glyphicon-random',
+            list: [{
+                name: '文档管理',
+                link: '/input/upload/'
+            }, {
+                name: '问题录入',
+                link: '/input/issue/'
+            }]
+        }]
+    },
+    methods: {
+        isActive: function (link) {
+            var path = window.location.pathname;
+
+            if (link === path) {
+                return 'selected';
+            }
+        }
+    }
+});
+
+// 导航高亮
+nav.isActive();
+
+// 提示窗功能
+function showAlert(type, msg, auto) {
+    var winWidth = parseInt($(window).width()),
+        body = $('body'),
+        msgDiv = '<div id="a_msg" class="a-msg ' + type + '">' + msg + '</div>',
+        layout = '<div id="a_layout" class="a-layout"></div>';
+
+    if ($('#a_msg')) {
+        $('#a_msg').remove();
+    }
+
+    body.append(msgDiv);
+
+    var msgBox = $('#a_msg'),
+        msgWidth = msgBox.outerWidth(true),
+        msgTop = msgBox.position().top - msgBox.scrollTop() + 50,
+        msgleft = (winWidth - msgWidth) / 2;
+
+    msgBox.css({
+        top: msgTop,
+        left: msgleft
+    });
+
+    if (auto === true) {
+        msgBox.slideDown('fast', function () {
+            var seconds = 2,
+                e = $(this),
+                time = setInterval(function () {
+                    seconds--;
+
+                    if (seconds <= 0) {
+                        clearInterval(time);
+
+                        e.slideUp('fast', function () {
+                            $(this).remove();
+                        });
+                    }
+                }, 1000);
+        });
+    } else {
+        body.append(layout);
+
+        var layoutBox = $('#a_layout');
+
+        layoutBox.show();
+
+        msgBox.slideDown('fast');
+
+        layoutBox.on('click', function () {
+            if (msgBox.length) {
+                msgBox.slideUp('fast', function () {
+                    $(this).remove();
+                    layoutBox.remove();
+                });
+            }
+        });
+    }
+}

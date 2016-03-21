@@ -1,0 +1,236 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version weekly.html
+ */
+
+$(function() {
+
+    // datetime
+    $('.datetime-from, .datetime-to, .weektime-to, .weektime-from').datetimepicker({
+        weekStart: 1,
+        /*endDate: '2016-01-20',*/
+        todayBtn: 1,
+        autoclose: 1,
+        todayHighlight: 1,
+        startView: 2,
+        minView: 2,
+        forceParse: 0,
+        linkField: "mirror_field",
+        pickerPosition: "bottom-left"
+    });
+
+    // Vue对象
+    var vm = new Vue({
+        el: '#week_box',
+        data: {
+            curSelected: '',
+            curDepartment: '',
+            departments: [],
+            startTime: '',
+            endTime: '',
+            searchStart: '',
+            searchEnd: '',
+            weekList: [],
+            progressValue: '',
+            planValue: '',
+            progressGroup: [],
+            planGroup: [],
+            weeklyId: ''
+        },
+        methods: {
+
+            // 初次加载渲染
+            getList: function(departmentName) {
+
+                // 获取当前日期及周一日期
+                if (!vm.searchStart && !vm.searchEnd) {
+                    this.startTime = this.getMonday().startTime;
+                    this.endTime = this.getMonday().endTime;
+                    this.searchStart = this.getMonday().startTime;
+                    this.searchEnd = this.getMonday().endTime;
+                }
+
+                $.ajax({
+                    url: '/report/ajax_get_weeklys/',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        department_name: departmentName,
+                        start_time: vm.searchStart,
+                        end_time: vm.searchEnd
+                    }
+                })
+                .done(function(data) {
+                    vm.weekList = data.list;
+                    vm.departments = data.department;
+                    vm.curDepartment = vm.departments[0];
+                    vm.curSelected === '' ? vm.curSelected = vm.departments[0] : '';
+                })
+                .fail(function() {
+                    showAlert('jError', '出错了 :(', false);
+                });
+            },
+
+            // 获取月份
+            getMonday: function() {
+                var date = new Date(),
+                    year = date.getFullYear(),
+                    month = date.getMonth() + 1,
+                    day = date.getDate(),
+                    week = date.getDay() - 1;
+
+                if (week === -1) {
+                    week = 6;
+                }
+
+                var startDay = date.setDate(day - week),
+                    startDate = new Date(startDay),
+                    curYear = startDate.getFullYear(),
+                    curMonth = startDate.getMonth() + 1,
+                    curDate = startDate.getDate();
+
+                curMonth < 10 ? curMonth = '0' + curMonth : '';
+                curDate < 10 ? curDate = '0' + curDate : '';
+                month < 10 ? month = '0' + month : '';
+                day < 10 ? day = '0' + day : '';
+
+                return {
+                    startTime: curYear + '-' + curMonth + '-' + curDate,
+                    endTime: year + '-' + month + '-' + day
+                }
+            },
+
+            // 编辑周报
+            editFn: function(index) {
+                var list = this.weekList[index],
+                    progress = list.progress,
+                    plan = list.plan,
+                    progressLen = progress.length,
+                    planLen = plan.length,
+                    i,
+                    j;
+
+                this.weeklyId = list.id;
+                this.progressValue = progress[0];
+                this.planValue = plan[0];
+                this.curDepartment = this.curSelected;
+                this.startTime = this.getMonday().startTime;
+                this.endTime = this.getMonday().endTime;
+                vm.progressGroup = [];
+                vm.planGroup = [];
+
+                for (i = 1; i < progressLen; i++) {
+                    vm.progressGroup.push({
+                        value: progress[i]
+                    })
+                }
+
+                for (j = 1; j < planLen; j++) {
+                    vm.planGroup.push({
+                        value: plan[j]
+                    })
+                }
+                
+                $('#my_tab a[href="#tab_two"]').tab('show');
+            },
+
+            // 取消编辑
+            cancelEdit: function () {
+                this.weeklyId = '';
+                this.progressValue = '';
+                this.planValue = '';
+                this.progressGroup = [];
+                this.planGroup = [];
+            },
+
+            // 添加工作进展
+            addProgress: function() {
+                this.progressGroup.push({
+                    value: ''
+                });
+            },
+
+            // 删除工作进展
+            removeProgress: function(index) {
+                this.progressGroup.splice(index, 1);
+            },
+
+            // 添加工作计划
+            addPlan: function() {
+                this.planGroup.push({
+                    value: ''
+                });
+            },
+
+            // 删除工作计划
+            removePlan: function(index) {
+                this.planGroup.splice(index, 1);
+            },
+
+            // 确认提交
+            comfirm: function() {
+                var progressArr = this.progressGroup,
+                    planArr = this.planGroup,
+                    progressData = [],
+                    planData = [];
+
+                this.progressValue.trim() !== '' ? progressData.push(this.progressValue) : '';
+                this.planValue.trim() !== '' ? planData.push(this.planValue) : '';
+
+                progressArr.forEach(function(e) {
+                    if (e.value.trim() !== '') {
+                        progressData.push(e.value);
+                    }
+                });
+
+                planArr.forEach(function(e) {
+                    if (e.value.trim() !== '') {
+                        planData.push(e.value);
+                    }
+                });
+
+                if (progressData.length && planData.length && this.startTime && this.endTime) {
+
+                    // DOTO AJAX
+                    $.ajax({
+                        url: '/report/ajax_edit_weekly/',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            id: vm.weeklyId,
+                            department_name: vm.curDepartment,
+                            start_time: vm.startTime,
+                            end_time: vm.endTime,
+                            progress_list: progressData,
+                            plan_list: planData
+                        }
+                    })
+                    .done(function(data) {
+                        if (data.result === 1) {
+                            vm.progressGroup = [];
+                            vm.planGroup = [];
+                            vm.progressValue = '';
+                            vm.planValue = '';
+
+                            vm.getList(vm.curSelected);
+
+                            showAlert('jSuccess', '提交成功 :)', true);
+                        } else {
+                            showAlert('jError', '出错了 :(', false);
+                        }
+                    })
+                    .fail(function() {
+                        showAlert('jError', '出错了 :(', false);
+                    });
+                } else {
+                    showAlert('jNotify', '有尚未填写的输入项，请检查 :(', true);
+                }
+            }
+        }
+    });
+
+    // 渲染周报列表
+    vm.getList('');
+});

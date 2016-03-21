@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>运维协同平台</title>
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body>
+    {% include "header.html" %}
+    <div class="main-box">
+        <div class="main-inner">
+            {% include "left.html" %}
+            <div class="col-main">
+                <h2 class="main-title">文档管理</h2>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="first active">
+                        <a href="#tab_one" aria-controls="tab-one" role="tab" data-toggle="tab">文档列表</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#tab_two" aria-controls="tab-two" role="tab" data-toggle="tab">上传文档</a>
+                    </li>
+                </ul>
+                <div id="upload_box" class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="tab_one">
+                        <form class="form-inline"> 
+                            <div class="form-group">
+                                <div class="input-group doc-search">
+                                    <input type="text" class="form-control" v-model="searchDoc" placeholder="标题/作者">
+                                    <div class="input-group-addon pointer" v-on:click="searchFn">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group pull-right">
+                                <label class="control-label">显示</label>
+                                <select class="form-control" v-model="len" v-on:change="getDocs(len)">
+                                    <option value='10'>10</option>
+                                    <option value='50'>50</option>
+                                    <option value='500'>500</option>
+                                    <option value=''>所有</option>
+                                </select>
+                                <label class="control-label">条</label>
+                            </div>
+                        </form>
+                        <ul class="doc-box mt20">
+                            <li class="doc-list clearfix" v-for="doc in docs">
+                                <h5 class="pull-left m0">[[ doc.name ]]</h5>
+                                <dl class="pull-right">
+                                    <dd>[[ doc.user ]]</dd>
+                                    <dd>[[ doc.time ]]</dd>
+                                    <dd>
+                                        <a class="pointer icon-download icon-block" v-bind:href="doc.download" target="_blank"></a>
+                                    </dd>
+                                </dl>
+                            </li> 
+                            <li class="file-empty" v-if="!docs.length" v-cloak>
+                                没有找到任何文件
+                            </li>
+                        </ul>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="tab_two">
+                        <form id="file_form" class="form-inline form-upload">
+                            <div class="form-group">
+                                <label class="control-label text-muted">选择文件：</label>
+                                <input type="text" class="form-control" v-model="docPath" style="width:315px;" disabled>
+                                <button class="btn btn-default btn-input" type="button" v-on:click="selectDocs">
+                                    选择
+                                </button>
+                                <button class="btn btn-primary btn-input" type="button" v-on:click="uploadFile()">
+                                    上传
+                                </button>
+                                <input id="upload_file" type="file" name="upload_file" v-on:change="getPath" style="position:absolute;opacity:0;filter:alpha(opacity:0);left:-999%" size="28">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "importjs.html" %}
+    <script type="text/javascript" src="/static/src/jq/input/upload.js"></script>
+</body>
+</html>

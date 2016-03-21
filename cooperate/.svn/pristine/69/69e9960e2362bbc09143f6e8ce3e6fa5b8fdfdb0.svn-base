@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>部门管理系统</title>
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="/static/src/tool/boot_datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+<link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body>
+    {% include "header.html" %}
+    <div class="main-box">
+        <div class="main-inner">
+            {% include "left.html" %}
+            <div id="task_box" class="col-main">
+                <h2 class="main-title">项目管理</h2>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" v-for="product in products" v-bind:class="$index === 0 ? 'first active' : ''" v-on:click="isActive($index)">
+                        <a role="tab" data-toggle="tab" v-text="product"></a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active">
+                        <form class="form-horizontal common-form" onsubmit="return false">
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label text-muted">阶段：</label>
+                                <div class="col-sm-10">
+                                    <div class="btn-group step-btn" data-toggle="buttons">
+                                        <label class="btn btn-default" v-for="period in periods" v-bind:class="$index === 0 ? 'active' : ''" v-cloak>
+                                            <input type="radio" name="step" autocomplete="off"> [[ period ]]
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label text-muted">上线时间：</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="col-sm-2 step-time" track-by="$index" v-for="time in ontime" v-model="time" v-on:blur="saveTime($index)" v-bind:class="$index === ontime.length - 1 ? 'last' : ''">
+                                </div>
+                            </div>
+                            <div class="task-step">
+                                <div class="task-input">
+                                    <table class="table table-bordered table-center">
+                                        <thead>
+                                            <tr>
+                                                <th width="20%">时间段</th>
+                                                <th width="10%">步骤</th>
+                                                <th>内容</th>
+                                                <th width="10%">完成率</th>
+                                                <th width="10%">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="list in dataArr">
+                                                <td v-bind:rowspan="dataArr.length" v-if="$index === 0"><input class="input-time" type="text" v-model="productTime" disabled></td>
+                                                <td v-text="$index + 1"></td>
+                                                <td><input class="input-content" type="text" v-model="list.content"></td>
+                                                <td><input class="input-td" type="text" v-model="list.rate"></td>
+                                                <td><span class="pointer glyphicon glyphicon-trash" v-on:click="deleteList($index)"></span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-center">
+                                    <button class="btn btn-primary btn-input" v-on:click="saveList()">
+                                        保存
+                                    </button>
+                                    <button class="btn btn-primary btn-input" v-on:click="addList()">
+                                        添加行
+                                    </button>
+                                </div>
+                                <div class="task-view" v-for="stage in more">
+                                    <table class="table table-bordered table-center">
+                                        <thead>
+                                            <tr>
+                                                <th width="20%">时间段</th>
+                                                <th>步骤</th>
+                                                <th width="50%">内容</th>
+                                                <th>完成率</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="step in stage.list">
+                                                <td v-bind:rowspan="stage.list.length" v-if="$index === 0" v-text="stage.start_time + ' ~ ' + stage.end_time"></td>
+                                                <td v-cloak>[[ $index + 1 ]]</td>
+                                                <td><input class="input-content" type="text" v-model="step.content" disabled></td>
+                                                <td><input class="input-td" type="text" v-model="step.rate" disabled></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <a class="load-data" v-on:click="getStages()">
+                                    <i class="icon-down-open"></i>
+                                    更多
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "importjs.html" %}
+    <script type="text/javascript" src="/static/src/tool/boot_datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+    <script type="text/javascript" src="/static/src/jq/project/task.js?v=201603021348"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.db.transaction import commit_on_success
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import logging
+import traceback
+import json
+import datetime
+from service import _report, _group
+
+logger = logging.getLogger("logger")
+
+@login_required
+@csrf_exempt
+@render_to('group/system.html')
+def system_index(request):
+    return locals()
+
+@login_required
+@csrf_exempt
+@render_to('group/department.html')
+def department_index(request):
+    return locals()
+
+@csrf_exempt
+def ajax_get_routines(request):
+    result = {}
+    result['user'] = request.user.username
+    
+    departments = _report.get_departments_by_params()
+    result['department'] = [d.name for d in departments]
+        
+    department_name = request.POST.get('department_name','')
+    time_filter = request.POST.get('time_filter','')
+    status_filter = request.POST.get('status_filter','')
+    length = request.POST.get('length', 10)
+    
+    routine_list = []
+    if departments:
+        if department_name:
+            department = _report.get_department_by_params(name=department_name)
+        else:
+            department = departments[0]
+    
+        routines = _group.get_routines_by_params(department=department).order_by('-id')
+        if time_filter:
+            date_list = time_filter.split('-')
+            year = int(date_list[0])
+            month = int(date_list[1])
+            day = int(date_list[2])
+            routines = routines.filter(updated__year=year,updated__month=month,updated__day=day)
+        if status_filter:
+            routines = routines.filter(status=status_filter)
+        
+        for routine in routines:
+            id = routine.id
+            content = routine.content
+            author = routine.update_user.username
+            time = datetime.datetime.strftime(routine.updated,'%Y-%m-%d %H:%M')
+            status = routine.status
+            routine_list.append({'id':id, 'content':content, 'author': author, 'time':time, 'status':status})
+    if length:
+        routine_list = routine_list[:int(length)]
+    
+    result['list'] = routine_list
+    
+    return HttpResponse(json.dumps(result), content_type="application/json")
+
+@csrf_exempt
+@commit_on_success
+def ajax_edit_routine(request):
+    user = request.user
+    sdicts = {'result':0}
+    routine_id = request.POST.get("id",'')
+    department_name = request.POST.get("department_name",'')
+    content = request.POST.get("content",'')
+    status = request.POST.get("status",0)
+    
+    department = _report.get_department_by_params(name=department_name)
+    if department:
+        try:
+            if routine_id:
+                routine = _group.get_routine_by_params(id=int(routine_id))
+            else:
+                routine = _group.create_routine_by_params(department=department)
+                routine.create_user = user
+            routine.content = content
+            routine.status = status
+            routine.update_user = user
+            routine.save()
+            sdicts["result"] = 1
+        except Exception,e:
+            print e
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+@csrf_exempt
+@commit_on_success
+def ajax_delete_routine(request):
+    sdicts = {'result':0}
+    routine_id = request.POST.get("id",'')
+    
+    if routine_id:
+        try:
+            routine = _group.get_routine_by_params(id=int(routine_id))
+            routine.delete()
+            sdicts["result"] = 1
+        except Exception,e:
+            print e
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^group/system/$', system_index, name='system_index'),
+    
+    url(r'^group/department/$', department_index, name='department_index'),
+    url(r'^group/ajax_get_routines/$', ajax_get_routines, name='ajax_get_routines'),
+    url(r'^group/ajax_edit_routine/$', ajax_edit_routine, name='ajax_edit_routine'),
+    url(r'^group/ajax_delete_routine/$', ajax_delete_routine, name='ajax_delete_routine'),
+    
+)

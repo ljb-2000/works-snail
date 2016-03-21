@@ -1,0 +1,194 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import logging
+import traceback
+import json
+from service import _report
+import datetime
+
+logger = logging.getLogger("logger")
+
+@login_required
+@render_to("index.html")
+def index(request):
+    return locals()
+
+@csrf_exempt
+def ajax_get_departments(request):
+    department_list = []
+    
+    departments = _report.get_departments_by_params()
+        
+    for department in departments:
+        rule = _report.get_rule_by_params(department=department)
+        header = department.name
+        html = ''
+        if rule:
+            html = rule.content
+        department_list.append({'header':header, 'html': html})
+        
+    return HttpResponse(json.dumps(department_list), content_type="application/json")
+
+@csrf_exempt
+def ajax_edit_department(request):
+    user = request.user
+    sdicts = {'result':0}
+    department_name = request.POST.get("department_name",'')
+    content = request.POST.get("content",'')
+    department = _report.get_department_by_params(name=department_name)
+    if department:
+        try:
+            rule,create = _report.get_or_create_rule_by_params(department=department)
+            if create:
+                rule.create_user = user
+            rule.update_user = user
+            rule.content = content
+            rule.save()
+            sdicts["result"] = 1
+        except Exception,e:
+            print e
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+@login_required
+@csrf_exempt
+@render_to('report/weekly.html')
+def weekly_index(request):
+    return locals()
+
+@csrf_exempt
+def ajax_get_weeklys(request):
+    user = request.user
+    result = {}
+    
+    departments = _report.get_departments_by_params()
+    result['department'] = [d.name for d in departments]
+        
+    department_name = request.POST.get('department_name','')
+    start_time = request.POST.get('start_time','')
+    end_time = request.POST.get('end_time','')
+    
+    weekly_list = []
+    if departments:
+        if department_name:
+            department = _report.get_department_by_params(name=department_name)
+        else:
+            department = departments[0]
+    
+        weeklys = _report.get_weeklys_by_params(department=department).order_by('-id')
+        if start_time:
+            start_time = datetime.datetime.strptime(start_time,'%Y-%m-%d')
+            weeklys = weeklys.filter(start_time__gte=start_time)
+        if end_time:
+            end_time = datetime.datetime.strptime(end_time,'%Y-%m-%d')
+            weeklys = weeklys.filter(end_time__lte=start_time)
+        for weekly in weeklys:
+            editable = False
+            if user == weekly.user:
+                editable = True
+            id = weekly.id
+            author = weekly.user.username
+            time = datetime.datetime.strftime(weekly.updated,'%Y-%m-%d')
+            
+            weekly_progress_list = _report.get_weeklyProgresss_by_params(weekly=weekly)
+            weekly_plan_list = _report.get_weeklyPlans_by_params(weekly=weekly)
+            progress_list = [progress.content for progress in weekly_progress_list]
+            plan_list = [plan.content for plan in weekly_plan_list]
+            weekly_list.append({'id':id, 'progress':progress_list, 'plan':plan_list, 'author': author, 'time':time, 'editable':editable})
+    
+    result['list'] = weekly_list
+    
+    return HttpResponse(json.dumps(result), content_type="application/json")
+
+@csrf_exempt
+def ajax_create_weekly(request):
+    user = request.user
+    sdicts = {'result':0}
+    department_name = request.POST.get("department_name",'')
+    start_time = request.POST.get("start_time")
+    end_time = request.POST.get("end_time")
+    progress_list = request.POST.getlist("progress_list[]",[])
+    plan_list = request.POST.getlist("plan_list[]",[])
+    
+    department = _report.get_department_by_params(name=department_name)
+    if department:
+        try:
+            weekly = _report.create_weekly_by_params(department=department,user=user)
+            weekly.start_time = datetime.datetime.strftime(start_time,'%Y-%m-%d')
+            weekly.end_time = datetime.datetime.strftime(end_time,'%Y-%m-%d')
+            weekly.save()
+            
+            for progress in progress_list:
+                weekly_progress =  _report.create_weeklyProgress_by_params(weekly=weekly)
+                weekly_progress.content = progress
+                weekly_progress.save()
+            
+            for plan in plan_list:
+                weekly_plan =  _report.create_weeklyPlan_by_params(weekly=weekly)
+                weekly_plan.content = plan
+                weekly_plan.save()
+            
+            sdicts["result"] = 1
+        except Exception,e:
+            print e
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+@csrf_exempt
+def ajax_edit_weekly(request):
+    user = request.user
+    sdicts = {'result':0}
+    weekly_id = request.POST.get("id",'')
+    start_time = request.POST.get("start_time")
+    end_time = request.POST.get("end_time")
+    progress_list = request.POST.getlist("progress_list[]",[])
+    plan_list = request.POST.getlist("plan_list[]",[])
+    
+    if weekly_id:
+        try:
+            weekly = _report.get_weekly_by_params(id=int(weekly_id))
+            weekly.start_time = datetime.datetime.strftime(start_time,'%Y-%m-%d')
+            weekly.end_time = datetime.datetime.strftime(end_time,'%Y-%m-%d')
+            weekly.save()
+            
+            #TODO
+#             for progress in progress_list:
+#                 weekly_progress =  _report.create_weeklyProgress_by_params(weekly=weekly)
+#                 weekly_progress.content = progress
+#                 weekly_progress.save()
+#             
+#             for plan in plan_list:
+#                 weekly_plan =  _report.create_weeklyPlan_by_params(weekly=weekly)
+#                 weekly_plan.content = plan
+#                 weekly_plan.save()
+                
+            sdicts["result"] = 1
+        except Exception,e:
+            print e
+    return HttpResponse(json.dumps(sdicts), content_type="application/json")
+
+@login_required
+@csrf_exempt
+@render_to('report/monthly.html')
+def monthly_index(request):
+    return locals()
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^index/$', index, name='index'),
+    url(r'^index/ajax_get_departments/$', ajax_get_departments, name='ajax_get_departments'),
+    url(r'^index/ajax_edit_department/$', ajax_edit_department, name='ajax_edit_department'),
+                    
+    url(r'^report/weekly/$', weekly_index, name='weekly_index'),
+    url(r'^report/ajax_get_weeklys/$', ajax_get_weeklys, name='ajax_get_weeklys'),
+    url(r'^report/ajax_create_weekly/$', ajax_create_weekly, name='ajax_create_weekly'),
+    url(r'^report/ajax_edit_weekly/$', ajax_edit_weekly, name='ajax_edit_weekly'),
+    
+    url(r'^report/monthly/$', monthly_index, name='monthly_index'),
+    
+)

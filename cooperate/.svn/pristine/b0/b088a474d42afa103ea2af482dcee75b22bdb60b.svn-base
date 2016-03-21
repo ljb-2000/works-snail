@@ -1,0 +1,25 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import logging
+import traceback
+
+logger = logging.getLogger("logger")
+
+@login_required
+@csrf_exempt
+@render_to('project/meeting.html')
+def meeting_index(request):
+    return locals()
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^project/meeting/$', meeting_index, name='meeting_index'),
+    
+)

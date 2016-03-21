@@ -1,0 +1,4 @@
+<script type="text/javascript" src="/static/src/tool/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="/static/src/tool/vue/vue.js"></script>
+<script type="text/javascript" src="/static/src/tool/bootstrap/bootstrap.min.js"></script>
+<script type="text/javascript" src="/static/src/jq/common.js"></script>

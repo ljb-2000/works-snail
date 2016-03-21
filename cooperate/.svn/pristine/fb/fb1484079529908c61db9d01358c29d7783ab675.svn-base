@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>运维协同平台</title>
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body>
+    {% include "header.html" %}
+    <div class="main-box">
+        <div class="main-inner">
+            {% include "left.html" %}
+            <div class="col-main">
+                <h2 class="main-title">部门事务</h2>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="first active">
+                        <a href="#tab_one" aria-controls="tab-one" role="tab" data-toggle="tab">事务列表</a>
+                    </li>
+                </ul>
+                <div id="department_box" class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="tab_one">
+                        <form class="form-inline" onsubmit="return false">
+                            <div class="form-group">
+                                <select class="form-control" v-model="curSelected">
+                                    <option v-for="department in departments" v-bind:value='department' v-text="department" v-bind:selected="$index === 0 ? 'true' : 'false'"></option>
+                                </select>
+                                <button class="btn btn-primary btn-input" v-on:click="addData()">
+                                    添加行
+                                </button>
+                            </div>
+                            <div class="form-group pull-right">
+                                <label class="control-label">显示</label>
+                                <select class="form-control">
+                                    <option value='10'>10</option>
+                                    <option value='50'>50</option>
+                                    <option value='500'>500</option>
+                                    <option value='500'>所有</option>
+                                </select>
+                                <label class="control-label">条</label>
+                            </div>
+                        </form>
+                        <table class="table table-bordered table-hover table-center mt30">
+                            <thead>
+                                <tr>
+                                    <th>序号</th>
+                                    <th width="40%">内容（可编辑）</th>
+                                    <th>添加人</th>
+                                    <th width="15%">时间（可编辑）</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="list in workList">
+                                    <td>[[ $index + 1 ]]</td>
+                                    <td class="content-left" contenteditable="true">[[ list.content ]]</td>
+                                    <td>[[ list.author ]]</td>
+                                    <td contenteditable="true">[[ list.time ]]</td>
+                                    <td>
+                                        <span class="pointer icon-save icon-block" v-on:click="saveData($index, list.id)"></span>&nbsp;&nbsp;
+                                        <span class="pointer icon-delete icon-block" v-on:click="deleteData($index, list.id)"></span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "importjs.html" %}
+    <script type="text/javascript" src="/static/src/jq/group/department.js"></script>
+</body>
+</html>

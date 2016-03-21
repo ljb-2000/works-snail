@@ -1,0 +1,170 @@
+#encoding:utf-8
+
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth.models import User
+from audit_log.models.managers import AuditLog
+
+class Department(models.Model):
+    '''
+    @note: 部门
+    '''
+    name = models.CharField(max_length=128,verbose_name=_(u'部门名'), unique=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_(u"更新时间"), auto_now=True)
+    
+    def __unicode__(self):
+        return '%s'%(self.name)
+    
+class Product(models.Model):
+    '''
+    @note: 业务
+    '''
+    name = models.CharField(max_length=128,verbose_name=_(u'业务名'), unique=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_(u"更新时间"), auto_now=True)
+    
+    def __unicode__(self):
+        return '%s'%(self.name)
+        
+class Rule(models.Model):
+    '''
+    @note: 章程管理
+    '''
+    department = models.ForeignKey(Department, verbose_name=_(u'部门'))
+    content = models.TextField(verbose_name=_(u'章程'), blank=True, null=True)
+    create_user = models.ForeignKey(User, verbose_name=_(u'创建人'), related_name='rule_create_user', blank=True, null=True)
+    update_user = models.ForeignKey(User, verbose_name=_(u'更新人'), related_name='rule_update_user', blank=True, null=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_(u"更新时间"), auto_now=True)
+
+    def __unicode__(self):
+        return '%s'%(self.department.name)
+
+class Weekly(models.Model):
+    '''
+    @note: 周报
+    '''
+    department = models.ForeignKey(Department, verbose_name=_(u'部门'))
+    user = models.ForeignKey(User, verbose_name=_(u'创建人'), related_name='weekly_user', blank=True, null=True)
+    start_time = models.DateTimeField(verbose_name=_(u"开始时间"), blank=True, null=True)
+    end_time = models.DateTimeField(verbose_name=_(u"结束时间"), blank=True, null=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_(u"更新时间"), auto_now=True)
+
+    def __unicode__(self):
+        return 'Weekly:%s'%(self.department.name)
+    
+class WeeklyProgress(models.Model):
+    '''
+    @note: 周报进展
+    '''
+    weekly = models.ForeignKey(Weekly, verbose_name=_(u'周报'))
+    content = models.CharField(max_length=128, verbose_name=_(u'进展 '), blank=True, null=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_(u"更新时间"), auto_now=True)
+
+    def __unicode__(self):
+        return '%s-%s'%(self.weekly, self.content)
+    
+class WeeklyPlan(models.Model):
+    '''
+    @note: 周报计划
+    '''
+    weekly = models.ForeignKey(Weekly, verbose_name=_(u'周报'))
+    content = models.CharField(max_length=128, verbose_name=_(u'计划 '), blank=True, null=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_(u"更新时间"), auto_now=True)
+
+    def __unicode__(self):
+        return '%s-%s'%(self.weekly, self.content)
+
+class Monthly(models.Model):
+    '''
+    @note: 月报
+    '''
+    department = models.ForeignKey(Department, verbose_name=_(u'部门'))
+    user = models.ForeignKey(User, verbose_name=_(u'创建人'), related_name='monthly_user', blank=True, null=True)
+    time = models.DateTimeField(verbose_name=_(u"时间"), blank=True, null=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_(u"更新时间"), auto_now=True)
+
+    def __unicode__(self):
+        return 'Monthly:%s'%(self.department.name)
+        
+class MonthlyInfo(models.Model):
+    '''
+    @note: 月报内容
+    '''
+    monthly = models.ForeignKey(Monthly, verbose_name=_(u'月报'))
+    product = models.ForeignKey(Product, verbose_name=_(u'业务'))
+    
+    hard_num = models.CharField(max_length=128, verbose_name=_(u'硬件故障数 '), blank=True, null=True)
+    soft_num = models.CharField(max_length=128, verbose_name=_(u'软件故障数 '), blank=True, null=True)
+    human_num = models.CharField(max_length=128, verbose_name=_(u'人为事故(次) '), blank=True, null=True)
+    safe_num = models.CharField(max_length=128, verbose_name=_(u'安全事件数 '), blank=True, null=True)
+    service_num = models.CharField(max_length=128, verbose_name=_(u'服务次数 '), blank=True, null=True)
+    service_time = models.CharField(max_length=128, verbose_name=_(u'服务时长(h)'), blank=True, null=True)
+    server_num = models.CharField(max_length=128, verbose_name=_(u'区服数量'), blank=True, null=True)
+    space_percent = models.CharField(max_length=128, verbose_name=_(u'容量利用(%)'), blank=True, null=True)
+    machine_num = models.CharField(max_length=128, verbose_name=_(u'机器数量'), blank=True, null=True)
+    
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_(u"更新时间"), auto_now=True)
+
+    def __unicode__(self):
+        return '%s'%(self.monthly, self.content)
+    
+STATUS1 = 1
+STATUS2 = 2
+STATUS3 = 3
+STATUS4 = 4
+STATUS5 = 5
+
+TASK_STATUS = (
+     (STATUS1, _(u'研发')),
+     (STATUS2, _(u'CB1')),
+     (STATUS3, _(u'CBN')),
+     (STATUS4, _(u'不删档')),
+     (STATUS5, _(u'OB')),
+)    
+    
+class TaskPeriod(models.Model):
+    '''
+    @note: 项目阶段
+    '''
+    product = models.ForeignKey(Product, verbose_name=_(u'业务'))
+    period = models.IntegerField(verbose_name=_(u'阶段'), choices=TASK_STATUS, default=STATUS1)
+    time = models.CharField(max_length=128, verbose_name=_(u"上线时间"), blank=True, null=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_(u"更新时间"), auto_now=True)
+
+    def __unicode__(self):
+        return 'TaskPeriod:%s'%(self.product.name)
+    
+class TaskCircle(models.Model):
+    '''
+    @note: 项目时间段
+    '''
+    product = models.ForeignKey(Product, verbose_name=_(u'业务'))
+    start_time = models.DateField(verbose_name=_(u"开始时间"), blank=True, null=True)
+    end_time = models.DateField(verbose_name=_(u"结束时间"), blank=True, null=True)
+    user = models.ForeignKey(User, verbose_name=_(u'创建人'), related_name='taskcircle_user', blank=True, null=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_(u"更新时间"), auto_now=True)
+
+    def __unicode__(self):
+        return 'TaskCircle:%s'%(self.task)
+    
+class TaskInfo(models.Model):
+    '''
+    @note: 项目周期内容
+    '''
+    task_circle = models.ForeignKey(TaskCircle, verbose_name=_(u'项目阶段周期'))
+    content = models.CharField(max_length=128, verbose_name=_(u'项目阶段周期内容 '), blank=True, null=True)
+    rate = models.CharField(max_length=128, verbose_name=_(u'完成率'), blank=True, null=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now_add=True)
+    updated = models.DateTimeField(verbose_name=_(u"更新时间"), auto_now=True)
+
+    def __unicode__(self):
+        return 'TaskInfo:%s'%(self.task)

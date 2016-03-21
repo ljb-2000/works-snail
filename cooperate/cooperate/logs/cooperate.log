@@ -1,0 +1,300 @@
+2016-01-26 15:21:19,457 [Thread-8:8120] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-01-27 09:57:38,209 [Thread-1549:7552] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-01-27 14:12:49,306 [Thread-2596:7824] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-01-27 15:21:04,848 [Thread-3082:8848] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-01-27 15:22:55,457 [Thread-3167:9324] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-01-27 15:27:14,976 [Thread-3328:4580] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-01-27 19:34:21,460 [Thread-3410:10496] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-01-28 09:29:24,039 [Thread-3473:11128] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-01-28 09:34:19,042 [Thread-3523:9988] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-01-29 10:47:36,131 [Thread-3582:12924] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-15 10:00:19,911 [Thread-7:14416] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-15 13:26:28,058 [Thread-149:15272] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-22 13:23:23,740 [Thread-8:5636] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-23 12:17:21,039 [Thread-1245:7096] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-23 15:25:51,414 [Thread-7:10968] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-23 15:35:44,197 [Thread-99:13280] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-23 15:56:54,957 [Thread-8:15284] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-23 16:40:36,551 [Thread-8:13288] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-24 09:22:28,713 [Thread-380:16020] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-24 09:50:44,671 [Thread-474:7780] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-24 13:18:16,052 [Thread-3:19648] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-24 13:18:17,410 [Thread-18:15272] [logger:77] [ERROR]
+Rule对象不存在（{'department': <Department: 项目二部>}）
+2016-02-24 13:19:34,494 [Thread-34:20364] [logger:77] [ERROR]
+Rule对象不存在（{'department': <Department: 项目二部>}）
+2016-02-24 13:19:59,874 [Thread-50:8528] [logger:77] [ERROR]
+Rule对象不存在（{'department': <Department: 项目二部>}）
+2016-02-24 13:20:34,740 [Thread-54:17580] [logger:77] [ERROR]
+Rule对象不存在（{'department': <Department: 项目二部>}）
+2016-02-24 13:21:04,086 [Thread-69:19604] [logger:77] [ERROR]
+Rule对象不存在（{'department': <Department: 项目二部>}）
+2016-02-24 13:21:28,595 [Thread-85:20472] [logger:77] [ERROR]
+Rule对象不存在（{'department': <Department: 项目二部>}）
+2016-02-24 13:21:44,335 [Thread-101:18368] [logger:77] [ERROR]
+Rule对象不存在（{'department': <Department: 项目二部>}）
+2016-02-24 14:27:55,138 [Thread-349:20036] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-24 15:33:45,397 [Thread-380:19120] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-24 16:26:35,351 [Thread-252:20508] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-24 16:48:25,253 [Thread-13:19792] [logger:36] [ERROR]
+Department对象不存在（{'name': ''}）
+2016-02-24 16:50:38,118 [Thread-36:19776] [logger:36] [ERROR]
+Department对象不存在（{'name': ''}）
+2016-02-24 17:05:26,029 [Thread-130:15956] [logger:36] [ERROR]
+Department对象不存在（{'name': u''}）
+2016-02-24 17:31:29,694 [Thread-75:18328] [logger:37] [ERROR]
+Routine对象不存在（{'id': 29}）
+2016-02-24 19:04:38,730 [Thread-257:19856] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-24 19:56:12,867 [Thread-8:21696] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-24 20:43:31,632 [Thread-8:20720] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 09:20:12,382 [Thread-8:22332] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 09:24:52,023 [Thread-81:18696] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 10:30:00,479 [Thread-11:23220] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 12:01:17,207 [Thread-187:3208] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 12:28:04,286 [Thread-244:22320] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 13:21:38,173 [Thread-330:22664] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 15:34:38,068 [Thread-8:23284] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 15:48:55,019 [Thread-8:23880] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 16:27:50,025 [Thread-8:23952] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 17:31:04,526 [Thread-10:25588] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 19:15:01,191 [Thread-405:19476] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-25 19:17:12,900 [Thread-497:24708] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-26 13:30:14,071 [Thread-890:26912] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-26 14:02:50,019 [Thread-1183:26820] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-26 15:19:19,770 [Thread-1532:26324] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-26 15:52:19,625 [Thread-2045:24876] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-29 13:26:51,236 [Thread-699:24992] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-29 14:30:48,703 [Thread-740:29260] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-29 15:13:51,157 [Thread-9:2320] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-29 17:13:12,676 [Thread-471:7116] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-29 17:20:26,029 [Thread-622:5672] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-02-29 18:52:50,122 [Thread-44:6348] [logger:406] [ERROR]
+TaskPeriod对象不存在（{'product': <Product: 音乐侠国内>, 'period': 0}）
+2016-02-29 18:52:52,385 [Thread-45:7192] [logger:406] [ERROR]
+TaskPeriod对象不存在（{'product': <Product: 音乐侠国内>, 'period': 0}）
+2016-02-29 18:53:02,150 [Thread-46:6492] [logger:406] [ERROR]
+TaskPeriod对象不存在（{'product': <Product: 音乐侠国内>, 'period': 0}）
+2016-02-29 18:53:04,053 [Thread-50:7172] [logger:406] [ERROR]
+TaskPeriod对象不存在（{'product': <Product: 音乐侠国内>, 'period': 0}）
+2016-02-29 18:54:22,730 [Thread-68:8068] [logger:406] [ERROR]
+TaskPeriod对象不存在（{'product': <Product: 音乐侠国内>, 'period': 0}）
+2016-02-29 18:54:24,704 [Thread-69:6096] [logger:406] [ERROR]
+TaskPeriod对象不存在（{'product': <Product: 音乐侠国内>, 'period': 0}）
+2016-03-01 13:26:04,986 [Thread-262:8704] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-01 19:32:33,158 [Thread-240:11524] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-01 19:48:11,642 [Thread-506:9596] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-01 20:19:54,032 [Thread-774:4296] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-01 20:20:49,171 [Thread-8:11304] [logger:39] [DEBUG]
+[user login] luozh login ok.
+2016-03-01 20:44:44,592 [Thread-377:9684] [logger:39] [DEBUG]
+[user login] luozh login ok.
+2016-03-02 09:04:22,582 [Thread-841:11220] [logger:39] [DEBUG]
+[user login] luozh login ok.
+2016-03-02 09:29:57,589 [Thread-10:10440] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-02 10:26:52,049 [Thread-364:13236] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-02 13:15:35,546 [Thread-317:9952] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-02 13:41:34,392 [Thread-340:12724] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-02 15:05:06,426 [Thread-231:10116] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-02 15:13:41,897 [Thread-135:8284] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-02 15:47:33,482 [Thread-376:14384] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-02 16:38:10,635 [Thread-22:14956] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 16:38:34,191 [Thread-32:14464] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 16:45:24,121 [Thread-12:13452] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 16:47:15,783 [Thread-47:11284] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 16:47:22,108 [Thread-56:2276] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 16:48:19,640 [Thread-114:13328] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 16:49:30,703 [Thread-133:15156] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-02 16:49:53,828 [Thread-175:13744] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 16:50:18,727 [Thread-205:15048] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 16:50:26,875 [Thread-214:12664] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 16:50:38,775 [Thread-222:14392] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 16:51:46,980 [Thread-271:14452] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 16:53:59,134 [Thread-312:13316] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:16:41,217 [Thread-338:12752] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-02 17:16:51,743 [Thread-376:14836] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:20:46,921 [Thread-395:14924] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:20:49,926 [Thread-399:14448] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:21:40,752 [Thread-410:12964] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:21:41,095 [Thread-422:13888] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:21:41,372 [Thread-434:14948] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:21:49,851 [Thread-446:12084] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:22:58,326 [Thread-458:14692] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:23:21,657 [Thread-470:14048] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:24:00,137 [Thread-482:12544] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:25:41,048 [Thread-496:14260] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:26:03,982 [Thread-508:11028] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:26:18,278 [Thread-514:3856] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:26:30,480 [Thread-525:13828] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:27:12,546 [Thread-537:12964] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-02 17:29:57,865 [Thread-586:12688] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-04 11:35:36,941 [Thread-640:12460] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-04 11:38:18,279 [Thread-680:16596] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-04 11:40:41,178 [Thread-702:16052] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-04 11:44:21,214 [Thread-742:16660] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-07 09:18:40,397 [Thread-756:11580] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-07 09:18:50,713 [Thread-794:10180] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-07 09:24:01,075 [Thread-811:1756] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-07 09:24:17,834 [Thread-834:8152] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-07 09:24:52,142 [Thread-857:11656] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-07 09:30:26,532 [Thread-919:4308] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-07 09:30:39,828 [Thread-937:9612] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-07 14:24:24,045 [Thread-957:7064] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-07 14:24:41,621 [Thread-996:17372] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-07 14:25:37,503 [Thread-1022:16504] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-07 14:26:16,674 [Thread-1044:15708] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-07 14:32:43,736 [Thread-1089:16316] [logger:78] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-08 17:19:03,099 [Thread-1129:17104] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-08 17:23:42,391 [Thread-32:18196] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-08 17:24:57,082 [Thread-51:7692] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-08 17:28:05,671 [Thread-88:17624] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-08 17:29:21,953 [Thread-125:16576] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-08 19:00:23,920 [Thread-145:13400] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-08 19:00:50,756 [Thread-192:8684] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-08 19:01:33,621 [Thread-222:14208] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-09 11:34:01,637 [Thread-245:16420] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-09 11:34:13,769 [Thread-282:13992] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-09 19:00:28,961 [Thread-297:10696] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-09 19:00:39,688 [Thread-334:5072] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-09 19:00:59,796 [Thread-353:13264] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-11 10:13:29,398 [Thread-365:19252] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-11 10:25:15,582 [Thread-479:18472] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-11 10:25:42,411 [Thread-502:9264] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-11 10:26:29,693 [Thread-19:3624] [logger:287] [ERROR]
+Monthly对象不存在（{'id': 1}）
+2016-03-11 10:26:51,335 [Thread-1:19220] [logger:287] [ERROR]
+Monthly对象不存在（{'id': 1}）
+2016-03-11 10:27:09,259 [Thread-9:6652] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-11 10:27:55,292 [Thread-20:19220] [logger:36] [DEBUG]
+[user login] luozh login ok.
+2016-03-11 10:28:17,036 [Thread-78:17768] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-11 10:33:47,269 [Thread-166:19156] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-11 10:33:49,275 [Thread-177:4520] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-11 10:33:58,364 [Thread-189:5920] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）
+2016-03-11 10:35:16,377 [Thread-233:15836] [logger:82] [ERROR]
+Product对象不存在（{'name': u''}）

@@ -1,0 +1,663 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:43:32
+ * @version 主样式文件
+ */
+
+ html,
+ body {
+    line-height: 1.6;
+    font-family: Arial, "Helvetica Neue", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: #222;
+    font-size: 14px;
+ }
+
+ body {
+    min-width: 1200px;
+    background: #e7e8eb;
+ }
+
+ a {
+    color: #555;
+ }
+
+ a:hover {
+    cursor: pointer;
+    color: #555;
+ }
+
+ a:active,
+ a:focus {
+     outline: none !important;
+     color: #555;
+ }
+
+ ul {
+     list-style: none;
+ }
+
+ input:focus,
+ select:focus,
+ textarea:focus {
+     border-color: #ccc !important;
+     box-shadow: none !important;
+     outline: none !important;
+ }
+
+ button:focus {
+     border-color: none !important;
+     outline: none !important;
+ }
+
+ label {
+    font-weight: normal;
+ }
+
+ textarea {
+     resize: none !important;
+ }
+
+ table th {
+    font-weight: normal;
+    color: #999;
+ }
+
+ table th,
+ table td {
+    font-size: 12px !important;
+ }
+
+ .form-control[disabled],
+ fieldset[disabled] .form-control {
+     cursor: default !important;
+ }
+
+ .red {
+     color: #BB1A0E;
+ }
+
+ .m0 {
+     margin: 0 !important;
+ }
+
+ .m10 {
+     margin: 10px !important;
+ }
+
+ .mt10 {
+     margin-top: 10px;
+ }
+
+ .mt15 {
+     margin-top: 15px;
+ }
+
+ .mt20 {
+     margin-top: 20px;
+ }
+
+ .mt30 {
+     margin-top: 30px;
+ }
+
+ .mb0 {
+     margin-bottom: 0;
+ }
+
+ .mb20 {
+    margin-bottom: 20px !important;
+ }
+
+ .mr10 {
+     margin-right: 10px;
+ }
+
+ .mr35 { 
+     margin-right: 35px;
+ }
+
+ .mr82 {
+    margin-right: 82px;
+ }
+
+ .ml35 {
+     margin-left: 35px;
+ }
+
+ .pl0 {
+     padding-left: 0;
+ }
+
+ .pb0 {
+     padding-bottom: 0;
+ }
+
+ .pd0 {
+     padding: 0;
+ }
+
+ .form-inline .dataTables_wrapper {
+     clear: none !important;
+ }
+
+ .checknow {
+     background: #d9edf7 !important;
+ }
+
+ .table-striped>tbody>tr:nth-of-type(odd) {
+     background-color: #e7e7e7;
+ }
+
+ .pointer {
+     cursor: pointer;
+     color: #005380;
+ }
+
+ .panel,
+ .panel-heading,
+ .input-group-addon,
+ textarea,
+ input {
+    border-radius: 0 !important;
+ }
+
+.input-group-addon,
+.form-control[readonly],
+.form-control[disabled] {
+    background: #fff;
+}
+
+.panel-group .panel-heading {
+    text-align: center;
+}
+
+/* 提示窗样式 */
+
+.a-layout {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: rgb(0, 0, 0);
+    z-index: 9998;
+    opacity: 0.3;
+    display: none;
+}
+
+.a-msg {
+    position: absolute;
+    min-width: 140px;
+    padding: 10px;
+    padding-left: 50px;
+    margin: 15px;
+    z-index: 9999;
+    border-radius: 5px;
+    display: none;
+    cursor: pointer;
+}
+
+.jSuccess {
+    color: #264409;
+    background: #E6EFC2 url("/static/images/success.png") no-repeat 15px center;
+    border: 1px solid #C6D880;
+}
+
+.jError {
+    color: #8a1f11;
+    background: #FBE3E4 url('/static/images/error.png') no-repeat 15px center;
+    border: 1px solid #FBC2C4;
+}
+
+.jNotify {
+    color: #35517c;
+    background: #d8e6fc url('/static/images/info.png') no-repeat 15px center;
+    border: 1px solid #a7c3f0;
+}
+
+ /* 主体样式 */
+[v-cloak] {
+  display: none;
+}
+
+.header {
+    position: relative;
+    min-width: 1200px;
+    background-color: #fff;
+    border-top: 4px solid #44b549;
+    border-bottom: 1px solid #d9dadc;
+}
+
+.inner-header {
+    width: 1200px;
+    height: 60px;
+    margin: 0 auto;
+}
+
+.logo {
+    float: left;
+    font-size: 22px;
+    margin: 0;
+}
+
+.logo a {
+    display: block;
+    width: 248px;
+    height: 60px;
+    line-height: 60px;
+    overflow: hidden;
+    color: #696868;
+}
+
+.logo a:hover {
+    text-decoration: none;
+}
+
+.logo-img {
+    vertical-align: top;
+    transform: scale(0.8);
+    -webkit-transform: scale(0.8);
+    -moz-transform: scale(0.8);
+}
+
+.logo-text {
+    margin-left: -8px;
+}
+
+.account {
+    float: right;
+    line-height: 60px;
+}
+
+.username {
+    margin-right: 8px;
+}
+
+.exit {
+    display: inline-block;
+    height: 18px;
+    line-height: 17px;
+    padding-left: 11px;
+    border-left: 1px solid #ccc;
+    color: #222;
+}
+
+.exit:hover {
+    cursor: pointer;
+}
+
+.main-box {
+    width: 1200px;
+    margin: 0 auto;
+    padding: 36px 0;
+}
+
+.main-inner {
+    min-height: 700px;
+    border: 1px solid #d9dadc;
+    background-color: #fff;
+}
+
+.col-side {
+    position: relative;
+    width: 17.5%;
+    max-width: 208px;
+    border-right: 1px solid #e7e7eb;
+}
+
+.col-main {
+    width: 2000px;
+    height: 700px;
+}
+
+.main-inner .col-side, 
+.main-inner .col-main {
+    display: table-cell;
+    vertical-align: top;
+    word-wrap: break-word;
+    word-break: break-all;
+}
+
+.menu-box {
+    margin-bottom: 150px;
+}
+
+.menu {
+    padding-top: 6px;
+    border-top: 1px solid #e7e7eb;
+    margin-bottom: 0;
+}
+
+.menu.menu-extra {
+    border-top-width: 0;
+    margin-top: 13px;
+}
+
+.menu-title {
+    margin-bottom: 0;
+    position: relative;
+    padding: 0 30px 0;
+    width: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-wrap: normal;
+    line-height: 34px;
+    font-weight: normal;
+    color: #B2B2B2;
+}
+
+.menu-item {
+    line-height: 34px;
+}
+
+.menu-item a {
+    display: block;
+    padding: 0 0 0 58px;
+    width: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-wrap: normal;
+    color: #222;
+}
+
+.menu-item a:hover {
+    text-decoration: none;
+}
+
+.menu-item.selected a {
+    color: #fff;
+}
+
+.menu-item:hover {
+    background-color: #f4f5f9;
+}
+
+.menu-item.selected {
+    background-color: #44b549;
+}
+
+.menu-icon {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    display: inline-block;
+    margin-right: 6px;
+    font-size: 16px;
+}
+
+.copyright {
+    position: absolute;
+    bottom: 0;
+    left: 45px;
+    color: #8d8d8d;
+    font-size: 12px;
+    line-height: 30px;
+    margin-bottom: 10px;
+}
+
+.main-title {
+    font-size: 16px;
+    padding: 0 30px;
+    line-height: 75px;
+    font-weight: 400;
+    font-style: normal;
+    margin: 0;
+}
+
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
+    border-color: transparent;
+}
+
+.nav-tabs>li:hover {
+    border-bottom: 3px solid #a0a3ab;
+}
+
+.nav-tabs>li.active {
+    border-bottom: 3px solid #44b549;
+}
+
+.nav-tabs>li.first>a {
+    padding-left: 30px;
+}
+
+.nav-tabs>li>a:hover {
+    border-color: transparent;
+    background-color: #fff;
+}
+
+.tab-content>.tab-pane {
+    padding: 20px 30px 40px 30px;
+}
+
+.btn.btn-input {
+    min-width: 104px;
+}
+
+.i-inputform *:focus {
+    outline: none !important;
+}
+
+.i-inputform input.ng-dirty.ng-invalid,.i-inputform textarea.ng-dirty.ng-invalid {
+    border:1px solid #a94442;
+}
+
+.inpass {
+    color:#B02C2C;
+}
+
+.pass {
+    color:green;
+}
+
+.m-btn {
+    margin: 0px 82px 0 242px;
+}
+
+.datetime-form .input-group {
+    float: left;
+    padding-left: 15px;
+}
+
+.add {
+    top: 5px;
+    color: #44B549;
+}
+
+.remove {
+    top: 5px;
+    color: #882B2B;
+}
+
+.common-form {
+    padding-top: 30px;
+}
+
+.list-box {
+    background: #fff;
+    padding: 30px;
+    border-top: 1px solid #ccc;
+}
+
+.list-header {
+    color: #9E9E9E;
+}
+
+.list-body > dl > dt {
+    font-size: 14px;
+    color: #555;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.list-body > dl > dd {
+    margin: 0 0 15px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.list-author, .list-date {
+    color: #999;
+    font-size: 14px;
+}
+
+.list-edit {
+    color: #4298ba;
+}
+
+.table-center th,
+.table-center td {
+    text-align: center;
+    vertical-align: middle !important;
+}
+
+.mini-tips i {
+    font-weight: 400;
+    font-style: normal;
+    margin-top: -3px;
+    margin-right: 3px;
+}
+
+.icon-msg-mini {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.icon-msg-mini.info {
+    background: url("/static/images/icon.png") 0 -1050px no-repeat;
+}
+
+.icon-save {
+    background: url("/static/images/icon.png") 0 -4550px no-repeat;
+}
+
+.icon-save:hover {
+    background: url("/static/images/icon.png") 0 -4576px no-repeat;
+}
+
+.icon-delete {
+    background: url("/static/images/icon.png") 0 -4800px no-repeat;
+}
+
+.icon-delete:hover {
+    background: url("/static/images/icon.png") 0 -4772px no-repeat;
+}
+
+.icon-download {
+    background: url("/static/images/icon.png") 0 -4940px no-repeat;
+}
+
+.icon-download:hover {
+    background: url("/static/images/icon.png") 0 -4968px no-repeat;
+}
+
+.icon-block {
+    width: 26px;
+    height: 18px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.task-input, .task-view {
+    padding: 25px 25px 0 25px;
+}
+
+.task-step {
+    border-top: 2px dotted #ccc;
+    margin-top: 41px;
+    padding-top: 10px;
+}
+
+.load-data {
+    display: block;
+    height: 40px;
+    margin-top: 20px;
+    line-height: 40px;
+    text-align: center;
+    background: #eee;
+    color: #459ae9;
+    text-decoration: none;
+}
+
+.load-data:hover {
+    color: #459ae9;
+}
+
+.icon-down-open {
+    display: inline-block;
+    width: 12px;
+    height: 9px;
+    vertical-align: middle;
+    margin-right: 3px;
+    background: transparent url("/static/images/icon_up_down.png") no-repeat 0 0;
+}
+
+.doc-box {
+    padding: 0;
+    clear: both;
+}
+
+.doc-list dl dd {
+    float: left;
+    margin-left: 30px;
+}
+
+.doc-list {
+    height: 40px;
+    padding: 11px;
+    background: #F5F5F5;
+    color: #555;
+    margin-bottom: 15px;
+}
+
+.doc-search {
+    width:350px;
+}
+
+.form-upload {
+    padding: 50px 0 0 50px;
+}
+
+.step-btn .btn {
+    width: 129px;
+}
+
+.panel-collapse .step-btn .btn {
+    width: 125px;
+}
+
+.panel-heading {
+    background: #fff !important;
+}
+
+.step-time {
+    height: 34px;
+    border-left: 1px solid #ccc;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    border-right: none;
+    text-align: center;
+}
+
+.step-time.last {
+    border-right: 1px solid #ccc;
+}
+
+.panel-collapse .panel-body:focus {
+    outline: none;
+}
+
+.file-empty {
+    text-align: center;
+    font-size: 24px;
+    color: #ccc;
+    padding-top: 100px;
+}
+
+.content-left {
+    text-align: left !important;
+}

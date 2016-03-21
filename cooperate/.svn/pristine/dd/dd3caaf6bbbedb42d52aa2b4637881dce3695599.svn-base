@@ -1,0 +1,221 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version task.html
+ */
+
+var vm = new Vue({
+    el: '#task_box',
+    data: {
+        products: {}
+    },
+    methods: {
+        getProducts: function() {
+            this.products = {
+                active: 0,
+                time: '2016.01.16 - 2016.01.22',
+                data: [{
+                    productName: 'xxx业务',
+                    ontime: ['', '', '', '', ''],
+                    modules: [{
+                        name: '研发',
+                        status: true,
+                        list: [{
+                            content: '-',
+                            rate: '-'
+                        }],
+                        more: []
+                    }, {
+                        name: 'CB1',
+                        status: false,
+                        list: [{
+                            content: '-',
+                            rate: '-'
+                        }],
+                        more: []
+                    }, {
+                        name: 'CBN',
+                        status: false,
+                        list: [{
+                            content: '-',
+                            rate: '-'
+                        }],
+                        more: []
+                    }, {
+                        name: '不删档',
+                        status: false,
+                        list: [{
+                            content: '-',
+                            rate: '-'
+                        }],
+                        more: []
+                    }, {
+                        name: 'OB',
+                        status: false,
+                        list: [{
+                            content: '-',
+                            rate: '-'
+                        }],
+                        more: []
+                    }]
+                }, {
+                    productName: 'yyy业务',
+                    ontime: ['', '', '', '', ''],
+                    modules: [{
+                        name: '研发',
+                        status: true,
+                        list: [{
+                            content: '-',
+                            rate: '-'
+                        }],
+                        more: []
+                    }, {
+                        name: 'CB1',
+                        status: false,
+                        list: [{
+                            content: '-',
+                            rate: '-'
+                        }],
+                        more: []
+                    }, {
+                        name: 'CBN',
+                        status: false,
+                        list: [{
+                            content: '-',
+                            rate: '-'
+                        }],
+                        more: []
+                    }, {
+                        name: '不删档',
+                        status: false,
+                        list: [{
+                            content: '-',
+                            rate: '-'
+                        }],
+                        more: []
+                    }, {
+                        name: 'OB',
+                        status: false,
+                        list: [{
+                            content: '-',
+                            rate: '-'
+                        }],
+                        more: []
+                    }]
+                }]
+            }
+        },
+        isActive: function(index) {
+            this.products.active = index;
+        },
+
+        // 获取当前阶段更多数据
+        getStages: function(index) {
+            var cur = this.products.active,
+                obj = this.products.data[cur];
+
+            obj.modules[index].more = [
+                [{
+                    time: '2016.01.16 - 2016.01.22',
+                    content: '机器申请已到位，完成验收。',
+                    percentage: '70%'
+                }, {
+                    content: '服务端已完成搭建3个大区，待运营侧测试验收。',
+                    percentage: '80%'
+                }, {
+                    content: '登录器、gmcc、极效等周边环境已接入完成，待运营测试验收',
+                    percentage: '90%'
+                }, {
+                    content: '监控已接入，etl已接入',
+                    percentage: '100%'
+                }]
+            ];
+        },
+
+        // 激活当前阶段
+        activeModule: function(index) {
+            var cur = this.products.active,
+                obj = this.products.data[cur],
+                len = obj.modules.length,
+                i;
+
+            for (i = 0; i < len; i++) {
+                obj.modules[i].status = false;
+            }
+
+            obj.modules[index].status = true;
+        },
+
+        // 删除行
+        deleteList: function(index) {
+            var cur = this.products.active,
+                obj = this.products.data[cur],
+                len = obj.modules.length,
+                i;
+
+            for (i = 0; i < len; i++) {
+                if (obj.modules[i].status === true) {
+                    obj.modules[i].list.splice(index, 1);
+                }
+            }
+        },
+
+        // 添加行
+        addList: function(index) {
+            var cur = this.products.active,
+                obj = this.products.data[cur];
+
+            obj.modules[index].list.push({
+                content: '-',
+                rate: '-'
+            });
+        },
+
+        // 提交列表
+        submitList: function(index) {
+            var cur = this.products.active,
+                obj = this.products.data[cur];
+
+            console.log(obj.ontime);
+        },
+
+        // 计算时间段
+        getDate: function() {
+            var date = new Date(),
+                dateTime = date.getDate(),
+                week = date.getDay(),
+                sweek = week + 1,
+                eweek = 5 - week;
+
+            sweek === 7 ? sweek = 0 : '';
+            eweek === -1 ? eweek = 6 : '';
+
+            var setsTime = date.setDate(dateTime - sweek),
+                seteTime = date.setDate(dateTime + eweek),
+                startTime = new Date(setsTime),
+                endTime = new Date(seteTime),
+                sYear = startTime.getFullYear(),
+                eYear = endTime.getFullYear(),
+                sMonth = startTime.getMonth() + 1,
+                eMonth = endTime.getMonth() + 1,
+                sDate = startTime.getDate(),
+                eDate = endTime.getDate();
+
+            sMonth < 10 ? sMonth = '0' + sMonth : '';
+            eMonth < 10 ? eMonth = '0' + eMonth : '';
+            sDate < 10 ? sDate = '0' + sDate : '';
+            eDate < 10 ? eDate = '0' + eDate : '';
+
+            var startStr = [sYear, sMonth, sDate].join('.'),
+                endStr = [eYear, eMonth, eDate].join('.');
+
+            this.products.time = startStr + ' - ' + endStr;
+        }
+    }
+});
+
+// 获取产品列表
+vm.getProducts();
+
+vm.getDate();

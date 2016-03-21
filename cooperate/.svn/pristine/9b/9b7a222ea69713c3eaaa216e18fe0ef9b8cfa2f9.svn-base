@@ -1,0 +1,48 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-01-19 09:45:35
+ * @version task.html
+ */
+
+$(function() {
+
+    var vm = new Vue({
+        el: '#task_box',
+        data: {
+            products: []
+        },
+        methods: {
+            getProducts: function() {
+                this.products = [{
+                    name: 'xxx业务',
+                    list: []
+                }, {
+                    name: 'yyy业务',
+                    list: []
+                }]
+            },
+            getStages: function(index) {
+                this.products[index].list = [
+                    [{
+                        time: '2016.01.16 - 2016.01.22',
+                        content: '机器申请已到位，完成验收。',
+                        percentage: '70%'
+                    }, {
+                        content: '服务端已完成搭建3个大区，待运营侧测试验收。',
+                        percentage: '80%'
+                    }, {
+                        content: '登录器、gmcc、极效等周边环境已接入完成，待运营测试验收',
+                        percentage: '90%'
+                    }, {
+                        content: '监控已接入，etl已接入',
+                        percentage: '100%'
+                    }]
+                ];
+            }
+        }
+    });
+
+    // 获取产品列表
+    vm.getProducts();
+});
