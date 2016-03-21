@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+import datetime
+import os, errno
+import logging
+import traceback, json
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import HttpResponse
+import settings
+
+
+#logger = logging.getLogger("logger_utils")
+
+@csrf_exempt
+def file_upload(request):
+    ret="0"
+    file = request.FILES.get("Filedata",None)
+    if file:
+        result,new_name=profile_upload(file)
+        if result:
+            ret="1"
+        else:
+            ret="2"                    
+    result={'ret':ret,'save_name':new_name}
+    return HttpResponse(json.dumps(result,ensure_ascii = False))
+
+
+def profile_upload(file):
+    '''文件上传函数'''
+    if file:
+        path = settings.MEDIA_ROOT
+        file_name = file.name
+        file_path=os.path.join(path,file.name)
+        fp = open(file_path, 'wb')
+        for content in file.chunks(): 
+            fp.write(content)
+        fp.close()
+        return (True,file_name)
+    return (False,file_name)

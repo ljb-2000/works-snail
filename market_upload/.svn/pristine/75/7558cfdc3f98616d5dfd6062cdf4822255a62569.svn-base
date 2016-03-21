@@ -1,0 +1,146 @@
+/**
+ * 
+ * @authors Your Name (you@example.org)
+ * @date    2015-09-21 18:14:24
+ * @version $Id$
+ */
+
+//退出
+$("#exit_ok").on("click", function() {
+    location.href = "/logout";
+});
+
+//接入校验封装
+function commom_product(product_name,ftp_info,file_name) {
+    if (!product_name.val().trim() || !ftp_info.val().trim() || !file_name.val().trim()) {
+        jNotify("有未填写的输入项，请检查！");
+        return false;
+    }
+
+    var arr = ftp_info.val().trim().split(',');
+    if (arr.length != 4) {
+        jNotify("资源ftp站点信息 格式错误，请检查！");
+        return false;
+    }
+
+    var ip = arr[0];
+    if (is_ip(ip) == false) {
+        return false;
+    }
+}
+
+//保存接入
+function save_product() {
+    var product_name = $("#product_name"),
+        ftp_info = $("#ftp_info"),
+        ftp_domain = $("#ftp_domain"),
+        file_path = $("#file_path");
+    
+    /*var valid_form = commom_product(product_name,ftp_info,file_name);
+    if(valid_form === false){
+        return false;
+    }
+
+    var valid_data = data_product(name_list,path_list);
+    if(valid_data === false){
+        return false;
+    }
+    else {
+        group_name = valid_data.group_name;
+        group_path = valid_data.group_path;
+    }*/
+
+    $.ajax({
+        type: 'POST',
+        url: '/product/save/',
+        data: {
+            'product_name': product_name.val(),
+            'file_path': file_path.val(),
+            'ftp_info': ftp_info.val(),
+            'ftp_domain': ftp_domain.val()
+        },
+        dataType: 'json',
+        success: function(msg) {
+            if (msg.result == 1) {
+                jSuccess('保存业务成功！');
+                $('#myModal').modal('hide');
+                $.ajax({
+                    type: "POST",
+                    url: "/product/ajax_get_product_option/",
+                    data: {},
+                    dataType: "json",
+                    error: function(XMLHttpRequest) {
+                        //alert(XMLHttpRequest.responseText);
+                        return false;
+                    },
+                    success: function(data) {
+                        makeoption(data, 'product_select');
+                    }
+                });
+            }else{
+                jError(msg.msg);
+            }
+        },
+        error: function() {
+            jError('保存业务失败！');
+        }
+    });
+    return true;
+}
+
+//选择修改业务名称
+$("#product_name").on("change",function(){
+    var product_name = $(this).val(),
+        ftp_info = $("#ftp_info"),
+        ftp_domain = $("#ftp_domain"),
+        file_path = $("#file_path");
+
+    if(product_id) {
+        //ajax
+        $.ajax({
+            type: "POST",
+            url: "/product/ajax_get_productinfo/",
+            data: {
+                'product_name': product_name
+            },
+            dataType: "json",
+            error: function(XMLHttpRequest) {
+                return false;
+            },
+            success: function(data) {
+                if(data.result==1){
+                    ftp_domain.val(data.ftp_domain);
+                    file_path.val(data.file_path);
+                    var ftp = [data.ftp_host,data.ftp_port,data.ftp_username,data.ftp_password];
+                    var ftp_group = ftp.join(',');
+                    ftp_info.val(ftp_group);
+                }
+            }
+        });
+    }
+});
+
+//检测ip
+function is_ip(ip) {
+    var reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+    if (!reg.test(ip)) {
+        jNotify("ip格式输入有误，请检查！");
+        return false;
+    }
+}
+
+function makeoption(data, select_id) {
+    var select = $('#' + select_id);
+    var opt = select.children();
+    opt.filter('option[value!=""]').remove();
+    var add_opt = [];
+    for (var i = 0; i < data.length; i++) {
+        add_opt.push('<option value="' + data[i][0] + '">' + data[i][1] + '</option>');
+    }
+    var a_opt = add_opt.join('\n');
+    select.append(a_opt);
+}
+
+
+
+

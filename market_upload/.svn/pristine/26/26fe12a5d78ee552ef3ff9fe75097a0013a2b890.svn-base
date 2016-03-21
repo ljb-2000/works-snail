@@ -1,0 +1,125 @@
+@charset 'UTF-8';
+
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-11 13:53:04
+ * @version $Id$
+ */
+
+.system-box {
+    position: absolute;
+    top: 13%;
+    left: 50%;
+    width: 700px;
+    margin-left: -350px;
+}
+
+.ststem-header h1 {
+    font-size: 29px !important;
+    position: relative;
+    text-align: center;
+}
+
+.access {
+    font-size: 18px;
+    position: absolute;
+    top: 7px;
+    left: 0;
+}
+
+.exit {
+    font-size: 18px;
+    position: absolute;
+    top: 7px;
+    right: 0;
+}
+
+.exit:hover,
+.exit:active,
+.exit:focus {
+    text-decoration: none !important;
+}
+
+body {
+    font-family: Arial, 'Microsoft YaHei', 'Source Sans Pro', Helvetica, sans-serif;
+    background: url('/static/assets/fonts/bg.png');
+}
+
+button,
+input,
+select:focus {
+    border-color: #ccc !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+a:focus,
+a:hover {
+    text-decoration: none !important;
+    outline: none !important;
+}
+
+.mt10 {
+    margin-top: 10px;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.red {
+    color: red;
+}
+
+.modal-box {
+    width: 850px;
+    margin-top: 7%;
+}
+
+.exit-box {
+    width: 500px;
+    margin-top: 12%;
+}
+
+.uploadifive-queue {
+    overflow: auto;
+    width: 541px;
+    max-height: 215px;
+    margin-top: 5px;
+}
+
+.uploadifive-queue-item {
+    width: 100%;
+    max-width: none !important;
+}
+
+.uploadifive-button {
+    font-family: 'Microsoft YaHei' !important;
+    font-weight: normal !important;
+    margin-left: 208px;
+    color: #423c3c !important;
+    border: none !important;
+    border-radius: 5px !important;
+    background-color: #f5f5f5 !important;
+    background-image: none !important;
+    text-shadow: none !important;
+}
+
+.url {
+    display: inline-block;
+    float: left;
+    overflow: hidden;
+    width: 380px;
+    text-overflow: ellipsis;
+    color: #a94442;
+    border: none;
+    background: #f5f5f5;
+}
+
+.check-open {
+    display: block;
+    width: 22px;
+    height: 18px;
+    margin-top: 8px !important;
+}

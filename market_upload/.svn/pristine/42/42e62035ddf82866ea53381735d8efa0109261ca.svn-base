@@ -1,0 +1,362 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+import settings
+from utils.decorator import render_to, login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.db.transaction import commit_on_success
+from django.shortcuts import HttpResponse
+import json
+import datetime
+from ftplib import FTP
+import logging
+import traceback
+from releaseinfo import bufsize, SPECIAL_USERS, PRODUCT_URL
+from service import _product
+import hashlib, base64
+import urllib, urllib2
+
+logger = logging.getLogger('logger')
+
+@csrf_exempt
+@login_required
+def save(request):
+    user = request.user
+    sdicts = {}
+    sdicts["result"] = 0
+    product_name = request.POST.get('product_name','').strip()
+    file_path = request.POST.get('file_path').strip()
+    
+    product = _product.get_or_create_product_by_params(name=product_name)[0]
+    product.file_path = file_path
+    product.create_user = user
+    product.update_user = user
+    product.save()
+    
+    sdicts["result"] = 1
+    sdicts["msg"] = u'保存业务信息成功'
+    return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+
+@csrf_exempt
+@login_required
+def edit(request):
+    user = request.user
+    sdicts = {}
+    sdicts["result"] = 0
+    product_id = request.POST.get('product_id',0)
+    ftp_info = request.POST.get('ftp_info')
+    file_name = request.POST.get('file_name','').strip()
+    group_name = request.POST.get('group_name')
+    group_path = request.POST.get('group_path')
+    group_id = request.POST.get('group_id')
+    
+    try:
+        ftp_info_list = ftp_info.split(',')
+        ftp_host = ftp_info_list[0].strip()
+        ftp_port = ftp_info_list[1].strip()
+        ftp_username = ftp_info_list[2].strip()
+        ftp_password = ftp_info_list[3].strip()
+    except:
+        sdicts["msg"] = u'资源ftp站点信息有误！'
+        return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+    
+    product = _product.get_product_by_params(id=product_id)
+    if not product:
+        sdicts["msg"] = u'业务不存在！'
+        return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+    product.file_name = file_name
+    product.ftp_host = ftp_host
+    product.ftp_port = ftp_port
+    
+    product.ftp_username = base64.b64encode(ftp_username)
+    product.ftp_password = base64.b64encode(ftp_password)
+#    product.create_user = user
+    product.update_user = user
+    product.save()
+    
+    group_name_list = group_name.split(',')
+    group_path_list = group_path.split(',')
+    group_id_list = []
+    if group_id:
+        group_id_list = group_id.split(',')
+    
+    for index,gname in enumerate(group_name_list):
+        gname = gname.strip()
+        gpath = group_path_list[index]
+        gpath = gpath.strip()
+        if index < len(group_id_list):
+            group_id = group_id_list[index]
+            productinfo = _product.get_productInfo_by_params(id=group_id)
+            productinfo.group_name = gname
+            productinfo.group_path = gpath
+            productinfo.update_user = user
+            productinfo.save()
+        else:
+            productinfo = _product.create_productInfo_by_params(product=product)
+            productinfo.group_name = gname
+            productinfo.group_path = gpath
+            productinfo.create_user = user
+            productinfo.update_user = user
+            productinfo.save()
+        
+    sdicts["result"] = 1
+    sdicts["msg"] = u'修改业务信息成功'
+    return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+
+@csrf_exempt
+@login_required
+def delete(request):
+    sdicts = {}
+    sdicts["result"] = 0
+    group_id = request.POST.get('group_id',0)
+    
+    productinfo = _product.get_productInfo_by_params(id=group_id)
+    if not productinfo:
+        sdicts["msg"] = u'业务范围不存在！'
+        return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+    productinfo.delete()
+    sdicts["result"] = 1
+    sdicts["msg"] = u'删除业务范围成功'
+    return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+
+@csrf_exempt
+def ajax_file_upload(request):
+    user = request.user
+    sdicts = {}
+    sdicts["result"] = 0
+    now = datetime.datetime.now()
+    if request.method == "POST":
+        fileUploadLog = _product.create_fileUploadLog_by_params(user=user)
+        try:
+            f = request.FILES.get("file_road", None)
+            product_id = request.POST.get("product_id")
+            group_id = request.POST.get("group_id")
+            #存储文件
+            if f:
+                fileUploadLog.file_name = f.name
+                product = _product.get_product_by_params(id=product_id)
+                if f.name != product.file_name:
+                    sdicts["msg"] = u'请上传正确的公告文件！'
+                    fileUploadLog.log = u'file name incorrect'
+                    fileUploadLog.end_time = datetime.datetime.now()
+                    fileUploadLog.save()
+                    return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+                if f.size > 1024*1024:
+                    sdicts["msg"] = u'上传文件不允许超过1M！'
+                    fileUploadLog.log = u'file size greater than 1M'
+                    fileUploadLog.end_time = datetime.datetime.now()
+                    fileUploadLog.save()
+                    return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+                
+                fpath = settings.REL_MEDIA_ROOT
+                fpath = os.path.join(fpath, '%s'%product_id)
+                if not os.path.exists(fpath):
+                    os.makedirs(fpath)
+                fpath = os.path.join(fpath, '%s'%group_id)
+                if not os.path.exists(fpath):
+                    os.makedirs(fpath)
+                fpath = os.path.join(fpath, '%s'%user.username)
+                if not os.path.exists(fpath):
+                    os.makedirs(fpath)
+                fpath = os.path.join(fpath, '%s'%now.strftime("%Y%m%d%H%M%S"))
+                if not os.path.exists(fpath):
+                    os.makedirs(fpath)  
+                filepath = os.path.join(fpath, f.name)
+                fileUploadLog.file_path = filepath
+                
+                of = open(filepath, 'wb+')
+                for chunk in f.chunks():
+                    of.write(chunk)
+                of.close()
+                
+                hash_value = calc_md5(filepath)
+                
+                fileUploadLog.log = 'file upload success'
+                fileUploadLog.end_time = datetime.datetime.now()
+                fileUploadLog.save()
+                
+                sdicts['result'] = 1
+                sdicts["msg"] = u'文件上传成功，请点"发布公告"！'
+                sdicts["filepath"] = filepath
+                sdicts["filename"] = f.name
+                sdicts["hash_value"] = hash_value
+                
+        except Exception, e:
+            print e
+            sdicts["msg"] = u'上传失败！'
+            fileUploadLog.log = e
+            fileUploadLog.end_time = datetime.datetime.now()
+            fileUploadLog.save()
+    return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+
+@csrf_exempt
+@login_required
+def ftp_upload(request):
+    '''
+    host="115.182.81.164"
+    port="21"
+    username="anonymous"
+    password="anonymous"
+    '''
+    user = request.user
+    sdicts = {}
+    sdicts["result"] = 0
+    
+    filepath = request.POST.get('filepath')
+    group_id = request.POST.get('group_id')
+    group = _product.get_productInfo_by_params(id=group_id)
+    product = group.product
+    host = product.ftp_host
+    port = int(product.ftp_port)
+    username = base64.b64decode(product.ftp_username)
+    password = base64.b64decode(product.ftp_password)
+    remotepath = group.group_path.replace('\\','/')
+    
+    ftpUploadLog = _product.create_ftpUploadLog_by_params(user=user)
+    ftpUploadLog.file_path = filepath
+    ftpUploadLog.ftp_path = remotepath
+    
+    if not filepath or not os.path.exists(filepath):
+        sdicts["msg"] = u"本地文件不存在！"
+        ftpUploadLog.log = 'file does not exisit'
+        ftpUploadLog.end_time = datetime.datetime.now()
+        ftpUploadLog.save()
+        return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+    
+    file_upload = open(filepath,'rb')
+    ftp=FTP()
+    ftp.set_debuglevel(2)#打开调试级别2，显示详细信息;0为关闭调试信息 
+    logger.debug("ftp login start")
+    
+    try:
+        ftp.connect(host, port)
+        logger.debug("ftp connect success")
+    except Exception,e:
+        print e
+        sdicts["msg"] = u"发布公告失败！"
+        ftpUploadLog.log = 'ftp connection fail:%s'%e
+        ftpUploadLog.end_time = datetime.datetime.now()
+        ftpUploadLog.save()
+        return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+    
+    try:
+        ftp.login(username, password)
+        logger.debug("ftp login success")
+    except Exception,e:
+        print e
+        sdicts["msg"] = u"发布公告失败！"
+        ftpUploadLog.log = 'ftp login fail:%s'%e
+        ftpUploadLog.end_time = datetime.datetime.now()
+        ftpUploadLog.save()
+        return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+    
+    try:    
+        ftp.cwd(remotepath)
+        logger.debug("ftp change dir success")
+    except Exception,e:
+        print e
+        sdicts["msg"] = u"发布公告失败！"
+        ftpUploadLog.log = 'ftp change dir fail:%s'%e
+        ftpUploadLog.end_time = datetime.datetime.now()
+        ftpUploadLog.save()
+        return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+    
+    try:    
+        ftp.storbinary('STOR %s' % os.path.basename(filepath),file_upload,bufsize)
+    except Exception,e:
+        print e
+        sdicts["msg"] = u"发布公告失败！"
+        ftpUploadLog.log = 'ftp stor file fail:%s'%e
+        ftpUploadLog.end_time = datetime.datetime.now()
+        ftpUploadLog.save()
+        return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+    
+    ftp.set_debuglevel(0)
+    ftp.quit()
+    file_upload.close()
+    
+    ftpUploadLog.log = 'file upload success'
+    ftpUploadLog.end_time = datetime.datetime.now()
+    ftpUploadLog.save()
+    
+    sdicts['result'] = 1 
+    sdicts["msg"] = u"发布公告成功！"
+    
+    return HttpResponse(json.dumps(sdicts, ensure_ascii=False))
+
+@csrf_exempt
+def ajax_get_product_option(request):
+    user = request.user
+    
+    products_add = []
+    try:
+        if user.username in SPECIAL_USERS:
+            name = u'张延礼'
+        data = {'username':name.encode('utf8'),}
+        
+        req = urllib2.Request(PRODUCT_URL)
+        params = urllib.urlencode(data)
+        response = urllib2.urlopen(req, params)
+        
+        jsonText = response.read()
+        json_dict= json.loads(jsonText)
+        
+        product_dict_list = json_dict.get('items')
+        for product_dict in product_dict_list:
+            products_name = product_dict.get('VERSION_NAME')
+            products_add.append(products_name)
+    except Exception,e:
+        print e
+    
+    products = _product.get_products_by_params(name__in=products_add)
+    res = []
+    for product in products:
+        obj = [product.id, product.name]
+        res.append(obj)
+    result = json.dumps(res)
+    return HttpResponse(result)
+    
+@csrf_exempt
+def ajax_get_group_option(request):
+    if request.method == "POST":
+        product_id = int(request.POST.get('product_id'))
+        res = []
+        product = _product.get_product_by_params(id=product_id)
+        groups = _product.get_productInfos_by_params(product=product)
+        for group in groups:
+            obj = [group.id, group.group_name]
+            res.append(obj)
+        result = json.dumps(res)
+        return HttpResponse(result)
+
+@csrf_exempt
+def ajax_get_productinfo(request):
+    sdicts = {}
+    sdicts['result'] = 0
+    if request.method == "POST":
+        product_id = request.POST.get('product_id',0)
+        res = []
+        product = _product.get_product_by_params(id=product_id)
+        if product:
+            groups = _product.get_productInfos_by_params(product=product)
+            for group in groups:
+                obj = [group.id, group.group_name, group.group_path]
+                res.append(obj)
+            sdicts['ftp_host'] = product.ftp_host
+            sdicts['ftp_port'] = product.ftp_port
+            sdicts['ftp_username'] = base64.b64decode(product.ftp_username)
+            sdicts['ftp_password'] = base64.b64decode(product.ftp_password)
+            sdicts['file_name'] = product.file_name
+            sdicts['group_list'] = res
+            sdicts['result'] = 1
+        return HttpResponse(json.dumps(sdicts))
+
+def calc_md5(filepath):
+    with open(filepath,'rb') as f:
+        md5obj = hashlib.md5()
+        md5obj.update(f.read())
+        hash_value = md5obj.hexdigest()
+        return hash_value
