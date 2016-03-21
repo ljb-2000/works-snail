@@ -1,0 +1,99 @@
+#-*- coding:utf-8 -*-
+import MySQLdb
+from config import monitor
+from config import monitor_event
+
+def connect_db(host, port, user, password, db):
+    try:
+        conn = MySQLdb.connect(
+            host=host,
+            port=port,
+            user=user,
+            passwd=password,
+            db=db,
+            cursorclass = MySQLdb.cursors.DictCursor,
+            use_unicode=True,
+            charset="utf8")
+        return conn
+    except Exception, e:
+        print "Fatal: connect db fail:%s" % e
+        return None
+
+class DB(object):
+    def __init__(self, host, port, user, password, db):
+        self.host = host
+        self.port = port
+        self.user = user
+        self.password = password
+        self.db = db
+        self._conn = connect_db(host, port, user, password, db)
+
+    def connect(self):
+        self._conn = connect_db(self.host, self.port, self.user, self.password, self.db)
+        return self._conn
+
+    def execute(self, *a, **kw):
+        cursor = kw.pop('cursor', None)
+        try:
+            cursor = cursor or self._conn.cursor()
+            cursor.execute(*a, **kw)
+        except (AttributeError, MySQLdb.OperationalError):
+            self._conn and self._conn.close()
+            self.connect()
+            cursor = self._conn.cursor()
+            cursor.execute(*a, **kw)
+        return cursor
+
+    def commit(self):
+        if self._conn:
+            try:
+                self._conn.commit()
+            except MySQLdb.OperationalError:
+                self._conn and self._conn.close()
+                self.connect()
+                self._conn and self._conn.commit()
+
+    def rollback(self):
+        if self._conn:
+            try:
+                self._conn.rollback()
+            except MySQLdb.OperationalError:
+                self._conn and self._conn.close()
+                self.connect()
+                self._conn and self._conn.rollback()
+
+    def query_all(self, *a, **kw):
+        try:
+            cursor = self.execute(*a, **kw)
+            return cursor.fetchall()
+        finally:
+            self._conn and self._conn.close()
+            self.connect()
+
+    def query_one(self, *a, **kw):
+        rows = self.query_all(*a, **kw)
+        if rows:
+            return rows[0]
+        else:
+            return None
+
+#portal_db_conn = DB(
+#        portal.DB_HOST,
+#        portal.DB_PORT,
+#        portal.DB_USER,
+#        portal.DB_PASS,
+#        portal.DB_NAME)
+
+monitor_db_conn = DB(
+        monitor.DB_HOST,
+        monitor.DB_PORT,
+        monitor.DB_USER,
+        monitor.DB_PASS,
+        monitor.DB_NAME)
+
+monitor_event_db_conn = DB(
+        monitor_event.DB_HOST,
+        monitor_event.DB_PORT,
+        monitor_event.DB_USER,
+        monitor_event.DB_PASS,
+        monitor_event.DB_NAME)

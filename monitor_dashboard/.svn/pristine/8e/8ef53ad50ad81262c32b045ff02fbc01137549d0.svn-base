@@ -1,0 +1,312 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-02 15:32:45
+ * @msg     监控查询页js
+ */
+
+$(function() {
+
+    // datatable
+    var queryHostTable = $('#query_table').dataTable({
+        "sDom": 'lfrtip',
+        "bLengthChange": false,
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [0]
+        }],
+
+        // "aaSorting": [[ 8, "desc" ]],
+        "bProcessing": true,
+        "bServerSide": true,
+        "sPaginationType": "full_numbers",
+
+        "sAjaxSource": "/monitor_query_endpoint_list/",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+
+    var queryPlotTable = $('#query_plot_table').dataTable({
+        "sDom": 'lfrtip',
+        "bLengthChange": false,
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [0]
+        }],
+
+        // "aaSorting": [[ 8, "desc" ]],
+        "bProcessing": true,
+        "bServerSide": false,
+        "sPaginationType": "full_numbers",
+
+        // "sAjaxSource": "",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+
+    // 批量筛选功能
+    $(document).off("click", "#query_filter").on("click", "#query_filter", function() {
+        var txt = $("#u_fliter").val(),
+            msg = $(".filter-msg"),
+            result = filterIp(txt, msg);
+
+        if (result === false) {
+            return false;
+        } else {
+            queryHostTable.fnReloadAjax('/monitor_query_endpoint_list/?p=0&iptxt=' + result);
+
+            $('#node_arr').val(result);
+
+            $('#query_table').find('.check-all').prop('checked', false);
+        }
+    });
+
+    // 右侧选中栏高度设定
+    (function getQueryHeight() {
+        var queryH = $(window).height();
+
+        $(".add-pannel").height(queryH);
+
+        $(window).resize(function() {
+            var queryH = $(window).height();
+
+            $(".add-pannel").height(queryH);
+        });
+    })();
+
+    // 全选、全不选
+    (function queryCheckAll() {
+        var checkedAll = ".plot-all",
+            checkedIt = ".plot-it";
+
+        checkAll(checkedAll, checkedIt);
+    })();
+
+    // 右侧栏展开隐藏
+    $(document).off("click", ".left-menu").on("click", ".left-menu", function() {
+        $(".add-pannel").stop().animate({
+            "right": "-345px"
+        }, 600);
+    });
+
+    $(document).off("click", ".left-menu-open").on("click", ".left-menu-open", function() {
+        $(".add-pannel").stop().animate({
+            "right": "0"
+        }, 600);
+    });
+
+    // 筛选按钮开展收起
+    $(document).off("click", ".u-legend .active").on("click", ".u-legend .active", function() {
+        $(this).removeClass("active glyphicon-chevron-up").addClass("glyphicon-chevron-down").parent().siblings(".form-inline").slideUp(400);
+    });
+    $(document).off("click", ".u-legend .glyphicon-chevron-down").on("click", ".u-legend .glyphicon-chevron-down", function() {
+        $(".u-legend .active").removeClass("active glyphicon-chevron-up").addClass("glyphicon-chevron-down").parent().siblings(".form-inline").slideUp(400);
+
+        $(this).removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up active").parent().siblings(".form-inline").slideDown(400);
+    });
+
+    // 更新已选主机/策略数
+    var updateNum = function() {
+        var hostNum = $("#lf_host_table tbody").find('tr').length,
+            plotNum = $("#lf_plot_table tbody").find('tr').length;
+
+        $(".host-num").html(hostNum);
+
+        $(".plot-num").html(plotNum);
+    };
+
+    // 清空左侧收缩栏
+    $("#clear_host").on("click", function() {
+        $("#lf_host_table tbody").empty();
+
+        updateNum();
+
+        queryHostTable.fnReloadAjax();
+    });
+
+    $("#clear_plot").on("click", function() {
+        $("#lf_plot_table tbody").empty();
+
+        updateNum();
+
+        queryPlotTable.fnReloadAjax();
+    });
+
+    // 更新内容至左侧收缩栏
+    var updateList = function(e, obj) {
+        var child = obj.find("tr"),
+            idArr = [],
+            dict = {},
+            $parents = e.parents("tr"),
+            id = e.prop('value');
+        val = $parents.find('td').eq(1).text();
+
+        for (var i = 0, len = child.length; i < len; i++) {
+            var oId = child.eq(i).prop("id");
+
+            idArr.push(oId);
+        }
+
+        if (e.prop("checked") === true) {
+            dict[id] = val;
+
+            for (key in dict) {
+                if ($.inArray(key, idArr) === -1) {
+                    obj.append('<tr id=' + key + '><td>' + dict[key] + '</td><td><a class="delete">删除</a></td></tr>');
+                }
+            }
+        }
+
+        if (e.prop("checked") === false) {
+            obj.find('tr[id=' + id + ']').remove();
+        }
+
+        updateNum();
+    }
+
+    $(document).on("click", ".check-it", function() {
+        var tab = $(".add-pannel .nav a[href=#add_tab1]"),
+            e = $(this),
+            obj = $("#lf_host_table tbody");
+
+        if (!tab.parent().hasClass('active')) {
+            tab.trigger('click');
+        }
+
+        updateList(e, obj);
+    });
+
+    $(document).on("click", ".plot-it", function() {
+        var tab = $(".add-pannel .nav a[href=#add_tab2]"),
+            e = $(this),
+            obj = $("#lf_plot_table tbody");
+
+        if (!tab.parent().hasClass('active')) {
+            tab.trigger('click');
+        }
+
+        updateList(e, obj);
+    });
+
+    // 查看策略
+    $(document).off("click", "#plot-view").on("click", "#plot-view", function() {
+        var ipList = $("#lf_host_table tbody").find('tr'),
+            ipArr = [];
+
+        if (!$("#plot_menu").hasClass("active")) {
+            $("#plot_menu").trigger("click");
+        }
+
+        for (var i = 0, len = ipList.length; i < len; i++) {
+            var ip = ipList.eq(i).prop('id');
+            
+            ipArr.push(ip);
+        }
+
+        $.ajax({
+                url: '/ajax_get_counters/',
+                type: 'POST',
+                data: {
+                    endpoints: ipArr
+                }
+            })
+            .done(function() {
+                console.log("success");
+            })
+            .fail(function() {
+                console.log("error");
+            });
+    });
+
+    // 删除已选策略/主机
+    $(document).off("click", ".delete").on("click", ".delete", function() {
+        $(this).parents('tr').remove();
+
+        updateNum();
+    });
+
+    // jstree
+    var nodeId = [];
+
+    $('#u_jstree').on('changed.jstree', function() {
+        nodeId = $('#u_jstree').jstree().get_bottom_selected();
+    }).jstree({
+        "plugins": ["checkbox"],
+        'core': {
+            "themes": {
+                "theme": "classic",
+                "dots": true,
+                "icons": true
+            },
+            'dataType': 'json',
+            'data': {
+                'url': '/ajax_get_group_hosts/'
+            }
+        }
+    });
+
+    // confirm jstree
+    $('#confirm_tree').on('click', function() {
+        if (nodeId.length) {
+            $.ajax({
+                    url: "/ajax_get_ip_by_tree/",
+                    type: 'POST',
+                    data: {
+                        nodeIdLists: nodeId
+                    }
+                })
+                .done(function(data) {
+                    if (data.length) {
+                        queryHostTable.fnReloadAjax('/monitor_query_endpoint_list/?p=0&iptxt=' + data);
+                        $('#node_arr').val(data);
+                    } else {
+                        queryHostTable.fnReloadAjax('/monitor_query_endpoint_list/?p=0&null=1');
+                        $('#node_arr').val('null');
+                    }
+
+                    $('#query_table').find('.check-all').prop('checked', false);
+                });
+        } else {
+            queryHostTable.fnReloadAjax('/monitor_query_endpoint_list/?p=0');
+            $('#node_arr').val('');
+        }
+    });
+
+    // 搜索主机模糊匹配
+    $('#search_host').autocomplete({
+        source: function(request, response) {
+            var ip = $('#search_host').val(),
+                iptxt = $('#node_arr').val();
+
+            $.ajax({
+                type: "POST",
+                url: "/ajax_filter_ip/",
+                dataType: "json",
+                data: {
+                    'ip_text': request.term
+                },
+                success: function(data) {
+                    response($.map(data, function(item) {
+                        return item;
+                    }));
+
+                    queryHostTable.fnReloadAjax('/monitor_query_endpoint_list/?p=0&ipstr=' + ip + '&iptxt=' + iptxt);
+
+                    $('#query_table').find('.check-all').prop('checked', false);
+                }
+            });
+        },
+        select: function(event, ui) {
+            var value = ui.item.value,
+                iptxt = $('#node_arr').val();
+
+            queryHostTable.fnReloadAjax('/monitor_query_endpoint_list/?p=0&ipstr=' + value + '&iptxt=' + iptxt);
+        }
+    });
+});

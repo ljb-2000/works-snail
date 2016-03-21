@@ -1,0 +1,107 @@
+/**
+ * 
+ * @authors Your Name (you@example.org)
+ * @date    2016-02-23 13:28:56
+ * @version $Id$
+ */
+
+ // datetime
+ $('#select_time').datetimepicker({
+     weekStart: 1,
+     todayBtn: 1,
+     autoclose: 1,
+     todayHighlight: 1,
+     startView: 3,
+     minView: 3,
+     forceParse: 0,
+     linkField: "mirror_field",
+     pickerPosition: "bottom-left"
+ });
+
+ $(function () {
+
+     // 高度自适应
+     (function () {
+         var wrap = $(window).height() - 180;
+
+         $('.u-right .panel-body').css({
+             minHeight: wrap
+         });
+     })();
+
+     // 查询
+     $('#search_count').on('click', getChart);
+
+     // 绘图
+     function getChart() {
+        var curMonth = $('#month_data').val(),
+            curProduct = $('#screen_product').val();
+
+        $.ajax({
+            url: '/monitor/ajax_alarm_stats_list/',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                month: curMonth,
+                product: curProduct
+            }
+        })
+        .done(function(data) {
+            $('#chart_box').highcharts({                              
+                 chart: {                                                           
+                     type: 'column'                                                   
+                 },                                                                 
+                 title: {                                                           
+                     text: ''                    
+                 },                                                                 
+                 xAxis: {                                                           
+                     categories: data.categories                                                         
+                 },                                                                 
+                 yAxis: {                                                           
+                     min: 0,
+                     allowDecimals: false,                                                     
+                     title: {                                                       
+                         text: '',                             
+                     },                                                             
+                     labels: {                                                      
+                         overflow: 'justify'                                        
+                     }                                                              
+                 },                                                                 
+                 tooltip: {     
+                     pointFormat: '数量：<b>{point.y}</b>',
+                     valueSuffix: ' 台'                                       
+                 },                                                                 
+                 plotOptions: {
+                     column: {
+                         pointPadding: 0.2,
+                         borderWidth: 0
+                     }
+                 },                                                               
+                 legend: {
+                     enabled: false
+                 },                                                            
+                 series: [{                                                         
+                     data: data.values
+                 }]                                                                 
+             });
+        })
+        .fail(function() {
+            showAlert('jError', '出错了 :(', false);
+        });
+     }
+
+     (function() {
+        var date = new Date(),
+            curMonth = date.getMonth(),
+            time = date.setDate(curMonth),
+            newDate = new Date(time),
+            year = newDate.getFullYear(),
+            month = newDate.getMonth();
+
+        month < 10 ? month = '0' + month : '';
+
+        $('#month_data').val(year + '-' + month);
+     })();
+
+     getChart();
+ });

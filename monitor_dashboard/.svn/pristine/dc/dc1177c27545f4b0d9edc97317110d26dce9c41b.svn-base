@@ -1,0 +1,57 @@
+
+        <div class="form-group">
+            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">默认时间跨度：<span class="red">*</span></label>
+            <div class="col-sm-6">
+                <select id="time_span" class="form-control">
+                    <option value="3600" {% if timespan == '3600' %}selected{% endif %}>1小时</option>
+                    <option value="21600" {% if timespan == '21600' %}selected{% endif %}>6小时</option>
+                    <option value="43200" {% if timespan == '43200' %}selected{% endif %}>12小时</option>
+                    <option value="86400" {% if timespan == '86400' %}selected{% endif %}>1天</option>
+                    <option value="604800" {% if timespan == '604800' %}selected{% endif %}>7天</option>
+                    <option value="2595000" {% if timespan == '2595000' %}selected{% endif %}>1月</option>
+                    <option value="31104000" {% if timespan == '31104000' %}selected{% endif %}>1年</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">视角：<span class="red">*</span></label>
+            <div class="col-sm-6">
+                <div id="screen_view" class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-default {% if not graph_type or graph_type == 'h' %}active{% endif %}">
+                        <input type="radio" name="views" id="views_one" data-type="h" autocomplete="off"> endpoint视角
+                    </label>
+                    <label class="btn btn-default {% if graph_type == 'k' %}active{% endif %}">
+                        <input type="radio" name="views" id="views_two" data-type="k" autocomplete="off"> counter视角
+                    </label>
+                    <label class="btn btn-default {% if graph_type == 'a' %}active{% endif %}">
+                        <input type="radio" name="views" id="views_three" data-type="a" autocomplete="off"> 组合视角
+                    </label>
+                    <label class="btn btn-default {% if graph_type == 'q' %}active{% endif %}">
+                        <input type="radio" name="views" id="views_four" data-type="q" autocomplete="off"> 趋势视角
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">是否加和：<span class="red">*</span></label>
+            <div class="col-sm-6">
+                <div id="is_sum" class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-default {% if not method %}active{% endif %}">
+                        <input type="radio" name="sum" id="sum_off" data-type="" autocomplete="off"> 否
+                      </label>
+                    <label class="btn btn-default {% if method == 'SUM' %}active{% endif %}">
+                        <input type="radio" name="sum" id="sum_on" data-type="sum" autocomplete="off"> 是
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <button id="step-complete" class="btn" style="margin: 50px 0 0 270px;width: 150px;" onclick="return false;">
+                <span class="glyphicon glyphicon-ok-sign"></span>
+                完成
+            </button>
+            <button class="btn prev-step" style="margin: 50px 0 0 10px;width: 150px;" onclick="return false;">
+                <span class="glyphicon glyphicon-arrow-up"></span>
+                上一步
+            </button>
+        </div>

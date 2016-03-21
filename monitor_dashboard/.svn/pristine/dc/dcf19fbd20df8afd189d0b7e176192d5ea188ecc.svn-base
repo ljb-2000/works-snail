@@ -1,0 +1,60 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-02 15:13:22
+ * @msg     第三方业务页js
+ */
+
+// datetime
+$('.datetime-from,.datetime-to').datetimepicker({
+    weekStart: 1,
+    todayBtn: 1,
+    autoclose: 1,
+    todayHighlight: 1,
+    startView: 2,
+    forceParse: 0,
+    linkField: "mirror_field",
+    pickerPosition: "bottom-left"
+});
+
+$(function () {
+
+    // datatable
+    var otherServerTable = $('#other_server_table').dataTable({
+        "sDom": 'lfrtip',
+        "bLengthChange": false,
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [0, 2]
+        }],
+
+        // "aaSorting": [[ 8, "desc" ]],
+        "bProcessing": true,
+        "bServerSide": true,
+        "sPaginationType": "full_numbers",
+        "sAjaxSource": "/warning_query/other_server/list",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+
+    // 查询
+    $('#search_server_btn').on('click', function() {
+        var product = $('#product_item').val(),
+            time_from = $('#start_time').val(),
+            time_to = $('#end_time').val();
+
+        otherServerTable.fnReloadAjax('/warning_query/other_server/list?p=0&product=' + product + '&time_from=' + time_from + '&time_to=' + time_to);
+    });
+
+    // 高度自适应
+    (function () {
+        var wrap = $(window).height() - 180;
+
+        $('.u-right .panel-body').css({
+            minHeight: wrap
+        });
+    })();
+});

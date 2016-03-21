@@ -1,0 +1,102 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-10-29 13:31:50
+ * @msg     大图页ng
+ */
+
+var myBigChart = angular.module('myBigChart', ["highcharts-ng"]);
+
+// instead of {{}}
+myBigChart.config(['$interpolateProvider', function($interpolateProvider) {
+    $interpolateProvider.startSymbol('{[');
+    $interpolateProvider.endSymbol(']}');
+}]);
+
+// page controller
+myBigChart.controller('BigChart', ['$http',function($http) {
+    var vm = this,
+        transform = function(data){
+            return $.param(data);
+        },
+        defaultParam = {
+            start: -3600,
+            cf: 'AVERAGE',
+            sum: 'on',
+            sumonly: 'off'
+        },
+        urlH = '/chart/h/';
+
+    vm.param = angular.copy(defaultParam);
+
+    vm.reset = function() {
+        vm.param = angular.copy(defaultParam);
+    }
+
+    active();
+
+    function active() {
+        $http({
+            method: "POST",
+            url: urlH,
+            data: {
+
+            },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            transformRequest: transform
+        }).success(function(ret) {
+            var data = ret.series,
+                res = data[0],
+                timePoint = res.data,
+                pointName = res.name,
+                pointStart = res.pointStart,
+                pointInterval = res.pointInterval,
+                pointHeader = res.counter;
+
+            vm.charts = {
+                options: {
+                    chart: {
+                        type: 'line',
+                        zoomType: 'x'
+                    },
+                    tooltip: {
+                        xDateFormat: '%Y-%m-%d %H:%M:%S',
+                        valueDecimals: 2
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        dateTimeLabelFormats: {
+                            hour: '%H:%M'
+                                /*millisecond: '%H:%M:%S.%L',
+                                second: '%H:%M:%S',
+                                minute: '%H:%M',
+                                hour: '%H:%M',
+                                day: '%e. %b',
+                                week: '%e. %b',
+                                month: '%b \'%y',
+                                year: '%Y'*/
+                        },
+                        minRange: 1000, // 不能放大超过1s
+                        minTickInterval: 1000 // 放大间隔最小为1s
+                    },
+                },
+                series: [{
+                        name: pointName,
+                        data: timePoint,
+                        pointStart: pointStart, // Date.UTC(2010, 2, 4, 5, 25), // 开始时间 Date.UTC(year,month,day,hours,minutes,seconds,ms)
+                        pointInterval: pointInterval // 5 * 60 * 1000 // 5min
+                    }
+
+                ],
+                title: {
+                    text: null,
+                    header: pointHeader
+                }
+            } 
+        }).error(function() {
+            
+        });
+    }
+}]);

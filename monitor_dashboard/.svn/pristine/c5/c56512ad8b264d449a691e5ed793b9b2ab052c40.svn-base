@@ -1,0 +1,280 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/7
+# Usage:
+# --------------------------------
+
+import traceback, json
+from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import HttpResponse
+from models import LowLoadInfo, CategoryInfo, MetricInfo
+from utils.ctranslate import LazyEncoder
+from utils.db_conn import get_conn_monitor_event
+from utils.decorator import login_required
+from utils.common import get_product_list_by_user,get_hosts_of_user,get_set_by_ip_list,get_all_products, \
+    get_agent_info_result,get_last_month
+
+
+@csrf_exempt
+@login_required
+def implicit_ip_list(request):
+    """
+        filter host ip according to products of user.
+    """
+    ip_list=[]
+    iptxt = request.POST.get('iptxt','')
+    ip = request.POST.get("ip")
+    try:
+        user = request.user
+
+        if not iptxt:
+            products = get_product_list_by_user(user.first_name)
+            if not products:
+                ip_list=[]
+            else:
+                ip_list = get_hosts_of_user(user.first_name)
+        else:
+            ip_list = sorted(iptxt.split(","))
+        if ip:
+            ip_list = [i for i in ip_list if str(i).find(ip) > -1]
+    except:
+        print traceback.format_exc()
+    return HttpResponse(json.dumps(ip_list), content_type="application/json")
+
+
+@csrf_exempt
+@login_required
+def implicit_set_list(request):
+    """
+        filter host set according to products of user.
+    """
+    user = request.user
+    iptxt = request.POST.get('iptxt','').strip()
+    p_set = request.POST.get('p_set','').strip()
+    ip_list=[]
+    set_list=[]
+    try:
+        if not iptxt:
+            products = get_product_list_by_user(user.first_name)
+            if products:
+               ip_list = get_hosts_of_user(user.first_name)
+        else:
+            ip_list = iptxt.split(",")
+        set_list = sorted(get_set_by_ip_list(ip_list))
+        if p_set:
+            set_list = [i for i in set_list if unicode(i).find(p_set) > -1]
+    except Exception,e:
+        print traceback.format_exc()
+    return HttpResponse(json.dumps(set_list), content_type="application/json")
+
+@csrf_exempt
+@login_required
+def implicit_module_list(request):
+    """
+        filter host set according to products of user.
+    """
+    p_module = request.POST.get('p_module','').strip()
+    modules_list=[]
+    try:
+        sql = """select DISTINCT p_module from alarm_agentinfo where p_module!='';"""
+        res = get_agent_info_result(sql)
+        [modules_list.append(item['p_module']) for item in res]
+        modules_list = sorted(modules_list)
+        if p_module:
+            modules_list = [i for i in modules_list if unicode(i).find(p_module) > -1]
+    except Exception,e:
+        print traceback.format_exc()
+    return HttpResponse(json.dumps(modules_list), content_type="application/json")
+
+@csrf_exempt
+@login_required
+def ajax_low_load_list(request):
+    """
+        显示低负载机器信息
+    """
+    month = request.GET.get('month',get_last_month())
+    product = request.GET.get('product',"")
+    p_set = request.GET.get('p_set',"")
+    p_module = request.GET.get('p_module',"")
+
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = ['ip', 'product_name', 'p_set', 'p_module','cpu_ave_usage','mem_ave_usage','disk_ave_usage']
+
+    order_item = order_list[iSortCol_0]
+
+    if month:
+        items = LowLoadInfo.objects.filter(month=month)
+
+        if product:
+            items = items.filter(product_name=product)
+        if p_set:
+            items = items.filter(p_set=p_set)
+        if p_module:
+            items = items.filter(p_module=p_module)
+
+        if order_item:
+            if sSortDir_0 == "desc":
+                order_item = '-%s' % order_item
+            items = items.order_by(order_item)
+        else:
+            items = items.order_by('product_name')
+
+        p = Paginator(items, iDisplayLength)
+        total = p.count #总数
+        page_range = p.page_range #页数list
+        page = p.page(page_range[iDisplayStart / iDisplayLength])
+        object_list = page.object_list
+    else:
+        object_list = []
+        total = 0
+
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["aaData"] = []
+    try:
+        for obj in object_list:
+            data = [obj.ip, obj.product_name,obj.p_set,obj.p_module,"%.02f"%obj.cpu_ave_usage,"%.02f"%obj.mem_ave_usage,"%.02f"%obj.disk_ave_usage]
+            sdicts["aaData"].append(data)
+    except:
+        print traceback.format_exc()
+        sdicts["aaData"] = []
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@csrf_exempt
+def ajax_low_machine_list(request):
+    """
+        低负载机器数统计
+    """
+
+    month = request.GET.get('month',get_last_month())
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None,'low','all','rate']
+
+    order_item = order_list[iSortCol_0]
+
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["aaData"] = []
+    try:
+        items = []
+        if month:
+            products = get_all_products()
+            sql = "select id,product_name,COUNT(*) num from monitor_lowloadinfo where `month`='{0}' GROUP BY product_name".format(month)
+            objects = LowLoadInfo.objects.raw(sql)
+            low_map = {}
+            for obj in objects:
+                low_map[obj.product_name] = obj.num
+            sql = "select product_name,count(*) num from alarm_agentinfo group BY product_name"
+            agent_nums = get_agent_info_result(sql)
+            allocated_machines = {}
+            for item in agent_nums:
+                allocated_machines[item['product_name']] = item['num']
+            for product in products:
+                low = low_map.get(product,0)
+                all = allocated_machines.get(product,0)
+                items.append({
+                    "name":product,
+                    "low":low,
+                    "all":all,
+                    "rate":"%.2f"%(low*100.0/all if all>0 else 0)
+                })
+
+            if order_item:
+                if sSortDir_0 == "desc":
+                    items = sorted(items, key=lambda a: float(a[order_item]), reverse=True)
+                else:
+                    items = sorted(items, key=lambda a: float(a[order_item]))
+            else:
+                items = sorted(items,key=lambda a:float(a['rate']))
+
+            p = Paginator(items, iDisplayLength)
+            total = p.count #总数
+            # page_range = p.page_range #页数list
+            # page = p.page(page_range[iDisplayStart / iDisplayLength])
+            object_list = items
+        else:
+            object_list = []
+            total = 0
+
+
+        for obj in object_list:
+            data = [obj['name'],obj['low'],obj['all'],obj['rate']]
+            sdicts["aaData"].append(data)
+    except:
+        print traceback.format_exc()
+        sdicts["aaData"] = []
+        total=0
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+
+@csrf_exempt
+def ajax_alarm_stats_list(request):
+    """
+        告警统计
+    """
+    status = 500
+    ret_categories = []
+    ret_values = []
+    result_map = {}
+    try:
+        month = request.POST.get('month',get_last_month())
+        product_name = request.POST.get('product',"").strip()
+
+        parts = month.split("-")
+        table_name = "event_"+"%s%s"%(parts[0],parts[1])
+
+        categories = CategoryInfo.objects.all()
+        metric_map = {}
+        for category in categories:
+            metrics = MetricInfo.objects.filter(category=category).values('metric')
+            metrics = [item['metric'] for item in metrics]
+            print category,metrics
+            metric_map[category.name]=metrics
+            result_map[category.name]=0
+
+        if month:
+            try:
+                sql = u"select count(*) num ,product_name,metric from {0} GROUP BY product_name,metric ".format(table_name)
+                if product_name:
+                    sql = u"select count(*) num ,product_name,metric from {0} where product_name='{1}' GROUP BY product_name,metric ".format(table_name,product_name)
+                print sql
+                conn = get_conn_monitor_event()
+                objects = conn.query_all(sql)
+                for obj in objects:
+                    metric = obj['metric']
+                    for category,metrics in metric_map.iteritems():
+                        if metric in metrics:
+                            result_map[category] = result_map.get(category,0)+obj['num']
+                            break
+                status = 200
+            except Exception,e:
+                error = traceback.format_exc()
+                print error
+    except Exception,e:
+        print traceback.format_exc()
+    for key,value in result_map.iteritems():
+        ret_categories.append(key)
+        ret_values.append(value)
+    result = {
+        "status": status,
+        "categories":ret_categories,
+        "values":ret_values
+
+    }
+    return HttpResponse(json.dumps(result), content_type="application/json")

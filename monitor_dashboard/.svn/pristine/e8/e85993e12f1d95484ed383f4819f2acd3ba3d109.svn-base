@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/7
+# Usage:
+# --------------------------------
+
+import traceback, json
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import HttpResponse
+from utils.decorator import login_required
+from utils.common import get_product_list_by_user,get_hosts_of_user,get_set_by_ip_list
+
+@csrf_exempt
+@login_required
+def implicit_ip_list(request):
+    """
+        filter host ip according to products of user.
+    """
+    ip_list=[]
+    iptxt = request.POST.get('iptxt','')
+    ip = request.POST.get("ip")
+    try:
+        user = request.user
+
+        if not iptxt:
+            products = get_product_list_by_user(user.first_name)
+            if not products:
+                ip_list=[]
+            else:
+                ip_list = get_hosts_of_user(user.first_name)
+        else:
+            ip_list = sorted(iptxt.split(","))
+        if ip:
+            ip_list = [i for i in ip_list if str(i).find(ip) > -1]
+    except:
+        print traceback.format_exc()
+    return HttpResponse(json.dumps(ip_list), content_type="application/json")
+
+
+@csrf_exempt
+@login_required
+def implicit_set_list(request):
+    """
+        filter host set according to products of user.
+    """
+    user = request.user
+    iptxt = request.POST.get('iptxt','').strip()
+    p_set = request.POST.get('p_set','').strip()
+    ip_list=[]
+    set_list=[]
+    try:
+        if not iptxt:
+            products = get_product_list_by_user(user.first_name)
+            if products:
+               ip_list = get_hosts_of_user(user.first_name)
+        else:
+            ip_list = iptxt.split(",")
+        set_list = sorted(get_set_by_ip_list(ip_list))
+        if p_set:
+            set_list = [i for i in set_list if str(i).find(p_set) > -1]
+    except Exception,e:
+        print traceback.format_exc()
+    return HttpResponse(json.dumps(set_list), content_type="application/json")

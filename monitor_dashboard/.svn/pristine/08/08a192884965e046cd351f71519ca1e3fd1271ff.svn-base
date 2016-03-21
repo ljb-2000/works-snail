@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛智能监控平台</title>
+{% include "import_css.html" %}
+<link type="text/css" rel="stylesheet" href="/static/src/tool/boot_datetimepicker/css/bootstrap-datetimepicker.min.css">
+<style>
+    .form-inline .inline-label {
+        text-align: right;
+        padding-top: 7px;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+</style>
+</head>
+<body>
+    <!--主界面开始-->
+    <div class="container-fluid">
+        {% include "header.html" %}
+        <!-- 页面主体开始-->
+        <div class="row">
+            <!--查询显示面板开始-->
+            <div class="u-right" style="margin:18px 0 0;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">业务面板</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form class="form-inline">
+                            <div class="form-group ml35">
+                                <label class="control-label" for="product_item">所属业务：</label>
+                                <select id="product_item" class="form-control">
+                                    <option value=''>--请选择所属业务--</option>
+                                    {% for key,value in product_dict.items %}
+                                        <option value='{{ key }}'>{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="dtp_input1" class="col-md-4 control-label inline-label">开始时间：</label>
+                                <div class="input-group date datetime-from col-md-8" data-date="" data-date-format="yyyy-mm-dd hh:ii" data-link-field="dtp_input1" data-link-format="yyyy-mm-dd hh:ii">
+                                    <input id="start_time" class="form-control" size="16" type="text" value="" readonly>
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-remove"></span></span>
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-th"></span></span>
+                                </div>
+                                <input type="hidden" id="dtp_input1" value=""><br>
+                            </div>
+                            <div class="form-group">
+                                <label for="dtp_input2" class="col-md-4 control-label inline-label">结束时间：</label>
+                                <div class="input-group date datetime-to col-md-8" data-date="" data-date-format="yyyy-mm-dd hh:ii" data-link-field="dtp_input2" data-link-format="yyyy-mm-dd hh:ii">
+                                    <input id="end_time" class="form-control" size="16" type="text" value="" readonly>
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-remove"></span></span>
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-th"></span></span>
+                                </div>
+                                <input type="hidden" id="dtp_input1" value=""><br>
+                            </div>
+                            <div class="form-group">
+                                <button id="search_server_btn" class="btn btn-default" onclick="return false;">
+                                    <span class="glyphicon glyphicon-search"></span>
+                                    查询
+                                </button>
+                            </div>
+                            <table id="other_server_table" class="table table-hover table-striped mt30">
+                                <thead>
+                                    <tr>
+                                        <th width="20%">所属产品</th>
+                                        <th width="60%">报警内容</th>
+                                        <th width="20%">报警时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!--查询显示面板结束-->
+        </div>
+        <!-- 页面主体结束-->
+    </div>
+{% include "import_js.html" %}
+{% include "import_tooljs.html" %}
+<script type="text/javascript" src="/static/src/tool/boot_datetimepicker/js/bootstrap-datetimepicker.min.js?v=201511301743"></script>
+<script type="text/javascript" src="/static/src/jq/common.js?v=201512301459"></script>
+<script type="text/javascript" src="/static/src/jq/warn_query/other_server.js?v=201602161134"></script>
+</body>
+</html>

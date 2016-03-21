@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛智能监控平台</title>
+{% include "import_css.html" %}
+</head>
+<body>
+    <!--主界面开始-->
+    <div class="container-fluid">
+        {% include "header.html" %}
+        <!-- 页面主体开始-->
+        <div class="row">
+            <!--屏幕配置面板开始-->
+            <div class="u-right" style="margin:18px 0 0;box-shadow:none;">
+                <div id="screen_main">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#screen_home" aria-controls="screen_home" role="tab" data-toggle="tab">屏幕总览</a></li>
+                        <li role="presentation"><a href="#screen_setting" aria-controls="screen_setting" role="tab" data-toggle="tab">屏幕配置</a></li>
+                    </ul>
+
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="screen_home">
+                            <form name="screen-setting-form" class="form-inline mt30">
+                                <div class="form-group ml35">
+                                    <label class="control-label" for="screen_item">搜索屏幕：</label>
+                                    <input id="screen_item" type="text" class="form-control" placeholder="请输入屏幕名称">
+                                </div>
+                                <div class="form-group ml35 mr35">
+                                    <label class="control-label" for="screen_product">所属业务：</label>
+                                    <select id="screen_product" class="form-control">
+                                        <option>--请选择--</option>
+                                        <option>关云长</option>
+                                        <option>太极熊猫</option>
+                                        <option>天子</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                   <button class="btn btn-defalut" data-toggle="modal" data-target="#add_whitelist" onclick="return false;">
+                                       <span class="glyphicon glyphicon-modal-window"></span>
+                                       添加白名单
+                                   </button>
+                                </div>
+                                <div class="form-group">
+                                   <button class="btn" data-toggle="modal" data-target="#add_blacklist" onclick="return false;">
+                                       <span class="glyphicon glyphicon-modal-window"></span>
+                                       添加黑名单
+                                   </button>
+                                </div>
+                                <table id="screen_setting_table" class="table table-hover table-striped mt30">
+                                    <thead>
+                                        <tr>
+                                            <th width='5%'><input type="checkbox" class="screen-all"></th>
+                                            <th width='15%'>屏幕名称</th>
+                                            <th width='15%'>所属业务</th>
+                                            <th width='20%'>白名单</th>
+                                            <th width='20%'>黑名单</th>
+                                            <th width='20%'>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><input type="checkbox" class="screen-it"></td>
+                                            <td><a href="javascript:void(0);">test</a></td>
+                                            <td>关云长</td>
+                                            <td>luozh</td>
+                                            <td></td>
+                                            <td>
+                                                <span class="edit-screen pointer">编辑</span>&nbsp;&nbsp;
+                                                <span class="pointer" data-toggle="modal" data-target="#clone_screen">克隆</span>&nbsp;&nbsp;
+                                                <span class="add-graph pointer">+graph</span>&nbsp;&nbsp;
+                                                <span class="pointer">删除</span>&nbsp;&nbsp;
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </form>
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="screen_setting">
+                            {% include "monitor_query/step.html" %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--屏幕配置面板结束-->
+        </div>
+        <!-- 页面主体结束-->
+    </div>
+    
+    <!-- 添加白名单 modal -->
+    <div class="modal fade" id="add_whitelist" tabindex="-1" role="dialog" aria-labelledby="whitelistSetting">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="whitelistSetting">
+                        添加白名单
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    
+                </div>
+                <div class="modal-footer" style="text-align:center;">
+                    <button class="btn btn-primary">
+                        <span class="glyphicon glyphicon-ok-sign"></span>
+                        确定
+                    </button>
+                    <button class="btn btn-default" data-dismiss="modal">
+                        <span class="glyphicon glyphicon-remove-sign"></span>
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加黑名单 modal -->
+    <div class="modal fade" id="add_blacklist" tabindex="-1" role="dialog" aria-labelledby="blacklistSetting">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="blacklistSetting">
+                        添加黑名单
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    
+                </div>
+                <div class="modal-footer" style="text-align:center;">
+                    <button class="btn btn-primary">
+                        <span class="glyphicon glyphicon-ok-sign"></span>
+                        确定
+                    </button>
+                    <button class="btn btn-default" data-dismiss="modal">
+                        <span class="glyphicon glyphicon-remove-sign"></span>
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 克隆 modal -->
+    <div class="modal fade" id="clone_screen" tabindex="-1" role="dialog" aria-labelledby="cloneSetting">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="cloneSetting">
+                        克隆screen
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="clone_name">新screend的名字：</label>
+                            <input type="text" class="form-control" id="clone_name">
+                        </div>
+                        <div class="form-group">
+                            <label for="copy_graph_checkbox">是否复制相应的graph:</label>
+                            <br>
+                            <div class="btn-group" data-toggle="buttons">
+                                <label class="btn btn-default active">
+                                    <input type="radio" name="copy" id="copy_on"  autocomplete="off"> 是
+                                </label>
+                                <label class="btn btn-default">
+                                    <input type="radio" name="copy" id="copy_off"  autocomplete="off"> 否
+                                </label>
+                            </div>
+                          </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="text-align:center;">
+                    <button class="btn btn-primary">
+                        <span class="glyphicon glyphicon-ok-sign"></span>
+                        确定
+                    </button>
+                    <button class="btn btn-default" data-dismiss="modal">
+                        <span class="glyphicon glyphicon-remove-sign"></span>
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% include "import_js.html" %}
+{% include "import_tooljs.html" %}
+<script type="text/javascript" src="/static/src/jq/common.js?v=201512021459"></script>
+<script type="text/javascript" src="/static/src/jq/monitor_query/screen_setting.js?v=201512021459"></script>
+<script type="text/javascript" src="/static/src/jq/monitor_query/query.js?v=201512021459"></script>
+</body>
+</html>

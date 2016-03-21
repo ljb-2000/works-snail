@@ -1,0 +1,224 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+import datetime
+import os, errno
+import logging
+import traceback, json
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import HttpResponse
+from redisclient import rc
+from releaseinfo import UNSOLVED_ALARM_EVENTS_KEY, AGENT_INFO_KEY_PREFIX
+import time
+from utils.db_conn import DB
+from config import portal, monitor, graph
+
+#logger = logging.getLogger("logger_utils")
+
+@csrf_exempt
+def ajax_get_group_hosts(request):
+    """
+        get group host names
+    """
+    grp_str = request.GET.get('grp_str','')
+    select_id_str = request.GET.get('selected_id','')
+    select_ids = []
+    if select_id_str:
+        select_ids = select_id_str.split(',')
+    
+    result = []
+    portal_db_conn = DB(
+        portal.DB_HOST,
+        portal.DB_PORT,
+        portal.DB_USER,
+        portal.DB_PASS,
+        portal.DB_NAME)
+    
+    sql = u'''select id, grp_name from grp order by id'''
+    rows = portal_db_conn.query_all(sql)
+    
+    if grp_str:
+        sql1 = u"select id, grp_name from grp where grp_name like \'%%%s%%\' order by id"%grp_str
+        sql2 = u"select id, grp_name from grp where grp_name not like \'%%%s%%\' order by id"%grp_str
+        rows1 = portal_db_conn.query_all(sql1)
+        rows2 = portal_db_conn.query_all(sql2)
+        rows = rows1 + rows2
+    
+    product_list = []
+    product_dict = {}
+    for grp_info_dict in rows:
+        grp_name = grp_info_dict.get('grp_name')
+        grp_id = grp_info_dict.get('id')
+        product_name = grp_name.split('.')[0]
+        product_set = grp_name.split('.')[1]
+        if product_name not in product_list:
+            product_list.append(product_name)
+        if product_name not in product_dict.keys():
+            product_dict[product_name] = [{'product_set':product_set, 'grp_id':grp_id}]
+        else:
+            product_dict[product_name].append({'product_set':product_set, 'grp_id':grp_id})
+    
+    for product in product_list:
+        product_set_list = product_dict.get(product,[])
+        children_list = []
+        for product_set_dict in product_set_list:
+            product_set = product_set_dict.get('product_set')
+            grp_id = product_set_dict.get('grp_id')
+            if '%s'%grp_id in select_ids:
+                children_list.append({ 'text': product_set, "id": grp_id, "state":{'selected':True}})
+            else:
+                children_list.append({ 'text': product_set, "id": grp_id, })
+        result.append({"text": product, "id": product,
+                       "children": children_list,
+                       })
+    return HttpResponse(json.dumps(result), content_type="application/json")
+
+@csrf_exempt
+def ajax_get_ip_by_tree(request):
+    """
+        get ips by tree
+    """
+    node_id_list = request.POST.getlist('nodeIdLists[]',[])
+    node_id_str = ','.join(node_id_list)
+    sql = '''
+        select distinct(`host`.ip) from host, grp_host
+        where host.id = grp_host.host_id and grp_host.grp_id in (%s)
+         '''%(node_id_str)
+    
+    portal_db_conn = DB(
+        portal.DB_HOST,
+        portal.DB_PORT,
+        portal.DB_USER,
+        portal.DB_PASS,
+        portal.DB_NAME)
+    rows = portal_db_conn.query_all(sql)
+        
+    ip_list = []
+    for ip_dict in rows:
+        ip = ip_dict.get('ip')
+        ip_list.append(ip)
+    return HttpResponse(json.dumps(ip_list), content_type="application/json")
+
+def get_unsolved_alarms():
+    """
+        get unsolved alarm events from redis.
+    """
+    alarm_str = rc.get(UNSOLVED_ALARM_EVENTS_KEY)
+    alarm_list = []
+    if alarm_str:
+        alarms = json.loads(alarm_str)
+        for level,level_items in alarms.iteritems():
+            for event_id,event_value in level_items.iteritems():
+                timestamp = event_value.get('timestamp')
+                event_value.update({'alarm_time':time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(timestamp) if timestamp and isinstance(timestamp,int) else "")})
+                alarm_list.append(event_value)
+    return alarm_list
+
+def get_product_of_host(host):
+    if not host:
+        return ""
+    key = AGENT_INFO_KEY_PREFIX + host
+    p_name = rc.hget(key, 'p_name')
+    p_set = rc.hget(key, 'p_set')
+    p_module = rc.hget(key, 'p_module')
+    if not p_name or not p_set or not p_module:
+        sql = '''select * from alarm_agentinfo WHERE endpoint="%(host)s" limit 1''' % ({"host": host})
+        monitor_db_conn = DB(
+            monitor.DB_HOST,
+            monitor.DB_PORT,
+            monitor.DB_USER,
+            monitor.DB_PASS,
+            monitor.DB_NAME)
+        result = monitor_db_conn.query_one(sql)
+        if result:
+            p_name = result.get("product_name","")
+            p_set = result.get("p_set","")
+            p_module = result.get("p_module","")
+            rc.hset(key, "p_name", p_name)
+            rc.hset(key, "p_set", p_set)
+            rc.hset(key, "p_module", p_module)
+            rc.expire(key, 5 * 60)
+    info = {
+        "p_name":p_name,
+        "p_set":p_set,
+        "p_module":p_module
+    }
+    return info
+
+@csrf_exempt
+def ajax_filter_ip(request):
+    """
+        get ips by filter
+    """
+    ip_list = []
+    ip_text = request.POST.get('ip_text','')
+    if ip_text:
+        sql = '''select ip from host where ip like \'%%%s%%\''''%ip_text
+        
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        rows = portal_db_conn.query_all(sql)
+            
+        for ip_dict in rows:
+            ip = ip_dict.get('ip')
+            ip_list.append(ip)
+    return HttpResponse(json.dumps(ip_list), content_type="application/json")
+
+@csrf_exempt
+def ajax_filter_metric(request):
+    """
+        get metrics by filter
+    """
+    metric_list = []
+    metric_text = request.POST.get('metric_text','')
+    if metric_text:
+        sql = '''select DISTINCT metric from strategy where metric like \'%%%s%%\''''%metric_text
+        
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        rows = portal_db_conn.query_all(sql)
+            
+        for ip_dict in rows:
+            metric = ip_dict.get('metric')
+            metric_list.append(metric)
+    return HttpResponse(json.dumps(metric_list), content_type="application/json")
+
+@csrf_exempt
+def ajax_filter_counter(request):
+    """
+        get counters by filter
+    """
+    counter_list = []
+    counter_text = request.POST.get('counter_text','')
+    if counter_text:
+        graph_db_conn = DB(
+            graph.GRAPH_DB_HOST,
+            graph.GRAPH_DB_PORT,
+            graph.GRAPH_DB_USER,
+            graph.GRAPH_DB_PASSWD,
+            graph.GRAPH_DB_NAME)
+        
+        sql = '''select DISTINCT counter from endpoint_counter where counter like \'%%%s%%\''''%counter_text
+        rows = graph_db_conn.query_all(sql)
+            
+        for ip_dict in rows:
+            counter = ip_dict.get('counter')
+            counter_list.append(counter)
+    return HttpResponse(json.dumps(counter_list), content_type="application/json")
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^ajax_get_group_hosts/$', ajax_get_group_hosts, name='ajax_get_group_hosts'),
+    url(r'^ajax_get_ip_by_tree/$', ajax_get_ip_by_tree, name='ajax_get_ip_by_tree'),
+    url(r'^ajax_filter_ip/$', ajax_filter_ip, name='ajax_filter_ip'),
+    url(r'^ajax_filter_metric/$', ajax_filter_metric, name='ajax_filter_metric'),
+    url(r'^ajax_filter_counter/$', ajax_filter_counter, name='ajax_filter_counter'),
+)

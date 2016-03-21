@@ -1,0 +1,240 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-02 15:08:46
+ * @msg     报警记录页js
+ */
+
+// datetime
+$('.datetime-from, .datetime-to').datetimepicker({
+    weekStart: 1,
+    todayBtn: 1,
+    autoclose: 1,
+    todayHighlight: 1,
+    startView: 2,
+    forceParse: 0,
+    linkField: "mirror_field",
+    pickerPosition: "bottom-left"
+});
+
+$(function () {
+
+    // datatable
+    var recoveryTable = $('#recovery_table').dataTable({
+        "sDom": 'lfrtip',
+        "bLengthChange": false,
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [0, 5, 6, 7]
+        }],
+
+        // "aaSorting": [[ 8, "desc" ]],
+        "bProcessing": true,
+        "bServerSide": true,
+        "sPaginationType": "full_numbers",
+        "sAjaxSource": "/warning_query/recovery/list",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+
+    // 批量筛选功能
+    $(document).off("click", "#recovery_filter").on("click", "#recovery_filter", function() {
+        var txt = $("#u_fliter").val(),
+            msg = $(".filter-msg"),
+            result = filterIp(txt, msg);
+
+        if (result === false) {
+            return false;
+        } else {
+            recoveryTable.fnReloadAjax('/warning_query/recovery/list?p=0&iptxt=' + result);
+
+            $('#node_arr').val(result);
+
+            $('#recovery_table').find('.check-all').prop('checked', false);
+
+            $('#myModal').modal('hide');
+        }
+    });
+
+    // jstree绑定onchange事件
+    function changeJstree () {
+        nodeId = $('#u_jstree').jstree().get_bottom_selected();
+
+        if (nodeId.length) {
+            $.ajax({
+                    url: "/ajax_get_ip_by_tree/",
+                    type: 'POST',
+                    data: {
+                        nodeIdLists: nodeId
+                    }
+                })
+                .done(function(data) {
+                    if (data.length) {
+                        recoveryTable.fnReloadAjax('/warning_query/recovery/list?p=0&iptxt=' + data);
+                        $('#node_arr').val(data);
+                    } else {
+                        recoveryTable.fnReloadAjax('/warning_query/recovery/list?p=0&null=1');
+                        $('#node_arr').val('null');
+                    }
+
+                    $('#recovery_table').find('.check-all').prop('checked', false);
+                });
+        } else {
+            recoveryTable.fnReloadAjax('/warning_query/recovery/list?p=0');
+            $('#node_arr').val('');
+        }
+    }
+
+    // jstree
+    $('#u_jstree').on('changed.jstree', function() {
+        changeJstree ();
+    }).jstree({
+        "plugins": ["checkbox"],
+        'core': {
+            "themes": {
+                "theme": "classic",
+                "dots": true,
+                "icons": true
+            },
+            'dataType': 'json',
+            'data': {
+                'url': '/ajax_get_group_hosts/'
+            }
+        }
+    });
+
+    //模糊查询jstree
+    $("#search_tree").off("click").on("click", function() {
+        var grp_str = $("#search_tree_text").val(),
+            selectedId = $('#u_jstree').jstree().get_bottom_selected();
+
+        $.jstree.destroy();
+        
+        $('#u_jstree').on('changed.jstree', function() {
+            changeJstree ();
+        }).jstree({
+            "plugins": ["checkbox"],
+            'core': {
+                "themes": {
+                    "theme": "classic",
+                    "dots": true,
+                    "icons": true
+                },
+                'dataType': 'json',
+                'data': {
+                    'url': '/ajax_get_group_hosts/?grp_str=' + grp_str + '&selected_id=' + selectedId
+                }
+            }
+        });
+    });
+
+    // 搜索监控项模糊匹配
+    $('#watched_item').on('input', function() {
+        var e = $(this),
+            url = '/ajax_filter_metric/',
+            param = {
+                metric_text: e.val()
+            };
+
+        autoQuery(e, url, param);
+    });
+
+    // ip模糊查询
+    $('#search_host').on('input', function() {
+        var e = $(this),
+            url = '/monitor/ajax_filter_ip/',
+            param = {
+                ip: e.val(),
+                iptxt: $('#node_arr').val()
+            };
+
+        autoQuery(e, url, param);
+    });
+
+    // set模糊查询
+    $('#search_set').on('input', function() {
+        var e = $(this),
+            url = '/monitor/ajax_filter_set/',
+            param = {
+                p_set: e.val(),
+                iptxt: $('#node_arr').val()
+            };
+
+        autoQuery(e, url, param);
+    });
+
+    //监控查询
+    $('#search_recovery_btn').on('click', function() {
+        var metric = $('#watched_item').val(),
+            ip = $('#search_host').val(),
+            satrtTime = $('#start_time').val(),
+            endTime = $('#end_time').val(),
+            iptxt = $('#node_arr').val(),
+            pset = $('#search_set').val();
+
+        recoveryTable.fnReloadAjax('/warning_query/recovery/list?p=0&p=0&ip=' + ip + '&metric_text=' + metric + '&time_from=' + satrtTime + '&time_to=' + endTime + '&iptxt=' + iptxt + '&p_set=' + pset);
+        
+        $('#recovery_table').find('.check-all').prop('checked', false);
+    });
+
+    // 显示已选主机组
+    (function showHost() {
+        var hostArr = [];
+
+        $(document).on('click', '.jstree-anchor', function() {
+            var e = $(this),
+                idTxt = e.prop('id'),
+                idStr = idTxt.substring(0, idTxt.indexOf('_'));
+
+            if (isNaN(idStr)) {
+                var nid = e.parent().prop('id');
+
+                hostArr = searchHost(nid, hostArr);
+
+            } else {
+                var nodeParent = e.parent().parent().siblings('.jstree-anchor'),
+                    checklength = e.parent().parent().find('.jstree-clicked').length,
+                    nodeTxt = nodeParent.prop('id'),
+                    nodeStr = nodeTxt.substring(0, nodeTxt.indexOf('_'));
+
+                if (!checklength) {
+                    hostArr = searchHost(nodeStr, hostArr);
+                } else {
+                    if ($.inArray(nodeStr, hostArr) === -1) {
+                        hostArr.push(nodeStr);
+                    }
+                }
+            }
+
+            hostArr.length ? $("#host_text").html(hostArr.join('，')) : $("#host_text").html('0个');
+        });
+
+    })();
+
+    // 判断主机组是否存在
+    function searchHost(nid, hostArr) {
+        if ($.inArray(nid, hostArr) === -1) {
+            hostArr.push(nid);
+        } else {
+            for (var i = 0, len = hostArr.length; i < len; i++) {
+                if (hostArr[i] === nid) {
+                    hostArr.splice(i, 1)
+                }
+            }
+        }
+
+        return hostArr;
+    }
+
+    // 高度自适应
+    (function () {
+        var wrap = $(window).height() - 180;
+
+        $('.u-right .panel-body').css({
+            minHeight: wrap
+        });
+    })();
+});

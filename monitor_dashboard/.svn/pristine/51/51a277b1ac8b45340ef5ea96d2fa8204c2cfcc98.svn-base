@@ -1,0 +1,203 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-10-20 13:31:50
+ * @msg     多图页ng
+ */
+
+var myChart = angular.module('myChart',["highcharts-ng",'ui.bootstrap.datetimepicker']);
+
+// instead of {{}}
+myChart.config(['$interpolateProvider', function($interpolateProvider) {
+    $interpolateProvider.startSymbol('{[');
+    $interpolateProvider.endSymbol(']}');
+}]);
+
+// page controller
+myChart.controller('chartPage', ['$http', '$interval', '$scope', function($http, $interval, $scope) {
+    var vm = this,
+        path = angular.element("#path").val(), 
+        graph_type = angular.element("#graph_type").val(), 
+        urlH = '/chart/data/?id=' + path;
+
+    var transform = function(data) {
+            return $.param(data);
+        };
+
+    var date = new Date(),
+        h = date.valueOf() - 60*60*1000;
+
+    // global parameter
+    vm.defaultGlobalParam = {
+        start: new Date(h),
+        end: date,
+        sumonly: 'off'
+    };
+
+    vm.defaultWatchParam = {
+        cf: 'AVERAGE',
+        graph_type: graph_type,
+        sum: 'off'
+    }
+
+    vm.globalParam = angular.copy(vm.defaultGlobalParam);
+    vm.watchParam = angular.copy(vm.defaultWatchParam);
+
+    // reset
+    vm.reset = function(){
+        vm.globalParam = angular.copy(vm.defaultGlobalParam);
+        vm.watchParam = angular.copy(vm.defaultWatchParam);
+        active(vm.globalParam, vm.watchParam);
+    };
+
+    active(vm.globalParam, vm.watchParam);
+
+    // draw
+    vm.show = function(){
+        active(vm.globalParam, vm.watchParam);
+    };
+
+    // watch
+    $scope.$watch('vm.watchParam', function(newVal, oldVal) {
+        if (!angular.equals(newVal, oldVal)) {
+            active(vm.globalParam, newVal);
+        }
+    }, true);
+
+    function active(param, watchparam) {
+        var start = param.start,
+            end = param.end,
+            startTime = parseInt(start.getTime() / 1000),
+            endTime = parseInt(end.getTime() / 1000);
+
+        if (startTime >= endTime) {
+            alert('开始时间不能大于等于结束时间！');
+            return false;
+        }
+
+        /*if (param.graph_type === 'a') {
+            var chartArea = angular.element(".c-highchart");
+            var chart = angular.element("#highchart");
+            chartArea.css({"width":'90%'});
+            chart.css({"width":'90%'});
+            console.log('111');
+        }*/
+
+        $http({
+            method: "POST",
+            url: urlH + '&start=' + startTime + '&cf=' + watchparam.cf + '&sum=' + watchparam.sum + '&sumonly=' + param.sumonly + '&end=' + endTime + '&graph_type=' + watchparam.graph_type,
+            data: {},
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            transformRequest: transform
+        }).success(function(data) {
+            var chartsList = [],
+                ret = data.series_list,
+
+            for (var i = 0, len = ret.length; i < len; i++) {
+                var series = ret[i],
+                    dict = series[0],
+                    header = dict.header,
+                    chart = {
+                        options: {
+                            chart: {
+                                type: 'line',
+                                zoomType: 'x'
+                            },
+                            tooltip: {
+                                xDateFormat: '%Y-%m-%d %H:%M:%S',
+                                valueDecimals: 2
+                            },
+                            xAxis: {
+                                type: 'datetime',
+                                dateTimeLabelFormats: {
+                                    hour: '%H:%M'
+                                },
+                                minRange: 1000, // 不能放大超过1s
+                                minTickInterval: 1000 // 放大间隔最小为1s
+                            },
+                            yAxis: {
+                                max: data.ymax,
+                                min: data.ymin
+                            }
+                        },
+                        series: ret[i],
+                        title: {
+                            text: null,
+                            header: header
+                        }
+                    };
+
+                    chartsList.push(chart);
+                }
+
+                vm.charts = chartsList;
+
+        }).error(function() {
+            
+        });
+    }
+
+    /*function active(){
+        vm.charts = [
+        {
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        },
+        {
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        },
+        {
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        },
+        {
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        }];
+    }*/
+
+    return vm;
+}]);

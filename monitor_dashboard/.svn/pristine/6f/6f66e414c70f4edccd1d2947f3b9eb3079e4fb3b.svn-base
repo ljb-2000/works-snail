@@ -1,0 +1,101 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-10-29 13:31:50
+ * @msg     大图页ng
+ */
+
+var myBigChart = angular.module('myBigChart', ["highcharts-ng"]);
+
+// instead of {{}}
+myBigChart.config(['$interpolateProvider', function($interpolateProvider) {
+    $interpolateProvider.startSymbol('{[');
+    $interpolateProvider.endSymbol(']}');
+}]);
+
+// page controller
+myBigChart.controller('BigChart', ['$http', '$interval', '$scope', function($http, $interval, $scope) {
+    var vm = this,
+        transform = function(data) {
+            return $.param(data);
+        },
+        defaultParam = {
+            start: -3600,
+            cf: 'AVERAGE',
+            sum: 'off',
+            sumonly: 'off'
+        },
+        path = angular.element("#path").val(),
+        urlH = '/chart/data/?id=' + path;
+
+    vm.param = angular.copy(defaultParam);
+
+    vm.reset = function() {
+        vm.param = angular.copy(defaultParam);
+    };
+
+    // watch
+    $scope.$watch('vm.param', function(newVal, oldVal) {
+        if (!angular.equals(newVal, oldVal)) {
+            active(newVal);
+        }
+    }, true);
+
+    active(vm.param);
+
+    $interval(function() {
+        active(vm.param);
+    }, 600000);
+
+    function active(param) {
+        $http({
+            method: "POST",
+            url: urlH + '&start=' + param.start + '&cf=' + param.cf + '&sum=' + param.sum + '&sumonly=' + param.sumonly,
+            data: {},
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            transformRequest: transform
+        }).success(function(data) {
+            var ret = data.series_list,
+                series = ret[0],
+                header = series[0].header;
+
+            vm.charts = {
+                options: {
+                    chart: {
+                        type: 'line',
+                        zoomType: 'x'
+                    },
+                    tooltip: {
+                        xDateFormat: '%Y-%m-%d %H:%M:%S',
+                        valueDecimals: 2
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        dateTimeLabelFormats: {
+                            hour: '%H:%M'
+                                /*millisecond: '%H:%M:%S.%L',
+                                second: '%H:%M:%S',
+                                minute: '%H:%M',
+                                hour: '%H:%M',
+                                day: '%e. %b',
+                                week: '%e. %b',
+                                month: '%b \'%y',
+                                year: '%Y'*/
+                        },
+                        minRange: 1000, // 不能放大超过1s
+                        minTickInterval: 1000 // 放大间隔最小为1s
+                    }
+                },
+                series: series,
+                title: {
+                    text: null,
+                    header: header
+                }
+            }
+        }).error(function() {
+            alert('绘图失败了:(');
+        });
+    }
+}]);

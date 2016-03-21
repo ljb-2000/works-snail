@@ -1,0 +1,156 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/7
+# Usage:
+# --------------------------------
+
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
+
+#  -1 第三方接入心跳告警
+#  1  北京免机
+#  2  兔兔币充值消费转入转出金额监控
+#  3  账户性能
+#  4  AppStore网络连接情况
+#  5  中心库队列业务(端游戏充值、手游充值消息推送等中心库业务)
+#  6  帐号库队列业务(注册、帐号资料修改（密码、绑定手机号等）等帐号库业务)
+#  7  10040短信发送业务故障监控
+#  8  收银台
+#  9  海外游戏充值推送登录器
+# 10  兔兔币充值推送BSS
+# 11  webservice 日志分析数据库连接数监控报警
+# 12  联运ＩＰ限制监控报警
+# 13  官网充值
+# 14  监控http接口访问时间
+# 15  国内内网游戏充值推送登录器
+# 16  兔兔币账户性能和消息队列监控
+# 10000100017  url检测告警
+# 10000100018  兔兔币充值短信通知失败
+
+# 内部使用的src
+PRODUCT_TYPE_HBS_ALARM = "10000000000"  # 心跳告警
+
+# 第三方应用src
+PRODUCT_TYPE_MK = "10000100001"
+PRODUCT_TYPE_TTB = "10000100002"
+PRODUCT_TYPE_ACCOUNT_PERFORM = "10000100003"
+PRODUCT_TYPE_APPSTORE = "10000100004"
+PRODUCT_TYPE_CENTER_QUEUE = "10000100005"
+PRODUCT_TYPE_ACCOUNT_QUEUE = "10000100006"
+PRODUCT_TYPE_10040 = "10000100007"
+PRODUCT_TYPE_CASHIER = "10000100008"
+PRODUCT_TYPE_GAME_CHARGE = "10000100009"
+PRODUCT_TYPE_TTB_BSS = "10000100010"
+PRODUCT_TYPE_WEBSERVICE = "10000100011"
+PRODUCT_TYPE_IP_LIMIT = "10000100012"
+PRODUCT_TYPE_WEB_CHARGE = "10000100013"
+PRODUCT_TYPE_HTTP_MONITOR_TIMEOUT = "10000100014"
+PRODUCT_TYPE_GAME_CHARGE_CHINA = "10000100015"
+PRODUCT_TYPE_TTB_QUEUE = "10000100016"
+PRODUCT_TYPE_URL_CHECK = "10000100017"
+PRODUCT_TYPE_TTB_CHARGE_SMS_INFORM_FAIL = "10000100018"
+
+# 兼容旧版src, 做一个转换
+SRC_CODE_MAP = {
+    "1": PRODUCT_TYPE_MK,
+    "2": PRODUCT_TYPE_TTB,
+    "3": PRODUCT_TYPE_ACCOUNT_PERFORM,
+    "4": PRODUCT_TYPE_APPSTORE,
+    "5": PRODUCT_TYPE_CENTER_QUEUE,
+    "6": PRODUCT_TYPE_ACCOUNT_QUEUE,
+    "7": PRODUCT_TYPE_10040,
+    "8": PRODUCT_TYPE_CASHIER,
+    "9": PRODUCT_TYPE_GAME_CHARGE,
+    "10": PRODUCT_TYPE_TTB_BSS,
+    "11": PRODUCT_TYPE_WEBSERVICE,
+    "12": PRODUCT_TYPE_IP_LIMIT,
+    "13": PRODUCT_TYPE_WEB_CHARGE,
+    "14": PRODUCT_TYPE_HTTP_MONITOR_TIMEOUT,
+    "15": PRODUCT_TYPE_GAME_CHARGE_CHINA,
+    "16": PRODUCT_TYPE_TTB_QUEUE,
+}
+
+PRODUCT_TYPES = (
+    (PRODUCT_TYPE_MK, _(u'免机')),
+    (PRODUCT_TYPE_TTB, _(u'兔兔币')),
+    (PRODUCT_TYPE_ACCOUNT_PERFORM, _(u'账户性能')),
+    (PRODUCT_TYPE_APPSTORE, _(u'AppStore网络连接情况')),
+    (PRODUCT_TYPE_CENTER_QUEUE, _(u'中心库队列')),
+    (PRODUCT_TYPE_ACCOUNT_QUEUE, _(u'帐号库队列')),
+    (PRODUCT_TYPE_10040, _(u'10040故障告警')),
+    (PRODUCT_TYPE_CASHIER, _(u'收银台')),
+    (PRODUCT_TYPE_GAME_CHARGE, _(u'海外游戏充值推送登录器')),
+    (PRODUCT_TYPE_TTB_BSS, _(u'兔兔币充值推送BSS')),
+    (PRODUCT_TYPE_WEBSERVICE, _(u'webservice日志分析数据库连接数监控报警')),
+    (PRODUCT_TYPE_IP_LIMIT, _(u'联运ＩＰ限制监控报警')),
+    (PRODUCT_TYPE_WEB_CHARGE, _(u'官网充值')),
+    (PRODUCT_TYPE_HTTP_MONITOR_TIMEOUT, _(u'监控http接口超时')),
+    (PRODUCT_TYPE_HBS_ALARM, _(u'第三方心跳告警')),
+    (PRODUCT_TYPE_GAME_CHARGE_CHINA, _(u'国内内网游戏充值推送登录器')),
+    (PRODUCT_TYPE_TTB_QUEUE, _(u'兔兔币账户性能和消息队列监控')),
+    (PRODUCT_TYPE_URL_CHECK, _(u'URL检测告警')),
+    (PRODUCT_TYPE_TTB_CHARGE_SMS_INFORM_FAIL, _(u'兔兔币充值短信通知失败')),
+)
+
+
+PRODUCT_TYPE_DICT = dict()
+PRODUCT_TYPE_MAP = dict()
+
+[PRODUCT_TYPE_DICT.update({item[0]:item[1]}) for item in PRODUCT_TYPES]
+[PRODUCT_TYPE_MAP.update({item[1]:item[0]}) for item in PRODUCT_TYPES]
+
+class ThirdAlarm(models.Model):
+    '''
+        store third-party alarms.
+    '''
+
+    product = models.IntegerField(verbose_name=_(u'业务类型'), db_index=True,choices=PRODUCT_TYPES)
+    content = models.TextField(verbose_name=_(u'报警内容'))
+    create_time = models.BigIntegerField(_(u'报警时间'), db_index=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now=True)
+    info = models.TextField(verbose_name=_(u'其他'), blank=True)
+
+class LowLoadInfo(models.Model):
+    '''
+        低负载机器信息. CPU<20% & 内存<30% & 磁盘<40%
+    '''
+
+    class Meta:
+        verbose_name = _('LowLoadInfo')
+        verbose_name_plural = _('LowLoadInfo')
+    month = models.CharField(max_length=10, verbose_name=_(u'年月'),db_index=True)
+    ip = models.CharField(max_length=128, verbose_name=_(u'IP'),db_index=True)
+    product_name = models.CharField(max_length=255, verbose_name=_(u'产品名'),db_index=True,default="",blank=True)
+    p_set = models.CharField(max_length=255, verbose_name=_(u'所属集合'),default="",blank=True)
+    p_module = models.CharField(max_length=255, verbose_name=_(u'所属模块'),default="",blank=True)
+    cpu_ave_usage = models.FloatField(_(u'CPU平均使用率'))
+    mem_ave_usage = models.FloatField(_(u'MEM平均使用率'))
+    disk_ave_usage = models.FloatField(_(u'DISK平均使用率'))
+
+class CategoryInfo(models.Model):
+    '''
+        类别信息.
+    '''
+
+    class Meta:
+        verbose_name = _('CategoryInfo')
+        verbose_name_plural = _('CategoryInfo')
+
+    name = models.CharField(max_length=255, verbose_name=_(u'Name'),unique=True)
+
+class MetricInfo(models.Model):
+    '''
+        Metric信息.
+    '''
+
+    class Meta:
+        verbose_name = _('MetricInfo')
+        verbose_name_plural = _('MetricInfo')
+
+    metric = models.CharField(max_length=255, verbose_name=_(u'Metric'),unique=True)
+    category = models.ForeignKey(CategoryInfo, verbose_name=_(u'Category'))
+
+

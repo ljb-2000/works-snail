@@ -1,0 +1,400 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-04 09:57:45
+ * @msg     屏幕展示页js
+ */
+
+$(function() {
+
+    // 选择屏幕动画效果
+    (function() {
+        $('.game-wrap li').hover(function() {
+            var e = $(this).find('.showbar');
+
+            e.next().stop().animate({
+                "bottom": "0"
+            }, 400);
+        }, function() {
+            var e = $(this).find('.showbar');
+
+            e.next().stop().animate({
+                "bottom": "-74px"
+            }, 400);
+        });
+    })();
+
+    // 进入屏幕效果
+    $('.game-wrap .layer').on('click', function() {
+        var that = $(this),
+            productName = that.prev().find('b').text(),
+            txt = null;
+
+        $('.screen-product').html(productName);
+
+        $('#search-screen').val('');
+
+        refreshList(productName, txt, that);
+    });
+
+    // 查询屏幕ajax
+    $('#search-screen').on('input', function() {
+        var txt = $(this).val(),
+            productName = $('.screen-product').text();
+
+        refreshList(productName, txt);
+    });
+
+    // 刷新屏幕列表
+    function refreshList(productName, txt, that) {
+        $.ajax({
+                url: '/screen_list/ajax_get_screens_by_product/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_name: productName,
+                    txt: txt
+                }
+            })
+            .done(function(data) {
+                var screenList = '';
+
+                data.forEach(function(e) {
+                    screenList += '<a href="#" data-tab="' + e.id + '" class="list-group-item">' + e.name + '</a>';
+                });
+
+                $('.screen-list-wrap').empty().append(screenList);
+
+                if (!txt && that) {
+                    that.parents('.game-wrap').slideUp(400).next().show();
+                }
+
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+    // 返回产品列表
+    $('#go_back_screen').on('click', function() {
+        $(this).parents('.screen-wrap').slideUp(400).prev().slideDown(400);
+    });
+
+    // 增加标签页
+    function addTab(tabArr, valueArr, dataArr, chartArr) {
+        var obj = $('#my_tabs a[href="#' + tabArr + '"]');
+
+        if (obj.length) {
+            obj.tab('show');
+        } else {
+            $('#my_tabs').append('<li role="presentation" style="position: relative;">\
+                    <i class="glyphicon glyphicon-remove mytab-close"></i>\
+                    <a href="#' + tabArr + '" aria-controls="' + tabArr + '" role="tab" data-toggle="tab" style="padding-right: 24px;">\
+                        ' + valueArr + '\
+                    </a>\
+                </li>');
+
+            $('#my_contents').append('<div role="tabpanel" class="tab-pane" id="' + tabArr + '"></div>');
+
+            $('#my_tabs a:last').tab('show');
+
+            var $tab = $('#' + tabArr),
+                warp = null;
+
+            $tab.append(dataArr);
+
+            autoChartBar();
+
+            warp = $tab.find('.charts-wrap');
+
+            chartArr.forEach(function(data) {
+                var param = {
+                        header: data[0].header,
+                        chartId: data[0].g_id,
+                        graphId: data[0].graph_id,
+                        gStr: data[0].g_str
+                    },
+                    id = tabArr + '_' + param.graphId + '_' + param.chartId + '_' +  param.gStr;
+
+                createChart(id, param, warp); // 渲染chart html模板 
+
+                setCharts(id, data); // 渲染chart 绘图模板
+
+                setList(id, data); // 渲染 chart底部list
+            });
+        }
+
+        $('.screen-wrap').slideUp(400).prev().slideDown(400);
+    }
+
+    // 点击屏幕列表ajax
+    $(document).off('click', '.screen-list-wrap a').on('click', '.screen-list-wrap a', function() {
+        var that = $(this),
+            tabArr = that.attr('data-tab'),
+            productName = $('.screen-product').html(),
+            valueArr = that.text() + '--' + productName;
+
+        // TODO AJAX
+        $.ajax({
+                url: '/screen_list/ajax_show_screen/?screen_id=' + tabArr,
+                type: 'GET',
+                dataType: 'json'
+            })
+            .done(function(data) {
+                var dataArr = data.html,
+                    chartArr = data.series_list;
+
+                addTab(tabArr, valueArr, dataArr, chartArr);
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            });
+    });
+
+    // 点击tab刷新charts
+    $(document).on('click', '#my_tabs a', function() {
+
+    });
+
+    // 渲染chart html模板
+    function createChart(id, param, warp) {
+        var html = '<div class="c-highchart panel panel-default">\
+            <div class="panel-heading clearfix">\
+                <h3 class="panel-title pull-left">' + param.header + '</h3>\
+                <div class="pull-right">\
+                    <span class="view-larger glyphicon glyphicon-zoom-in"></span>&nbsp;&nbsp;\
+                    <span class="get-sum glyphicon glyphicon-stats"></span>&nbsp;&nbsp;\
+                    <span class="delete-chart glyphicon glyphicon-remove"></span>\
+                </div>\
+            </div>\
+            <div class="panel-body">\
+                <div id="' + id + '" class="chart-box">\
+                </div>\
+                <table class="table chart-table table-striped table-hover hide" style="color:#63524D;">\
+                    <thead>\
+                        <tr>\
+                            <th width="250px"></th>\
+                            <th width="80px">last</th>\
+                            <th width="80px">min</th>\
+                            <th width="80px">avg</th>\
+                            <th width="80px">max</th>\
+                        </tr>\
+                    </thead>\
+                    <tbody class="chart-list">\
+                    </tbody>\
+                </table>\
+            </div>\
+        </div>';
+
+        warp.append(html);
+    }
+
+    // 渲染chart 绘图模板
+    function setCharts(id, data) {
+        $('#' + id).highcharts({
+            chart: {
+                type: 'line',
+                zoomType: 'x'
+            },
+            tooltip: {
+                xDateFormat: '%Y-%m-%d %H:%M:%S',
+                valueDecimals: 2
+            },
+            xAxis: {
+                type: 'datetime',
+                dateTimeLabelFormats: {
+                    hour: '%H:%M'
+                },
+                minRange: 1000, // 不能放大超过1s
+                minTickInterval: 1000 // 放大间隔最小为1s
+            },
+            yAxis: {
+                max: data.y_max,
+                min: data.y_min
+            },
+            series: data,
+            title: {
+                text: null
+            }
+        });
+    }
+
+    // 渲染 chart底部list
+    function setList(id, data) {
+        var chartList = $('#' + id).next().find('.chart-list'),
+            list = '';
+
+        data.forEach(function(e) {
+            list += '<tr>\
+                <td>' + e.name + '</td>\
+                <td>' + Number(e.last).toFixed(2) + '</td>\
+                <td>' + Number(e.min).toFixed(2) + '</td>\
+                <td>' + Number(e.avg).toFixed(2) + '</td>\
+                <td>' + Number(e.max).toFixed(2) + '</td>\
+            </tr>';
+        });
+
+        chartList.append(list);
+    }
+
+    // 关闭标签页
+    function deleteTab(that) {
+        var e = that.parent(),
+            prev = e.prev(),
+            tabArr = that.next().attr('aria-controls'),
+            panel = $('#my_contents').find('#' + tabArr);
+
+        e.remove();
+        panel.remove();
+        prev.find('a').tab('show');
+    }
+
+    $(document).on('click', '.mytab-close', function() {
+        deleteTab($(this));
+    });
+
+    // 右侧选中栏高度设定
+    function autoChartBar() {
+        var tabH = $(window).height();
+
+        $(".screen-tool-bar").height(tabH);
+
+        $(window).resize(function() {
+            var tabH = $(window).height();
+
+            $(".screen-tool-bar").height(tabH);
+        });
+    }
+
+    // 右侧栏展开隐藏
+    $(document).on("click", ".left-menu", function() {
+        $(".screen-tool-bar").stop().animate({
+            "right": "-345px"
+        }, 600);
+    });
+
+    $(document).on("click", ".screen-tool-menu", function() {
+        $(".screen-tool-bar").stop().animate({
+            "right": "0"
+        }, 600);
+    });
+
+    // 开启关闭自动切换tab
+    (function() {
+        var t = setInterval(autoTab, 300000);
+
+        $('.time-switch').on('click', function() {
+            var isChecked = $(this).find('input').prop('checked');
+
+            if (!isChecked) {
+                clearInterval(t);
+            } else {
+                t = setInterval(autoTab, 300000);
+            }
+        });
+
+        function autoTab() {
+            var tabNow = $('#my_tabs li.active'),
+                index = tabNow.index(),
+                len = $('#my_tabs li').length,
+                scrollTop = $(window).scrollTop();
+
+            tabNow.attr('data-top', scrollTop);
+
+            if (index !== len && index) {
+                tabNow.next('li').find('a').tab('show');
+
+                var top = $('#my_tabs li.active').attr('data-top');
+
+                $(window).scrollTop(top);
+            }
+
+            if (index === len) {
+                $('#my_tabs a').eq(1).tab('show');
+
+                var top = $('#my_tabs li.active').attr('data-top');
+
+                $(window).scrollTop(top);
+            }
+        }
+    })();
+
+    // 关闭单个chart
+    $(document).on('click', '.delete-chart', function() {
+        var parent = $(this).parents('.c-highchart');
+
+        parent.fadeOut('400', function() {
+            $(this).remove();
+        });
+    });
+
+    // 滚动加载
+    $(window).scroll(function() {
+        var range = 50, // 距下边界长度/单位px  
+            totalheight = 0,
+            srollPos = $(window).scrollTop(); // 滚动条距顶部距离(页面超出窗口的高度)  
+
+        console.log(111);
+        if ($('#my_tabs li.active').index() !== 1) {
+            totalheight = parseFloat($(window).height()) + parseFloat(srollPos);
+
+            console.log(222);
+            if (($(document).height() - range) <= totalheight) {
+
+                console.log(333);
+                var tabNow = $('#my_tabs li.active'),   
+                    tabId = tabNow.find('a').attr('aria-controls'),      
+                    $tab = $('#' + tabId),   
+                    warp = $tab.find('.charts-wrap'),         
+                    charts = $tab.find('.chart-box'),         
+                    chartsLen = charts.length,              
+                    idTable = $tab.find('.screen-counter-table tbody'),             
+                    idChecked = idTable.find(':checked'),          
+                    idLen = idChecked.length,
+                    idArr = [],
+                    i;
+
+                console.log(444);
+                if (idLen - chartsLen > 0) {
+                    for (i = 0; i < idLen - chartsLen; i++) {
+                        var cid = idChecked.eq(chartsLen + i).prop('value');
+
+                        idArr.push(cid);
+                    };
+
+                    console.log(555);
+                    idArr.forEach(function(e){
+                        $.ajax({
+                                url: '/screen_list/ajax_get_graph_data/',
+                                type: 'POST',
+                                dataType: 'json',
+                                data: {
+                                    id: e
+                                }
+                            })
+                            .done(function(data) {
+
+                                console.log(666);
+                                var param = {
+                                        header: data[0].header,
+                                        chartId: data[0].g_id,
+                                        graphId: data[0].graph_id,
+                                        gStr: data[0].g_str
+                                    },
+                                    id = tabArr + '_' + param.graphId + '_' + param.chartId + '_' +  param.gStr;
+
+                                createChart(id, param, warp); // 渲染chart html模板 
+
+                                setCharts(id, data); // 渲染chart 绘图模板
+
+                                setList(id, data); // 渲染 chart底部list
+                            })
+                            .fail(function() {
+                                console.log("error");
+                            });
+                    });
+                }
+            }
+        }
+    });
+});

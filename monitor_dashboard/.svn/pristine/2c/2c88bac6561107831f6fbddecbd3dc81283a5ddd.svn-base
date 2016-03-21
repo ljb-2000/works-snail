@@ -1,0 +1,78 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-04 09:57:45
+ * @msg     屏幕展示页js
+ */
+
+$(function() {
+
+    // 选择屏幕动画效果
+    (function() {
+        $('.game-wrap li').hover(function() {
+            var e = $(this).find('.showbar');
+
+            e.next().stop().animate({"bottom": "0"}, 400);
+        }, function() {
+            var e = $(this).find('.showbar');
+
+            e.next().stop().animate({"bottom": "-74px"}, 400);
+        });
+    })();
+
+    // 进入屏幕效果
+    $('.game-wrap .layer').on('click', function() {
+        var e = $(this);
+
+        e.parents('.game-wrap').slideUp(400).next().show();
+    });
+
+    // 返回产品列表
+    $('#go_back_screen').on('click', function() {
+        $(this).parents('.screen-wrap').slideUp(400).prev().slideDown(400);
+    });
+
+    // 增加标签页
+    function addTab(tabArr, valueArr, dataArr) {
+        var obj = $('#my_tabs a[href="#' + tabArr + '"]');
+
+        if (obj.length) {
+            obj.tab('show');
+        } else {
+            $('#my_tabs').append('<li role="presentation" style="  position: relative;" >\
+                    <i class="glyphicon glyphicon-remove mytab-close"></i>\
+                    <a href="#' + tabArr + '" aria-controls="' + tabArr + '" role="tab" data-toggle="tab" style="padding-right: 24px;">\
+                        ' + valueArr + '\
+                    </a>\
+                </li>');
+
+            $('#my_contents').append('<div role="tabpanel" class="tab-pane" id="' + tabArr + '"></div>');
+            
+            $('#' + tabArr).html(dataArr);
+           
+            $('#my_tabs a:last').tab('show');
+        }
+    }
+
+    $(document).on('click', '.screen-list-wrap a', function() {
+        var tabArr = $(this).attr('data-tab');
+
+        addTab(tabArr, '屏幕1 --关云长', '测试');
+    });
+
+    // 关闭标签页
+    function deleteTab(that) {
+        var e = that.parent(),
+            prev = e.prev(),
+            tabArr = that.next().attr('aria-controls');
+            panel = $('#my_contents').find('#' + tabArr);
+
+        e.remove();
+        panel.remove();
+        prev.find('a').tab('show');
+    }
+
+    $(document).on('click', '.mytab-close', function() {
+        deleteTab($(this));
+    });
+});

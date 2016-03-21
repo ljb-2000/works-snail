@@ -1,0 +1,7 @@
+openpyxl==2.3.0
+django==1.6.11
+redis
+requests
+django-supervisor==0.3.2
+simplejson
+MySQL-python

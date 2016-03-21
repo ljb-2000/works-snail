@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+import settings
+from utils.decorator import render_to, login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.db.transaction import commit_on_success
+from django.shortcuts import HttpResponse
+import json
+import datetime
+import traceback
+
+
+@csrf_exempt
+def ajax_get_product_option(request):
+    user = request.user
+    
+    products_add = []
+    try:
+        if user.username in SPECIAL_USERS:
+            name = u'张延礼'
+        data = {'username':name.encode('utf8'),}
+        
+        req = urllib2.Request(PRODUCT_URL)
+        params = urllib.urlencode(data)
+        response = urllib2.urlopen(req, params)
+        
+        jsonText = response.read()
+        json_dict= json.loads(jsonText)
+        
+        product_dict_list = json_dict.get('items')
+        for product_dict in product_dict_list:
+            products_name = product_dict.get('VERSION_NAME')
+            products_add.append(products_name)
+    except Exception,e:
+        print e
+    
+    products = _product.get_products_by_params(name__in=products_add)
+    res = []
+    for product in products:
+        obj = [product.id, product.name]
+        res.append(obj)
+    result = json.dumps(res)
+    return HttpResponse(result)
+    
+@csrf_exempt
+def ajax_get_productinfo(request):
+    sdicts = {}
+    sdicts['result'] = 0
+    if request.method == "POST":
+        product_name = request.POST.get('product_name',0)
+        product_pinyin_list = lazy_pinyin(product_name, errors='ignore')
+        file_path_default = ''.join(product_pinyin_list)
+        sdicts['file_path_default'] = file_path_default
+        
+        product = _product.get_product_by_params(name=product_name)
+        if product:
+            sdicts['ftp_host'] = product.ftp_host
+            sdicts['ftp_port'] = product.ftp_port
+            sdicts['ftp_username'] = base64.b64decode(product.ftp_username)
+            sdicts['ftp_password'] = base64.b64decode(product.ftp_password)
+            sdicts['ftp_domain'] = product.ftp_domain
+            sdicts['file_path'] = product.file_path
+            sdicts['result'] = 1
+    return HttpResponse(json.dumps(sdicts))

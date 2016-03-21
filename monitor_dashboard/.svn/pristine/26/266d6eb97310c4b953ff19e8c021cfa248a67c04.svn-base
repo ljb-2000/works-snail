@@ -1,0 +1,75 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-05 16:58
+ * @msg     主页面js
+ */
+
+$(function() {
+
+    // 导航高亮
+    (function lightNavbar() {
+        var path = window.location.pathname,
+            firstPath = path.substring(0, path.indexOf('/', 1));
+
+        $('.h-menu a[href^="' + firstPath + '"]').addClass("active");
+        $('.h-nav a[href="' + path + '"]').addClass("active");
+
+        var index = $('.h-menu .active').parent().index();
+
+        $('.h-nav>div').eq(index).removeClass('hide').siblings('div').addClass('hide');
+
+        var left = $('.h-nav .active').position().left,
+            width = $('.h-nav .active').width();
+
+        $('#line_active').css({
+            width: width,
+            left: left
+        });
+    })();
+
+    // 显示面板
+    $('.creat-views label').on('click', function() {
+        var e = $(this),
+            dataId = e.attr('data-id'),
+            obj = $('#' + dataId);
+
+        if (e.hasClass('active')) {
+            obj.addClass('hide');
+        } else {
+            obj.removeClass('hide');
+        }
+    });
+
+    // 右边栏效果
+    $(window).scroll(function() {
+        var top = $(window).scrollTop(),
+            obj = $('.view-right-box');
+
+        if (top >= 120) {
+            obj.addClass('sticky');
+        } else {
+            obj.removeClass('sticky');
+        }
+    });
+
+    // 二级导航效果
+    $('.h-nav a').hover(function() {
+        var e = $(this),
+            left = e.position().left,
+            width = e.width();
+
+        $('#line_active').stop().animate({
+            width: width,
+            left: left
+        }, 500);
+    }, function() {
+        var curWidth = $('.h-nav .active').width(),
+            curLeft = $('.h-nav .active').position().left;
+
+        $('#line_active').stop().animate({
+            width: curWidth,
+            left: curLeft
+        }, 500);
+    });
+});

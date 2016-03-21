@@ -1,0 +1,446 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json
+import datetime, time
+from utils.ctranslate import LazyEncoder
+from django.db.transaction import commit_on_success
+from utils.db_conn import DB
+from utils.rrdgraph import merge_list, graph_query
+from config import dashboard
+import hashlib
+
+def get_max_min_avg_last(value_list):
+    data_sum = 0
+    data_max = '-'
+    data_min = '-'
+    data_last = '-'
+    data_avg = '-'
+    num = 0
+    for v in value_list:
+        if v == None:
+            continue
+        num += 1
+        data_last = v
+        data_sum += v
+        if data_max == '-' or v > data_max:
+            data_max = v
+        if data_min == '-' or v < data_min:
+            data_min = v
+    if num:
+        data_avg = float(data_sum)/num
+    return data_max, data_min, data_avg, data_last
+
+@login_required
+@csrf_exempt
+def chart(request):
+    endpoints = request.POST.getlist("endpoints[]") or []
+    counters = request.POST.getlist("counters[]") or []
+    graph_type = request.POST.get("graph_type") or dashboard.GRAPH_TYPE_HOST
+    
+    es = endpoints and dashboard.ENDPOINT_DELIMITER.join(sorted(endpoints)) or ""
+    cs = counters and dashboard.COUNTER_DELIMITER.join(sorted(counters)) or ""
+    ck = hashlib.md5("%s:%s" %(es.encode("utf8"), cs.encode("utf8"))).hexdigest()
+    
+    dashboard_db_conn = DB(
+        dashboard.DASHBOARD_DB_HOST,
+        dashboard.DASHBOARD_DB_PORT,
+        dashboard.DASHBOARD_DB_USER,
+        dashboard.DASHBOARD_DB_PASSWD,
+        dashboard.DASHBOARD_DB_NAME)
+    
+    sql = '''insert ignore into tmp_graph (endpoints, counters, ck) values(\'%s\', \'%s\', \'%s\') ON DUPLICATE KEY UPDATE time_=\'%s\''''%(es, cs, ck, datetime.datetime.now())
+    cursor = dashboard_db_conn.execute(sql)
+    dashboard_db_conn.commit()
+    id_ = cursor.lastrowid
+    
+    ret = {
+            "ok": False,
+            "id": id_,
+            "params": {
+                "graph_type": graph_type,
+            },
+    }
+    if id_:
+        ret['ok'] = True
+
+    return HttpResponse(json.dumps(ret, cls=LazyEncoder))
+
+@csrf_exempt
+@render_to('charts/big_charts.html')
+def chart_big(request):
+    g_id = request.GET.get('id')
+    return locals()
+
+#@csrf_exempt
+#@render_to('charts/big_charts.html')
+#def chart_big(request):
+#    g = {}
+#    now = int(time.time())
+#
+#    #是否显示顶部图表导航
+#    g['nav_header'] = request.GET.get("nav_header") or "on"
+#    cols = request.GET.get("cols") or "2"
+#    try:
+#        cols = int(cols)
+#    except:
+#        cols = 2
+#    if cols <= 0:
+#        cols = 2
+#    if cols >= 6:
+#        cols = 6
+#    g['cols'] = cols
+#    
+#    g['legend'] = request.GET.get("legend") or "off"
+#    g['graph_type'] = request.GET.get("graph_type") or dashboard.GRAPH_TYPE_HOST
+#    g['sum'] = request.GET.get("sum") or "off" #是否求和
+#    g['sumonly'] = request.GET.get("sumonly") or "off" #是否只显示求和
+#
+#    g['cf'] = (request.GET.get("cf") or "AVERAGE").upper() # MAX, MIN, AVGRAGE, LAST
+#
+#    g['start'] = int(request.GET.get("start") or -3600)
+#    if g['start'] < 0:
+#        g['start'] = now + g['start']
+#
+#    g['end'] = int(request.GET.get("end") or 0)
+#    if g['end'] <= 0:
+#        g['end'] = now + g['end']
+#    g['end'] = g['end'] - 60
+#
+#    g['id'] = request.GET.get("id") or ""
+#
+#    g['limit'] = int(request.GET.get("limit") or 0)
+#    g['page'] = int(request.GET.get("page") or 0)
+#    request.session['g'] = g
+#    return locals()
+
+@csrf_exempt
+def get_tmp_graph(g_id):
+    dashboard_db_conn = DB(
+        dashboard.DASHBOARD_DB_HOST,
+        dashboard.DASHBOARD_DB_PORT,
+        dashboard.DASHBOARD_DB_USER,
+        dashboard.DASHBOARD_DB_PASSWD,
+        dashboard.DASHBOARD_DB_NAME)
+    
+    sql = '''select id, endpoints, counters, time_ from tmp_graph where id=%s'''%g_id
+    cursor = dashboard_db_conn.execute(sql)
+    row = cursor.fetchone()
+    cursor and cursor.close()
+    if row:
+        id = row.get('id')
+        endpoints = row.get('endpoints')
+        counters = row.get('counters')
+        time_ = row.get('time_')
+        endpoint_list = endpoints and endpoints.split(dashboard.ENDPOINT_DELIMITER) or []
+        counter_list = counters and counters.split(dashboard.ENDPOINT_DELIMITER) or []
+        tmp_graph = {'id':id, 'endpoints':endpoint_list, 'counters':counter_list, 'time_':time_}
+    else:
+        tmp_graph =  None
+    return tmp_graph
+
+@csrf_exempt
+def multi_endpoints_chart_data(request):
+    now = int(time.time())
+    
+    g_id = request.GET.get("id")
+    if not g_id:
+        raise(400, "no graph id given")
+    
+    sum = request.GET.get("sum") or "off" #是否求和
+    sumonly = request.GET.get("sumonly") or "off" #是否只显示求和
+
+    cf = (request.GET.get("cf") or "AVERAGE").upper() # MAX, MIN, AVGRAGE, LAST
+
+    start = int(request.GET.get("start") or -3600)
+    if start < 0:
+        start = now + start
+
+    end = int(request.GET.get("end") or 0)
+    if end <= 0:
+        end = now + end
+    end = end - 60
+    
+    tmp_graph =  get_tmp_graph(g_id)
+    if not tmp_graph:
+        raise(404, "no graph which id is %s" %g_id)
+
+    counters = tmp_graph.get('counters')
+    if not counters:
+        raise(400, "no counters of %s" %g_id)
+    counters = sorted(set(counters))
+
+    endpoints = tmp_graph.get('endpoints')
+    if not endpoints:
+        raise(400, "no endpoints of %s" %g_id)
+    endpoints = sorted(set(endpoints))
+
+    ret = {
+        "units": "",
+        "title": "",
+        "series": []
+    }
+    ret['title'] = counters[0]
+    c = counters[0]
+    endpoint_counters = []
+    for e in endpoints:
+        endpoint_counters.append({
+            "endpoint": e,
+            "counter": c,
+        })
+
+    query_result = graph_query(endpoint_counters, cf, start, end)
+
+    series = []
+    counter = query_result[0].get("counter")
+    ret['counter'] = counter
+    for i in range(0, len(query_result)):
+        x = query_result[i]
+        
+        values = x.get("Values")
+        
+        point_1 = values[0]
+        point_2 = values[1]
+        pointStart = point_1.get('timestamp')*1000 + 1000*60*60*8
+        pointInterval = point_2.get('timestamp')*1000 - point_1.get('timestamp')*1000
+        
+        data_list = [v_dict.get('value') for v_dict in values]
+        data_max, data_min, data_avg, data_last = get_max_min_avg_last(data_list)
+        
+        serie = {
+                "max": data_max,
+                "min": data_min,
+                "avg": data_avg,
+                "last": data_last,
+                "data": data_list,
+                "name": query_result[i]["endpoint"],
+                "cf": cf,
+                "endpoint": query_result[i]["endpoint"],
+                "counter": counter,
+                "pointStart":pointStart,
+                "pointInterval":pointInterval,
+        }
+        series.append(serie)
+
+    if sum == "on" or sumonly == "on":
+        sum_list = []
+        max_size = 0
+        for serie in series:
+            serie_vs = [x for x in serie["data"]]
+            if len(serie_vs) > max_size:
+                max_size = len(serie_vs)
+            sum_list = merge_list(sum_list, serie_vs)
+        sum_serie_data = []
+        for i in range(0, max_size):
+            sum_serie_data.append(sum_list[i])
+        
+        data_max, data_min, data_avg, data_last = get_max_min_avg_last(sum_list)
+        
+        sum_serie = {
+                "max": data_max,
+                "min": data_min,
+                "avg": data_avg,
+                "last": data_last,
+                "data": sum_serie_data,
+                "name": 'sum',
+                "cf": cf,
+                "endpoint": 'sum',
+                "counter": counter,
+                "pointStart":pointStart,
+                "pointInterval":pointInterval,
+        }
+        
+        series.append(sum_serie)
+        
+    if sumonly == "on":
+        series = [sum_serie]
+
+    for index,serie in enumerate(series):
+        serie['color'] = dashboard.COLOR_LIST[index%20]
+    ret['series'] = series
+        
+    return HttpResponse(json.dumps(ret, cls=LazyEncoder))
+
+@csrf_exempt
+def multi_counters_chart_data(request):
+    g = request.session.get('g')
+    if not g:
+        raise(400, "session expired")
+    if not g.id:
+        raise(400, "no graph id given")
+    
+    tmp_graph =  get_tmp_graph(g.id)
+    if not tmp_graph:
+        raise(404, "no graph which id is %s" %g.id)
+
+    counters = tmp_graph.counters
+    if not counters:
+        raise(400, "no counters of %s" %g.id)
+    counters = sorted(set(counters))
+
+    endpoints = tmp_graph.endpoints
+    if not endpoints:
+        raise(400, "no endpoints of %s" % g.id)
+    endpoints = sorted(set(endpoints))
+
+    ret = {
+        "units": "",
+        "title": "",
+        "series": []
+    }
+    ret['title'] = endpoints[0]
+    e = endpoints[0]
+    endpoint_counters = []
+    for c in counters:
+        endpoint_counters.append({
+            "endpoint": e,
+            "counter": c,
+        })
+
+    query_result = graph_query(endpoint_counters, g.cf, g.start, g.end)
+
+    series = []
+    for i in range(0, len(query_result)):
+        x = query_result[i]
+        try:
+            xv = [(v["timestamp"]*1000, v["value"]) for v in x["Values"]]
+            serie = {
+                    "data": xv,
+                    "name": query_result[i]["counter"],
+                    "cf": g.cf,
+                    "endpoint": query_result[i]["endpoint"],
+                    "counter": query_result[i]["counter"],
+            }
+            series.append(serie)
+        except:
+            pass
+
+    sum_serie = {
+            "data": [],
+            "name": "sum",
+            "cf": g.cf,
+            "endpoint": e,
+            "counter": "sum",
+    }
+    if g.sum == "on" or g.sumonly == "on":
+        sum = []
+        tmp_ts = []
+        max_size = 0
+        for serie in series:
+            serie_vs = [x[1] for x in serie["data"]]
+            if len(serie_vs) > max_size:
+                max_size = len(serie_vs)
+                tmp_ts = [x[0] for x in serie["data"]]
+            sum = merge_list(sum, serie_vs)
+        sum_serie_data = []
+        for i in range(0, max_size):
+            sum_serie_data.append((tmp_ts[i], sum[i]))
+        sum_serie['data'] = sum_serie_data
+
+        series.append(sum_serie)
+
+    if g.sumonly == "on":
+        ret['series'] = [sum_serie,]
+    else:
+        ret['series'] = series
+
+    return json.dumps(ret)
+
+@csrf_exempt
+def multi_chart_data(request):
+    g = request.session.get('g')
+    if not g:
+        raise(400, "session expired")
+    if not g.id:
+        raise(400, "no graph id given")
+
+    tmp_graph = get_tmp_graph(g.id)
+    if not tmp_graph:
+        raise(404, "no graph which id is %s" %g.id)
+
+    counters = tmp_graph.counters
+    if not counters:
+        raise(400, "no counters of %s" %g.id)
+    counters = sorted(set(counters))
+
+    endpoints = tmp_graph.endpoints
+    if not endpoints:
+        raise(400, "no endpoints of %s, and tags:%s" %(g.id, g.tags))
+    endpoints = sorted(set(endpoints))
+
+    ret = {
+        "units": "",
+        "title": "",
+        "series": []
+    }
+
+    endpoint_counters = []
+    for e in endpoints:
+        for c in counters:
+            endpoint_counters.append({
+                "endpoint": e,
+                "counter": c,
+            })
+    query_result = graph_query(endpoint_counters, g.cf, g.start, g.end)
+
+    series = []
+    for i in range(0, len(query_result)):
+        x = query_result[i]
+        try:
+            xv = [(v["timestamp"]*1000, v["value"]) for v in x["Values"]]
+            serie = {
+                    "data": xv,
+                    "name": "%s %s" %(query_result[i]["endpoint"], query_result[i]["counter"]),
+                    "cf": g.cf,
+                    "endpoint": "",
+                    "counter": "",
+            }
+            series.append(serie)
+        except:
+            pass
+
+    sum_serie = {
+            "data": [],
+            "name": "sum",
+            "cf": g.cf,
+            "endpoint": "",
+            "counter": "",
+    }
+    if g.sum == "on" or g.sumonly == "on":
+        sum = []
+        tmp_ts = []
+        max_size = 0
+        for serie in series:
+            serie_vs = [x[1] for x in serie["data"]]
+            if len(serie_vs) > max_size:
+                max_size = len(serie_vs)
+                tmp_ts = [x[0] for x in serie["data"]]
+            sum = merge_list(sum, serie_vs)
+        sum_serie_data = []
+        for i in range(0, max_size):
+            sum_serie_data.append((tmp_ts[i], sum[i]))
+        sum_serie['data'] = sum_serie_data
+
+        series.append(sum_serie)
+
+    if g.sumonly == "on":
+        ret['series'] = [sum_serie,]
+    else:
+        ret['series'] = series
+
+    return json.dumps(ret)
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^chart/$', chart, name='chart'),
+    url(r'^chart/big/$', chart_big, name='chart_big'),
+    url(r'^chart/h/$', multi_endpoints_chart_data, name='multi_endpoints_chart_data'),
+    url(r'^chart/k/$', multi_counters_chart_data, name='multi_counters_chart_data'),
+    url(r'^chart/a/$', multi_chart_data, name='multi_chart_data'),
+)

@@ -1,0 +1,20 @@
+# -*- coding:utf-8 -*-
+__author__ = 'wx'
+
+# -- app config --
+DEBUG = True
+
+#-- dashboard db config --
+DASHBOARD_DB_HOST = "127.0.0.1"
+DASHBOARD_DB_PORT = 3306
+DASHBOARD_DB_USER = "root"
+DASHBOARD_DB_PASSWD = "root"
+DASHBOARD_DB_NAME = "dashboard"
+
+#chart
+RRD_CFS = ['AVERAGE', 'MAX', 'MIN', 'LAST']
+
+GRAPH_TYPE_KEY = 'k'
+GRAPH_TYPE_HOST = 'h'
+ENDPOINT_DELIMITER = "|"
+COUNTER_DELIMITER = "|"

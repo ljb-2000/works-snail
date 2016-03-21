@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛智能监控平台</title>
+{% include "import_css.html" %}
+</head>
+<body>
+    <!--主界面开始-->
+    <div class="container-fluid">
+        {% include "header.html" %}
+        <!-- 页面主体开始-->
+        <div class="row clearfix">
+            <!--左侧部分开始-->
+            <div class="pull-left u-left">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#u_tab3" aria-controls="u-tab3" role="tab" data-toggle="tab">主机组筛选</a></li>
+                 </ul>
+
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane" id="u_tab1">
+                        <form>
+                            <div class="form-group">
+                                <label for="u_fliter">ip信息：<span class="red">*</span></label>
+                                <textarea class="form-control" id="u_fliter" placeholder="请输入ip，多个ip以‘回车’分隔"></textarea>
+                            </div>
+                            <div class="form-group mt30">
+                                <button id="plot_filter" class="btn btn-primary btn-block" onclick="return false;">
+                                    <span class="glyphicon glyphicon-ok"></span>
+                                    确定
+                                </button>
+                            </div>
+                            <div class="form-group text-center">
+                                <span class="filter-msg u-red"></span>
+                            </div>
+                        </form>
+                    </div>
+                    <div role="tabpanel" class="tab-pane active" id="u_tab3">
+                        <div class="input-group">
+                            <input id="search_tree_text" type="text" class="tree-search form-control" placeholder="模糊排序">
+                            <div id="search_tree" class="tree-search-btn input-group-addon"><span class="glyphicon glyphicon-search"></span></div>
+                        </div>
+                        <div id="u_jstree">
+                            
+                        </div>
+                    </div>
+                    <input id="node_arr" type="hidden">
+                </div>
+            </div>
+            <!--左侧部分结束-->
+            <!--右侧部分开始-->
+            <div class="u-right">
+                <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">自助查询</h3>
+                        </div>
+                        <div class="panel-body pb0">
+                            <form class="form-inline">
+                                <div class="form-group">
+                                    <label for="">搜索：</label>
+                                    <input id="search_plot" type="text" class="form-control" autocomplete="off" placeholder="请输入监控项">
+                                </div>
+                                <div class="form-group">
+                                    <button id="close_btn" class="btn btn-primary" onclick="return false;">
+                                        <span class="glyphicon glyphicon-eye-close"></span>
+                                        屏蔽
+                                    </button>
+                                    <button id="open_btn" class="btn btn-info" onclick="return false;">
+                                        <span class="glyphicon glyphicon-expand"></span>
+                                        开启
+                                    </button>
+                                </div>
+                                <table id="plot_table" class="table-scroll table table-hover table-striped mt15">
+                                    <thead>
+                                        <tr>
+                                            <th width='5%'><input type="checkbox" class="check-all"></th>
+                                            <th>监控项</th>
+                                            <th>模板名称</th>
+                                            <th>状态</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </form>
+                        </div>
+                    </div>
+            </div>
+            <!--右侧部分结束-->
+        </div>
+        <!-- 页面主体结束-->
+    </div>
+{% include "import_js.html" %}
+{% include "import_tooljs.html" %}
+<script type="text/javascript" src="/static/src/jq/common.js?v=201512301743"></script>
+<script type="text/javascript" src="/static/src/jq/user_self/plot.js?v=201511301743"></script>
+</body>
+</html>

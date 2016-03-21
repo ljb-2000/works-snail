@@ -1,0 +1,176 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/2
+# Usage:
+# --------------------------------
+
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from models import ServerPluginSetting
+import traceback
+import logging
+import simplejson as json
+import os
+import datetime
+from openpyxl import load_workbook
+
+logger = logging.getLogger("logger")
+
+
+@csrf_exempt
+@require_POST
+def plugin_setting_add(request):
+    result = {"msg": ""}
+    code = 500
+    try:
+        data = request.POST
+        params = {
+            "ip": data.get("ip", ""),
+            "keys": data.get("keys", ""),
+            "values": data.get("values", "")
+        }
+        for key, value in params.iteritems():
+            if not value:
+                result['msg'] = '{0} is required'.format(key)
+        if not result['msg']:
+            keys = params['keys'].split(',')
+            values = params['values'].split(',')
+            total = len(keys)
+            if total != len(values):
+                result['msg'] = "key,value pair not match"
+            else:
+                for i in range(total):
+                    ServerPluginSetting.objects.create(ip=params['ip'], key=keys[i], value=values[i])
+                result['msg'] = 'add plugin values ok!'
+                code = 200
+    except Exception, e:
+        logger.error(e.message)
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = 'add plugin value fail'
+        print error
+
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))
+
+@csrf_exempt
+@require_POST
+def plugin_setting_delete(request):
+    result = {"msg":""}
+    code = 500
+    try:
+        s_id = request.POST.get("id","")
+        if not s_id:
+            result['msg'] = 'id is required'
+        else:
+            ids = s_id.split(',')
+            ServerPluginSetting.objects.filter(id__in=ids).delete()
+            code = 200
+            result['msg'] = 'ok'
+    except ServerPluginSetting.DoesNotExist:
+        result['msg'] = 'setting not exist'
+    except Exception, e:
+        logger.error(e.message)
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = 'add plugin value fail'
+        print error
+
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))
+
+@csrf_exempt
+@require_POST
+def plugin_setting_update(request):
+    result = {"msg":""}
+    code = 500
+    try:
+        s_id = request.POST.get("id","")
+        s_ip = request.POST.get("ip","")
+        s_key = request.POST.get("key","")
+        s_value = request.POST.get("value","")
+
+        if not s_id:
+            result['msg'] = 'id is required'
+        else:
+            setting = ServerPluginSetting.objects.get(id=s_id)
+            setting.ip=s_ip
+            setting.key=s_key
+            setting.value=s_value
+            setting.save()
+            code = 200
+            result['msg'] = 'ok'
+    except ServerPluginSetting.DoesNotExist:
+        result['msg'] = 'setting not exist'
+    except Exception, e:
+        logger.error(e.message)
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = 'add plugin value fail'
+        print error
+
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))
+
+
+@csrf_exempt
+@require_POST
+def plugin_setting_import(request):
+    result = {"msg": ""}
+    code = 500
+    try:
+        uploadfile = request.FILES['up_field']
+        if not uploadfile:
+            result['msg'] = "please select a excel format file"
+        else:
+            file_dir = os.path.join(os.getcwd(), "uploads")
+            if not os.path.isdir(file_dir):
+                os.makedirs(file_dir)
+                logger.debug("## create upload folder, path:{0}".format(file_dir))
+            file_path = os.path.join(file_dir, datetime.datetime.now().strftime("%Y%m%d%H%M%S")+'.xlsx')
+            logger.debug("setting file path:{0}".format(file_path))
+            tempfile = open(file_path, 'w+')
+            tempfile.write(uploadfile.read())
+            tempfile.close()
+            wb = load_workbook(filename=file_path,read_only=True,use_iterators=True,guess_types=True)
+            i_dict = []
+            for sheet in wb._sheets:
+                for item in sheet:
+                    i_dict.append({
+                        "ip": item[0].value,
+                        "key": item[1].value,
+                        "value": item[2].value
+                    })
+
+            logger.debug("file read complete, total:{0}".format(len(i_dict)))
+
+            for item in i_dict:
+                ip = item['ip']
+                key = item['key']
+                value = item['value']
+                obj,is_create = ServerPluginSetting.objects.get_or_create(ip=ip, key=key)
+                obj.value = value
+                obj.save()
+            code = 200
+            result['msg'] = 'ok'
+    except Exception, e:
+        logger.error(e.message)
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = 'load from file fail'
+        print error
+
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))

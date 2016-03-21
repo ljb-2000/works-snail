@@ -1,0 +1,68 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-04 09:57:45
+ * @msg     屏幕配置页js
+ */
+
+ // datatable
+ var screenSettingTable = $('#screen_setting_table').dataTable({
+     "sDom": 'lfrtip',
+     "bLengthChange": false,
+     "iDisplayLength": 10,
+     "aoColumnDefs": [{
+         "bSortable": false,
+         "aTargets": [0]
+     }],
+
+     // "aaSorting": [[ 8, "desc" ]],
+     //"bProcessing": true,
+     //"bServerSide": true,
+     "sPaginationType": "full_numbers",
+
+     //"sAjaxSource": "/monitor_query_endpoint_list/",
+     "bFilter": false,
+     "oLanguage": {
+         "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+     }
+ });
+
+ $(function() {
+
+    // 上一步 下一步
+    $(document).on('click', '.next-step', function() {
+        $(this).parents('.step-wrap').slideUp(400).next().slideDown(400);
+    });
+
+    $(document).on('click', '.prev-step', function() {
+        $(this).parents('.step-wrap').slideUp(400).prev().slideDown(400);
+    });
+
+    // 全选、全不选
+    (function() {
+        var checkedAll = ".screen-all",
+            checkedIt = ".screen-it";
+
+        checkAll(checkedAll, checkedIt);
+    })();
+
+    // 编辑屏幕
+    $(document).on('click', '.edit-screen', function() {
+        var tab = $("#screen_main .nav a[href=#screen_setting]");
+
+        tab.trigger('click');
+
+        $('#acreen_setting_type option').eq(1).prop('selected', true);
+
+    });
+
+    // +graph 
+    $(document).on('click', '.add-graph', function() {
+        var tab = $("#screen_main .nav a[href=#screen_setting]");
+
+        tab.trigger('click');
+
+        $('#acreen_setting_type option').eq(2).prop('selected', true);
+
+    });
+ });

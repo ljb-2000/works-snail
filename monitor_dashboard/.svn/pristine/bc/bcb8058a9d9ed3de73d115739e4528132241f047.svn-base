@@ -1,0 +1,166 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-02 16:58
+ * @msg     按主机屏蔽页js
+ */
+
+$(function() {
+
+    // datatable
+    var hostTable = $('#host_table').dataTable({
+        "sDom": 'lfrtip',
+        "bLengthChange": false,
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [0, 2, 3, 4]
+        }],
+
+        "aaSorting": [[ 5, "desc" ]],
+        "bProcessing": true,
+        "bServerSide": true,
+        "sPaginationType": "full_numbers",
+        "sAjaxSource": "/user_self_host_list/",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+
+    // 批量筛选功能
+    $(document).off("click", "#host_filter").on("click", "#host_filter", function() {
+        var txt = $("#u_fliter").val(),
+            msg = $(".filter-msg"),
+            result = filterIp(txt, msg);
+
+        if (result === false) {
+            return false;
+        } else {
+            hostTable.fnReloadAjax('/user_self_host_list/?p=0&iptxt=' + result);
+
+            $('#host_table').find('.check-all').prop('checked', false);
+        }
+    });
+
+    // load jstree
+    var nodeId = null;
+
+    $('#u_jstree').on('changed.jstree', function() {
+        nodeId = $('#u_jstree').jstree().get_bottom_selected();
+    }).jstree({
+        "plugins": ["checkbox"],
+        'core': {
+            "themes": {
+                "theme": "classic",
+                "dots": true,
+                "icons": true
+            },
+            'dataType': 'json',
+            'data': {
+                'url': '/ajax_get_group_hosts/'
+            }
+        }
+    });
+
+    // confirm jstree
+    $('#confirm_tree').on('click', function() {
+        if (nodeId.length) {
+            $.ajax({
+                    url: "/ajax_get_ip_by_groups/",
+                    type: 'POST',
+                    data: {
+                        nodeIdLists: nodeId
+                    }
+                })
+                .done(function(data) {
+                    data.length ? hostTable.fnReloadAjax('/user_self_host_list/?p=0&iptxt=' + data) : hostTable.fnReloadAjax('/user_self_host_list/?p=0&null=1');
+
+                    $('#host_table').find('.check-all').prop('checked', false);
+                });
+        }
+    });
+
+    // 搜索主机模糊匹配
+    $('#search_host').autocomplete({
+        source: function(request, response) {
+            $.ajax({
+                type: "POST",
+                url: "/ajax_filter_ip/",
+                dataType: "json",
+                data: {
+                    'ip_text': request.term
+                },
+                success: function(data) {
+                    response($.map(data, function(item) {
+                        return item;
+                    }));
+                }
+            });
+        }
+    });
+
+    // 查询主机
+    $('#search_host_btn').on('click', function() {
+        var ip = $('#search_host').val();
+
+        hostTable.fnReloadAjax('/user_self_host_list/?p=0&ipstr=' + ip);
+
+        $('#host_table').find('.check-all').prop('checked', false);
+    });
+
+    // 屏蔽开启主机
+    function switchItem(values, itemType) {
+        if (!values.length) {
+            jNotify('请先选择' + itemType.type + '项！');
+            return false;
+        }
+
+        $.ajax({
+                url: itemType.url,
+                type: 'POST',
+                data: {
+                    values: values
+                }
+            })
+            .done(function(data) {
+                if (data.result === 1) {
+                    jSuccess(itemType.type + '成功！');
+
+                    hostTable.fnReloadAjax();
+
+                    $('#host_table').find('.check-all').prop('checked', false);
+                } else {
+                    jError(itemType.type + '失败！');
+                }
+            })
+            .fail(function() {
+                jError(itemType.type + '失败！');
+            });
+    }
+
+    (function switchBtn() {
+        var table = $('#host_table tbody'),
+            closeItem = {
+                type: "屏蔽",
+                url: "/monitor_close/",
+            },
+            openItem = {
+                type: "开启",
+                url: "/monitor_open/"
+            };
+
+        $('#close_btn').on('click', function() {
+            var values = getCheckedTr(table);
+
+            switchItem(values, closeItem);
+        });
+
+        $('#open_btn').on('click', function() {
+            var values = getCheckedTr(table);
+
+            switchItem(values, openItem);
+        });
+    })();
+
+});

@@ -1,0 +1,4 @@
+# -*- coding:utf-8 -*-
+
+#-- query config --
+QUERY_ADDR = "http://192.168.17.128:9966"

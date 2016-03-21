@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import os, sys
+from utils.common import send_log
+
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.views.decorators.csrf import csrf_exempt
+import logging
+
+from utils.util import get_unsolved_alarms, get_product_of_host
+from utils.common import get_user_perm
+
+logger = logging.getLogger("logger")
+
+@login_required
+@render_to("index.html")
+def index(request):
+    user = request.user
+    #permission
+    user = get_user_perm(user)
+
+    #lastest 10 alarms
+    alarms = get_unsolved_alarms()
+    alarms = alarms[:10]
+    for obj in alarms:
+        info =  get_product_of_host(obj.get('endpoint'))
+        obj['p_name'] = info.get("p_name",'')
+        obj['p_set'] = info.get("p_set",'')
+        obj['p_module'] = info.get("p_module",'')
+        
+        monitor_item = " ".join([obj.get('metric'),obj.get('func'),obj.get('operator'),obj.get('rightValue')])
+        obj['monitor_item'] = monitor_item
+        
+        leftValue = obj.get('leftValue',"")
+        obj['leftValue'] = leftValue
+    
+    return locals()
+
+@login_required
+@render_to("overview/low_chart.html")
+def low_chart(request):
+    return locals()
+
+@login_required
+@render_to("overview/low_machine.html")
+def low_machine(request):
+    return locals()
+
+@login_required
+@render_to("overview/warning_count.html")
+def warning_count(request):
+    return locals()
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^overview/index/$', index, name='index'),
+    url(r'^overview/low_chart/$', low_chart, name='low_chart'),
+    url(r'^overview/low_machine/$', low_machine, name='low_machine'),
+    url(r'^overview/warning_count/$', warning_count, name='warning_count'),
+)

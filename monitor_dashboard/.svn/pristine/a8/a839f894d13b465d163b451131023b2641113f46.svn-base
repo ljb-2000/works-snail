@@ -1,0 +1,394 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json
+import datetime, time
+from utils.ctranslate import LazyEncoder
+from django.db.transaction import commit_on_success
+from utils.db_conn import DB
+from config import portal, graph
+from utils.common import get_product_list_by_user, get_history_data
+from releaseinfo import SPECIAL_USERS
+
+@login_required
+@csrf_exempt
+@render_to('monitor_query/query.html')
+def monitor_query_index(request):
+    return locals()
+
+@login_required
+@csrf_exempt
+def monitor_query_endpoint_list(request):
+    cnname = request.user.first_name
+    if request.user.username in SPECIAL_USERS:
+        cnname = u'张延礼'
+    products = get_product_list_by_user(cnname)
+    
+    is_null = request.GET.get('null',0)
+    iptxt = request.GET.get('iptxt','')
+    ipstr = request.GET.get('ipstr','')
+    ipset = request.GET.get('ipset','')
+    product_name_filter = request.GET.get('product_name','')
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength',10))
+    iDisplayStart = int(request.GET.get('iDisplayStart',0))
+    sEcho = int(request.GET.get('sEcho',1))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, 'ip', 'product_name', 'p_set', 'p_module']
+    order_item = order_list[iSortCol_0]
+    
+    if is_null:
+        total = 0
+        result_query = ()
+    else:
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        
+        sql_total = '''
+                    select count(*) as total
+                    from falcon_portal.host host, monitor.alarm_agentinfo alarm_agentinfo
+                    where host.ip = alarm_agentinfo.endpoint and alarm_agentinfo.product_name in (\'%s\')
+                    '''%"','".join(products)
+    
+        sql_query = '''
+            select host.id, host.ip, host.maintain_begin, alarm_agentinfo.product_name, alarm_agentinfo.p_set, alarm_agentinfo.p_module
+            from falcon_portal.host host, monitor.alarm_agentinfo alarm_agentinfo
+            where host.ip = alarm_agentinfo.endpoint and alarm_agentinfo.product_name in (\'%s\')
+            '''%"','".join(products)
+        
+        #product_name
+        if product_name_filter:
+            sql_total += " and alarm_agentinfo.product_name = \'%s\'"%product_name_filter
+            sql_query += " and alarm_agentinfo.product_name = \'%s\'"%product_name_filter
+            
+        #ip匹配查询
+        if iptxt:
+            ip_list = iptxt.split(',')
+            sql_total += " and host.ip in ('%s')"%"','".join(ip_list)
+            sql_query += " and host.ip in ('%s')"%"','".join(ip_list)
+        
+        #ip模糊查询
+        if ipstr:
+            sql_total += " and host.ip like \'%%%s%%\'"%ipstr
+            sql_query += " and host.ip like \'%%%s%%\'"%ipstr
+        
+        #set模糊查询
+        if ipset:
+            sql_total += " and alarm_agentinfo.p_set like \'%%%s%%\'"%ipset
+            sql_query += " and alarm_agentinfo.p_set like \'%%%s%%\'"%ipset
+          
+        #排序
+        if order_item:
+            if sSortDir_0 == "desc":
+                sql_query += ' order by %s desc'%order_item
+            else:
+                sql_query += ' order by %s'%order_item
+
+        result_total = portal_db_conn.query_all(sql_total)
+        total = result_total[0].get('total')
+        
+        sql_query += ' limit %s, %s'%(iDisplayStart, iDisplayLength)
+        result_query = portal_db_conn.query_all(sql_query)
+
+    #第一个参数表示需要分页的对象，可为list、tuple、QuerySet，只要它有count()或者__len__()函数
+    #第二个参数为每页显示记录数
+#    p = Paginator(rows, iDisplayLength)
+#    total = p.count #总数
+#    page_range = p.page_range #页数list
+#    page = p.page(page_range[iDisplayStart / iDisplayLength])
+#    object_list = page.object_list
+    
+    object_list = result_query
+    
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+
+    for obj in object_list:
+        #封装数组，按照列数填入对应的值
+        check_html = u"<input type='checkbox' value='%s' class='check-it'/>" % obj.get('ip')
+#        change_html = '<a style="color: blue;" href="javascript:void(0)" onclick="javascript:account_edit(\'%s\',\'%s\');">%s</a>' % (obj.id, obj.name, obj.name)
+        data = [check_html, obj.get('ip'), obj.get('product_name'), obj.get('p_set'), obj.get('p_module')]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+
+@login_required
+@csrf_exempt
+def monitor_query_counter_list(request):
+    user = request.user
+    endpoints = request.GET.get('endpoints','')
+    q = request.GET.get('q','')
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, 'counter']
+    order_item = order_list[iSortCol_0]
+    
+    if not endpoints:
+        total = 0
+        object_list = ()
+    else:
+        endpoint_list = endpoints.split(',')
+        
+        graph_db_conn = DB(
+            graph.GRAPH_DB_HOST,
+            graph.GRAPH_DB_PORT,
+            graph.GRAPH_DB_USER,
+            graph.GRAPH_DB_PASSWD,
+            graph.GRAPH_DB_NAME)
+        
+#        sql_total = '''select count(DISTINCT endpoint_counter.counter) as total from endpoint, endpoint_counter
+#                where endpoint_counter.endpoint_id=endpoint.id and endpoint.endpoint in ('%s') '''%"','".join(endpoint_list)
+#
+#        sql_query = '''select DISTINCT endpoint_counter.counter from endpoint, endpoint_counter
+#                where endpoint_counter.endpoint_id=endpoint.id and endpoint.endpoint in ('%s') '''%"','".join(endpoint_list)
+#
+#        if q:
+#            sql_total += "and endpoint_counter.counter like \'%%%s%%\'"%q
+#            sql_query += "and endpoint_counter.counter like \'%%%s%%\'"%q
+#        
+#        result_total = graph_db_conn.query_all(sql_total)
+#        total = result_total[0].get('total')
+#        
+#        sql_query += ' limit %s, %s'%(iDisplayStart, iDisplayLength)
+#        result_query = graph_db_conn.query_all(sql_query)
+#            
+#        object_list = result_query
+        
+        counter_set = set()
+        for index,ep in enumerate(endpoint_list):
+            sql_query = '''select endpoint_counter.counter from endpoint, endpoint_counter
+                    where endpoint_counter.endpoint_id=endpoint.id and endpoint.endpoint = '%s' '''%ep
+
+            if q:
+                sql_query += "and endpoint_counter.counter like \'%%%s%%\'"%q
+        
+            result_query = graph_db_conn.query_all(sql_query)
+            
+            result_set = set()
+            for r in result_query:
+                counter = r.get('counter')
+                result_set.add(counter)
+                
+            if index > 0:
+                counter_set = counter_set & result_set
+            else:
+                counter_set = result_set
+        
+        counter_list = list(counter_set)
+        counter_list.sort()
+        total = len(counter_list)
+        object_list = counter_list[iDisplayStart:iDisplayStart+iDisplayLength]
+    
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+    
+    for obj in object_list:
+        #封装数组，按照列数填入对应的值
+        check_html = u"<input type='checkbox' value='%s' class='plot-it'/>" % obj
+#        change_html = '<a style="color: blue;" href="javascript:void(0)" onclick="javascript:account_edit(\'%s\',\'%s\');">%s</a>' % (obj.id, obj.name, obj.name)
+        counter = '<a href="javascript:void(0);" onclick="fnShowChart(\'%s\')">%s</a>'%(obj,obj)
+        data = [check_html, counter]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+@render_to('monitor_query/newest_data.html')
+def monitor_newest_data(request):
+    return locals()
+
+@login_required
+@csrf_exempt
+def monitor_host_metric_list(request):
+    cnname = request.user.first_name
+    if request.user.username in SPECIAL_USERS:
+        cnname = u'张延礼'
+    products = get_product_list_by_user(cnname)
+    
+    is_null = request.GET.get('null',0)
+    iptxt = request.GET.get('iptxt','')
+    counterstr = request.GET.get('counterstr','')
+    ipstr = request.GET.get('ipstr','')
+    ipset = request.GET.get('ipset','')
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = ['e.endpoint', 'ec.counter', None, None, None, None, 'aa.product_name', 'aa.p_set', 'aa.p_module']
+    order_item = order_list[iSortCol_0]
+    
+    if is_null:
+        total = 0
+        result_query = ()
+    else:
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        
+        sql_total = '''
+                select count(ec.id) as total
+                from graph.endpoint_counter ec, graph.endpoint e, monitor.alarm_agentinfo aa
+                where ec.endpoint_id = e.id and e.endpoint = aa.endpoint and aa.product_name in (\'%s\')
+                '''%"','".join(products)
+    
+        sql_query = '''
+            select e.endpoint, ec.counter, aa.product_name, aa.p_set, aa.p_module
+            from graph.endpoint_counter ec, graph.endpoint e, monitor.alarm_agentinfo aa
+            where ec.endpoint_id = e.id and e.endpoint = aa.endpoint and aa.product_name in (\'%s\')
+            '''%"','".join(products)
+        
+        #ip匹配查询
+        if iptxt:
+            ip_list = iptxt.split(',')
+            sql_total += " and e.endpoint in ('%s')"%"','".join(ip_list)
+            sql_query += " and e.endpoint in ('%s')"%"','".join(ip_list)
+        
+        #ip模糊查询
+        if ipstr:
+            sql_total += " and e.endpoint like \'%%%s%%\'"%ipstr
+            sql_query += " and e.endpoint like \'%%%s%%\'"%ipstr
+        
+        #counter模糊查询
+        if counterstr:
+            sql_total += " and ec.counter like \'%%%s%%\'"%counterstr
+            sql_query += " and ec.counter like \'%%%s%%\'"%counterstr
+        
+        #set模糊查询
+        if ipset:
+            sql_total += " and aa.p_set like \'%%%s%%\'"%ipset
+            sql_query += " and aa.p_set like \'%%%s%%\'"%ipset
+            
+        #排序
+        if order_item:
+            if sSortDir_0 == "desc":
+                sql_query += ' order by %s desc'%order_item
+            else:
+                sql_query += ' order by %s'%order_item
+        
+        result_total = portal_db_conn.query_all(sql_total)
+        total = result_total[0].get('total')
+        
+        if iDisplayLength > 0:
+            sql_query += ' limit %s, %s'%(iDisplayStart, int(iDisplayLength))
+        result_query = portal_db_conn.query_all(sql_query)
+        
+    object_list = result_query
+    
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+
+    for obj in object_list:
+        #封装数组，按照列数填入对应的值
+#        change_html = '<a style="color: blue;" href="javascript:void(0)" onclick="javascript:account_edit(\'%s\',\'%s\');">%s</a>' % (obj.id, obj.name, obj.name)
+        ip = obj.get('endpoint')
+        counter = obj.get('counter')
+        counter_html = '<a href="javascript:void(0);" onclick="ajaxShowChart(\'%s\',\'%s\')">%s</a>'%(ip,counter,counter)
+        
+        product_name = u"<span>%s</span>"%obj.get('product_name')
+        p_set = u"<span>%s</span>"%obj.get('p_set')
+        p_module = u"<span>%s</span>"%obj.get('p_module')
+        
+        last_value1 = ''
+        last_value2 = ''
+        last_delta = ''
+        
+        try:
+            last_list = get_history_data(ip, counter)
+            if last_list:
+                last_list.reverse()
+                
+                if len(last_list) >= 4:
+                    last1 = last_list[0]
+                    last_value1 = last1.get('value')
+                    if last_value1 == None:
+                        last1 = last_list[1]
+                        last_value1 = last1.get('value')
+                        if last_value1 == None:
+                            last1 = last_list[2]
+                            last_value1 = last1.get('value')
+                            last2 = last_list[3]
+                        else:
+                            last2 = last_list[2]
+                    else:
+                        last2 = last_list[1]
+                    last_value2 = last2.get('value')
+                    last_delta = last_value1 - last_value2
+
+                elif len(last_list) >= 2:
+                    last1 = last_list[0]
+                    last_value1 = last1.get('value')
+                    if last_value1 == None:
+                        last1 = last_list[1]
+                        last_value1 = last1.get('value')
+                        if last_value1 == None:
+                            last1 = last_list[2]
+                            last_value1 = last1.get('value')
+                            last_value2 = ''
+                            last_delta = ''
+                        else:
+                            last2 = last_list[2]
+                            last_value2 = last2.get('value')
+                            last_delta = last_value1 - last_value2
+                    else:
+                        last2 = last_list[1]
+                        last_value2 = last2.get('value')
+                        last_delta = last_value1 - last_value2
+        except:
+            last_value1 = ''
+            last_value2 = ''
+            last_delta = ''
+        
+        if isinstance(last_delta, float):
+            last_delta = '%.2f'%last_delta
+        
+        _time = ''
+        if last_value1 != '':
+            timeStamp = last1.get('timestamp')
+            timeArray = time.localtime(timeStamp)
+            _time = time.strftime("%Y-%m-%d %H:%M", timeArray)
+            
+        data = [ip, counter_html, _time, last_value2, last_value1, last_delta, product_name, p_set, p_module, ]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^monitor_query/query/$', monitor_query_index, name='monitor_query_index'),
+    url(r'^monitor_query/endpoint_list/$', monitor_query_endpoint_list, name='monitor_query_endpoint_list'),
+    url(r'^monitor_query/counter_list/$', monitor_query_counter_list, name='monitor_query_counter_list'),
+
+    url(r'^monitor_query/newest_data/$', monitor_newest_data, name='monitor_newest_data'),
+    url(r'^monitor_query/host_metric_list/$', monitor_host_metric_list, name='monitor_host_metric_list'),
+)

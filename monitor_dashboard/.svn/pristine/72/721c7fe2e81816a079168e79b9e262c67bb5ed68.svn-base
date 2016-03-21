@@ -1,0 +1,1220 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-04 09:57:45
+ * @msg     屏幕展示页js
+ */
+
+$(function () {
+
+    // 选择屏幕动画效果
+    (function () {
+        $('.game-wrap li').hover(function () {
+            var e = $(this).find('.showbar');
+
+            e.next('.layer').stop().animate({
+                "bottom": "0"
+            }, 300);
+        }, function () {
+            var e = $(this).find('.showbar');
+
+            e.next('.layer').stop().animate({
+                "bottom": "-74px"
+            }, 300);
+        });
+    })();
+
+    // 进入屏幕效果
+    $('.game-wrap .screen-doc').on('click', function () {
+        var that = $(this),
+            productName = that.parent().prev('.showbar').find('b').text(),
+            txt = null;
+
+        $('.screen-product').html(productName);
+
+        $('#search-screen').val('');
+
+        refreshList(productName, txt, that);
+    });
+
+    // 查询屏幕ajax
+    $('#search-screen').on('input', function () {
+        var txt = $(this).val(),
+            productName = $('.screen-product').text();
+
+        refreshList(productName, txt);
+    });
+
+    // 刷新屏幕列表
+    function refreshList(productName, txt, that) {
+        $.ajax({
+                url: '/screen_list/ajax_get_screens_by_product/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_name: productName,
+                    txt: txt
+                }
+            })
+            .done(function (data) {
+                var screenList = '';
+
+                data.forEach(function(e) {
+                    screenList += '<li class="list-group-item"><input type="checkbox" value="' + e.id + '" data-name="' + e.name + '"><a href="#" data-tab="' + e.id + '">' + e.name + '</a></li>';
+                });
+
+                $('.screen-list-wrap').empty().append(screenList);
+
+                if (!txt && that) {
+                    that.parents('.game-wrap').slideUp(400).next().show();
+                }
+
+            })
+            .fail(function () {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+    // 返回产品列表
+    $('#go_back_screen').on('click', function () {
+        $(this).parents('.screen-wrap').slideUp(400).prev().slideDown(400);
+    });
+
+    // 增加屏幕标签页
+    function addTab(tabArr, valueArr, dataArr, chartArr) {
+        var obj = $('#my_tabs a[href="#' + tabArr + '"]'),
+            tabNum = $('#my_tabs').find('.atab').length;
+
+        if (obj.length) {
+            obj.tab('show');
+
+            $('.screen-wrap').slideUp(400).prev().slideDown(400);
+        } else if (tabNum === 5) {
+            showAlert('jNotify', '开启屏幕总数不能超过5个 :(', true);
+        } else {
+            $('#my_tabs').append('<li role="presentation" style="position: relative;">\
+                    <i class="glyphicon glyphicon-remove mytab-close"></i>\
+                    <a class="atab" href="#' + tabArr + '" aria-controls="' + tabArr + '" role="tab" data-toggle="tab" style="padding-right: 24px;">\
+                        ' + valueArr + '\
+                    </a>\
+                </li>');
+
+            $('#my_contents').append('<div role="tabpanel" class="tab-pane" id="' + tabArr + '"></div>');
+
+            $('#my_tabs a:last').tab('show');
+
+            var $tab = $('#' + tabArr),
+                warp = null;
+
+            $tab.append(dataArr);
+
+            autoChartBar();
+
+            warp = $tab.find('.charts-wrap');
+
+
+            chartArr.forEach(function (data, index) {
+                var param = {
+                        header: data[0].header,
+                        chartId: data[0].g_id,
+                        graphId: data[0].graph_id,
+                        graphType: data[0].graph_type
+                    },
+                    id = tabArr + '_' + param.graphId + '_' + param.chartId + '_' + param.graphType;
+
+                createChart(warp, index, index); // 渲染chart html模板 
+
+                var chart = $('#' + tabArr).find('div[data-index="' + index + '"]');
+
+                chart.find('.panel-title').html(param.header).prop('title', param.header);
+                chart.find('.chart-box').prop('id', id);
+                chart.find('.view-larger').prop('href', '/chart/big/?id=' + param.chartId + '&graph_type=' + param.graphType);
+
+                setCharts(id, data); // 渲染chart 绘图模板
+
+                setList(id, data); // 渲染 chart底部list
+            });
+
+            $('.screen-wrap').slideUp(400).prev().slideDown(400);
+        }
+    }
+
+    // 点击屏幕列表ajax
+    $(document).off('click', '.screen-list-wrap a').on('click', '.screen-list-wrap a', function () {
+        var that = $(this),
+            tabArr = that.attr('data-tab'),
+            productName = $('.screen-product').html(),
+            valueArr = that.text() + '--' + productName;
+
+        showScreen(tabArr, valueArr);
+    });
+
+    // 单屏幕tab
+    function showScreen(tabArr, valueArr) {
+        $.ajax({
+                url: '/screen_list/ajax_show_screen/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'screen_id': tabArr
+                }
+            })
+            .done(function (data) {
+                var dataArr = data.html,
+                    chartArr = data.series_list;
+
+                addTab(tabArr, valueArr, dataArr, chartArr);
+
+                $('.game-wrap').slideDown(400);
+                $('.screen-loading').addClass('hide');
+            })
+            .fail(function () {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+    // 屏幕配置跳转ajax
+    (function () {
+        var path = location.search;
+
+        if (path) {
+            var param = path.substring(path.indexOf('screen_id=')),
+                paramArr = param.split('&'),
+                tabArr = paramArr[0].split('='),
+                valueArr = paramArr[1].split('=');
+
+            $('.game-wrap').slideUp(400);
+            $('.screen-loading').removeClass('hide');
+
+            showScreen(tabArr[1], decodeURI(valueArr[1]));
+        }
+    })();
+
+    // 点击tab刷新charts
+    $(document).on('click', '#my_tabs .atab', function () {
+        var e = $(this);
+
+        modifyParam(e);
+    });
+
+    // 渲染chart html模板
+    function createChart(warp, index, num) {
+        var html = '<div class="c-highchart panel panel-default" data-index=' + index + '>\
+            <div class="panel-heading clearfix">\
+                <h3 class="chart-title panel-title pull-left"></h3>\
+                <div class="pull-right">\
+                    <span class="edit-title glyphicon glyphicon-edit" title="编辑标题" data-toggle="modal" data-target="#edit_title"></span>&nbsp;&nbsp;\
+                    <a class="view-larger glyphicon glyphicon-zoom-in" target="_blank" title="查看大图"></a>&nbsp;&nbsp;\
+                    <span class="get-sum glyphicon glyphicon-stats" title="求和"></span>&nbsp;&nbsp;\
+                    <span class="delete-chart glyphicon glyphicon-remove" title="删除"></span>\
+                </div>\
+            </div>\
+            <div class="panel-body">\
+                <div class="chart-box">\
+                </div>\
+                <table class="table chart-table table-striped table-hover hide" style="color:#63524D;">\
+                    <thead>\
+                        <tr>\
+                            <th width="250px"></th>\
+                            <th width="80px">last</th>\
+                            <th width="80px">min</th>\
+                            <th width="80px">avg</th>\
+                            <th width="80px">max</th>\
+                        </tr>\
+                    </thead>\
+                    <tbody class="chart-list">\
+                    </tbody>\
+                </table>\
+            </div>\
+        </div>',
+            box = warp.find('.c-highchart');
+
+        if (!box.length) {
+            warp.append(html);
+        } else {
+            if (num === 0) {
+                box.eq(0).before(html);
+            } else {
+                box.eq(num - 1).after(html);
+            }
+        }
+    }
+
+    // 渲染chart 绘图模板
+    function setCharts(id, data, bgcolor) {
+        $('#' + id).highcharts({
+            chart: {
+                type: 'line',
+                zoomType: 'x',
+                backgroundColor: bgcolor || '#fff'
+            },
+            tooltip: {
+                xDateFormat: '%Y-%m-%d %H:%M:%S',
+                valueDecimals: 2
+            },
+            xAxis: {
+                type: 'datetime',
+                dateTimeLabelFormats: {
+                    hour: '%H:%M'
+                },
+                minRange: 1000, // 不能放大超过1s
+                minTickInterval: 1000 // 放大间隔最小为1s
+            },
+            yAxis: {
+                max: data[0].y_max,
+                min: data[0].y_min
+            },
+            series: data,
+            title: {
+                text: null
+            }
+        });
+    }
+
+    // 渲染 chart底部list
+    function setList(id, data) {
+        var chartList = $('#' + id).next().find('.chart-list'),
+            list = '';
+
+        data.forEach(function (e) {
+            list += '<tr>\
+                <td>' + e.name + '</td>\
+                <td>' + Number(e.last).toFixed(2) + '</td>\
+                <td>' + Number(e.min).toFixed(2) + '</td>\
+                <td>' + Number(e.avg).toFixed(2) + '</td>\
+                <td>' + Number(e.max).toFixed(2) + '</td>\
+            </tr>';
+        });
+
+        chartList.append(list);
+    }
+
+    // 关闭标签页
+    function deleteTab(that) {
+        var e = that.parent(),
+            prev = e.prev(),
+            tabArr = that.next().attr('aria-controls'),
+            panel = $('#my_contents').find('#' + tabArr);
+
+        e.remove();
+        panel.remove();
+        prev.find('a').tab('show');
+    }
+
+    $(document).on('click', '.mytab-close', function () {
+        deleteTab($(this));
+    });
+
+    // 右侧选中栏高度设定
+    function autoChartBar() {
+        var tabH = $(window).height();
+
+        $(".screen-tool-bar").height(tabH);
+
+        $(window).resize(function() {
+            var tabH = $(window).height();
+
+            $(".screen-tool-bar").height(tabH);
+        });
+    }
+
+    // 右侧栏展开隐藏
+    $(document).on("click", ".left-menu", function () {
+        $(".screen-tool-bar").stop().animate({
+            "right": "-345px"
+        }, 600);
+    });
+
+    $(document).on("click", ".screen-tool-menu", function () {
+        $(".screen-tool-bar").stop().animate({
+            "right": "0"
+        }, 600);
+    });
+
+    // 开启关闭自动切换tab
+    (function () {
+        var t = setInterval(autoTab, 300000);
+
+        $('.time-switch').on('click', function () {
+            var isChecked = $(this).find('input').prop('checked');
+
+            if (!isChecked) {
+                clearInterval(t);
+            } else {
+                t = setInterval(autoTab, 300000);
+            }
+        });
+
+        function autoTab() {
+            var tabNow = $('#my_tabs li.active'),
+                index = tabNow.index(),
+                len = $('#my_tabs li').length,
+                scrollTop = $(window).scrollTop();
+
+            tabNow.attr('data-top', scrollTop);
+
+            if (index !== len && index !== 1) {
+                tabNow.next('li').find('a').trigger('click');
+
+                var top = $('#my_tabs li.active').attr('data-top');
+
+                $(window).scrollTop(top);
+            }
+
+            if (index === len) {
+                $('#my_tabs a').eq(1).trigger('click');
+
+                var top = $('#my_tabs li.active').attr('data-top');
+
+                $(window).scrollTop(top);
+            }
+        }
+    })();
+
+    // 关闭单个chart
+    $(document).on('click', '.delete-chart', function () {
+        var parent = $(this).parents('.c-highchart'),
+            parents = $(this).parents('.tab-pane'),
+            charts = parents.find('.c-highchart'),
+            warp = parents.find('.charts-wrap'),
+            tabArr = parents.prop('id'),
+            id = parent.find('.chart-box').prop('id'),
+            screenId = $(this).parents('.tab-pane').prop('id'),
+
+            mum = $('#' + screenId).find('.screen-counter-table tbody'),
+            obj = $('input[value = "' + id + '"]'),
+            num = obj.parents('tr').prevAll('.checknow').length,
+
+            index = charts.last().attr('data-index'),
+            obj2 = mum.find('tr').eq(index).next('.checknow'),
+            chartId = obj2.find(':checked').prop('value'),
+            nextIndex = obj2.index(),
+            nextnum = obj2.prevAll('.checknow').length - 1;
+
+
+        parent.fadeOut('400', function () {
+            $(this).remove();
+
+            obj.prop('checked', false).parents('tr').removeClass('checknow');
+
+            $('.chart-all-' + screenId).prop('checked', false);
+
+            if (num <= 4 && mum.find('.checknow').length >= 4 && charts.length <= 4) {
+                var pList = getParam(tabArr);
+
+                appendChart(chartId, tabArr, warp, nextIndex, nextnum, pList);
+            }
+        });
+    });
+
+    // 获取参数 
+    function getParam(tabArr) {
+        var obj = $('#' + tabArr),
+            list = {
+                start: obj.find('.time-span').val(),
+                cf: obj.find('.show-type').val(),
+                sum: obj.find('.sum-switch .active input').attr('data-value')
+            }
+
+        return list;
+    }
+
+    // 修改参数ajax
+    (function () {
+        $(document).on('change', '.time-span, .show-type', function () {
+            var e = $(this);
+
+            modifyParam(e);
+        });
+
+        $(document).on('click', '.sum-switch label', function () {
+            var e = $(this);
+
+            modifyParam(e, true);
+        });
+    })();
+
+    function modifyParam(e, sum) {
+        e.hasClass('atab') ? tabArr = e.attr('aria-controls') : tabArr = e.parents('.tab-pane').prop('id');
+
+        var $tab = $('#' + tabArr),
+            warp = $tab.find('.charts-wrap'),
+            chartLen = warp.find('.chart-box'), 
+            pList = getParam(tabArr),
+            idTable = $tab.find('.screen-counter-table tbody'),
+            idChecked = idTable.find(':checked'),
+            idLen = idChecked.length,
+            i;
+
+        if (sum) {
+            var isChecked = e.find('input').attr('data-value');
+
+            pList.sum = isChecked;
+        }
+
+        warp.empty();
+
+        for (i = 0; i < idLen; i++) {
+            var item = idChecked.eq(i),
+                chartId = item.prop('value'),
+                index = item.parents('tr').index(),
+                num = item.parents('tr').prevAll('.checknow').length;
+
+            appendChart(chartId, tabArr, warp, index, num, pList);
+
+            // 加载图片数量
+            if (i === chartLen.length - 1) {
+                break;
+            }
+        }
+    }
+
+    // 滚动加载
+    (function () {
+        var isScroll = true;
+
+        $(window).scroll(function () {
+            var range = 50, // 距下边界长度  
+                totalheight = 0,
+                srollPos = $(window).scrollTop(); // 滚动条距顶部距离(页面超出窗口的高度)  
+
+            if ($('#my_tabs li.active').index() !== 1) {
+                totalheight = parseFloat($(window).height()) + parseFloat(srollPos);
+
+                if (($(document).height() - range) <= totalheight) {
+
+                    var tabNow = $('#my_tabs li.active'),
+                        tabArr = tabNow.find('a').attr('aria-controls'),
+                        $tab = $('#' + tabArr),
+                        warp = $tab.find('.charts-wrap'),
+                        charts = $tab.find('.chart-box'),
+                        chartsLen = charts.length,
+                        idTable = $tab.find('.screen-counter-table tbody'),
+                        idChecked = idTable.find(':checked'),
+                        idLen = idChecked.length,
+                        idArr = [],
+                        i;
+
+                    if (idLen - chartsLen > 0 && isScroll) {
+                        for (i = 0; i < idLen - chartsLen; i++) {
+                            var cid = idChecked.eq(chartsLen + i).prop('value');
+
+                            idArr.push(cid);
+
+                            if (i === 3) {
+                                break;
+                            }
+                        };
+
+                        idArr.forEach(function (e) {
+                            var index = $('input[value="' + e + '"]').parents('tr').prevAll().length,
+                                num = $('input[value="' + e + '"]').parents('tr').prevAll('.checknow').length,
+                                pList = getParam(tabArr);
+
+                            appendChart(e, tabArr, warp, index, num, pList);
+                        });
+                    }
+                }
+            }
+        });
+    })();
+
+    // 插图ajax
+    function appendChart(chartId, tabArr, warp, index, num, pList) {
+        createChart(warp, index, num);
+
+        $.ajax({
+                url: '/screen_list/ajax_get_graph_data/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    g_str: chartId,
+                    start: pList.start,
+                    cf: pList.cf,
+                    sum: pList.sum
+                }
+            })
+            .done(function (data) {
+                var param = {
+                        header: data[0].header,
+                        chartId: data[0].g_id,
+                        graphId: data[0].graph_id,
+                        graphType: data[0].graph_type
+                    },
+                    id = tabArr + '_' + param.graphId + '_' + param.chartId + '_' + param.graphType;
+
+                var chart = $('#' + tabArr).find('div[data-index="' + index + '"]');
+
+                chart.find('.panel-title').html(param.header).prop('title', param.header);
+                chart.find('.chart-box').prop('id', id);
+                chart.find('.view-larger').prop('href', '/chart/big/?id=' + param.chartId + '&graph_type=' + param.graphType);
+
+                setCharts(id, data); // 渲染chart 绘图模板
+
+                setList(id, data); // 渲染 chart底部list
+
+                if ($('#' + tabArr).find('.show-legend').hasClass('active')) {
+                    chart.find('.chart-table').removeClass('hide');
+                } else {
+                    chart.find('.chart-table').addClass('hide');
+                }
+            })
+            .fail(function () {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+    // 侧边栏单选选中
+    (function() {
+        $(document).on('click', '.chart-it', function () {
+            var e = $(this),
+                chartId = e.prop('value'),
+                tabNow = $('#my_tabs li.active'),
+                tabArr = tabNow.find('a').attr('aria-controls'),
+                warp = $('#' + tabArr).find('.charts-wrap');
+
+            if (!e.prop('checked')) {
+                $('#' + chartId).parents('.c-highchart').find('.delete-chart').trigger('click');
+            } else {
+                var index = e.parents('tr').prevAll().length,
+                    num = e.parents('tr').prevAll('.checknow').length;
+
+                if (!warp.find('div[data-index="' + index + '"]').length) {
+                    var pList = getParam(tabArr);
+
+                    appendChart(chartId, tabArr, warp, index, num, pList);
+                }
+            }
+        });
+    })();
+
+    // 侧边栏全选反选
+    (function() {
+        $(document).on('click', '.chart-all', function () {
+            var e = $(this),
+                tabArr = e.parents('.screen-tool-bar').parent().prop('id'),
+                warp = $(this).parents('.screen-tool-bar').siblings('.charts-wrap'),
+                obj = e.parents('.screen-counter-table').find('tbody tr'),
+                i,
+                len;
+
+            if (!e.prop('checked')) {
+                warp.find('.c-highchart').remove();
+            } else {
+                warp.find('.c-highchart').remove();
+
+                for (i = 0, len = obj.length; i < len; i++) {
+                    var chartId = obj.eq(i).find(':checkbox').prop('value'),
+                        pList = getParam(tabArr),
+                        index = i,
+                        num = i;
+
+                    appendChart(chartId, tabArr, warp, index, num, pList);
+
+                    if (i === 3) {
+                        break;
+                    }
+                }
+            }
+        });
+    })();
+
+    // 显示隐藏legend
+    $(document).on('click', '.legend-switch label', function () {
+        var e = $(this),
+            parents = e.parents('.tab-pane');
+
+        if (e.hasClass('hide-legend')) {
+            parents.find('.chart-table').addClass('hide');
+        } else {
+            parents.find('.chart-table').removeClass('hide');
+        }
+    });
+
+    // 单图求和
+    $(document).on('click', '.get-sum', function () {
+        var e = $(this);
+
+        if (e.hasClass('on')) {
+            getChart(e, 'sum', 'off');
+
+            e.removeClass('on');
+        } else {
+            getChart(e, 'sum', 'on');
+
+            e.addClass('on');
+        }
+    });
+
+    // 单图操作ajax
+    function getChart(e, type, value) {
+        var tabArr = e.parents('.tab-pane').prop('id'),
+            chart = e.parents('.c-highchart'),
+            chartId = chart.find('.chart-box').prop('id'),
+            pList = getParam(tabArr);
+
+        pList[type] = value;
+
+        $.ajax({
+                url: '/screen_list/ajax_get_graph_data/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    g_str: chartId,
+                    start: pList.start,
+                    cf: pList.cf,
+                    sum: pList.sum
+                }
+            })
+            .done(function (data) {
+                setCharts(chartId, data); // 渲染chart 绘图模板
+
+                setList(chartId, data); // 渲染 chart底部list
+
+                if ($('#' + tabArr).find('.show-legend').hasClass('active')) {
+                    chart.find('.chart-table').removeClass('hide');
+                } else {
+                    chart.find('.chart-table').addClass('hide');
+                }
+            })
+            .fail(function () {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+
+    function newRequest(currentIndex, productName, checkedNum) {
+        if (currentIndex >= checkedNum.length) {
+            $('#go_screen').button('reset');
+
+            return;
+        }
+
+        var obj = checkedNum.eq(currentIndex),
+            valueArr = obj.attr('data-name') + '--' + productName,
+            tabArr = obj.prop('value');
+
+        $('#go_screen').button('loading');
+
+        $.ajax({
+                url: '/screen_list/ajax_show_screen/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'screen_id': tabArr
+                }
+            })
+            .done(function (data) {
+                currentIndex++;
+
+                var dataArr = data.html,
+                    chartArr = data.series_list;
+
+                addTab(tabArr, valueArr, dataArr, chartArr);
+
+                newRequest(currentIndex, productName, checkedNum);
+            })
+            .fail(function () {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+    // 多选屏幕
+    $(document).on('click', '#go_screen', function () {
+        var wrap = $('.screen-list-wrap'),
+            checkedNum = $('.screen-list-wrap').find(':checked'),
+            tabNum = $('#my_tabs').find('.atab'),
+            i,
+            len;
+
+        if (checkedNum.length + tabNum.length > 5) {
+            showAlert('jNotify', '开启屏幕总数不能超过5个 :(', true);
+
+            return false;
+        } else {
+            var productName = $('.screen-product').html(),
+                currentIndex = 0; // 退出递归的条件变量
+
+            newRequest(currentIndex, productName, checkedNum);
+        }
+    });
+
+    // chart搜索
+    $(document).on('input', '.chart-search', function () {
+        var e = $(this),
+            ids = e.parent().find('.chart-ids').val(),
+            txt = e.val(),
+            tabArr = e.parents('.screen-tool-bar').parent().prop('id'),
+            url = '/screen_list/ajax_filter_graph/',
+            param = {
+                graph_txt: txt,
+                screen_id: tabArr,
+                ids: ids
+            };
+
+        autoQuery(e, url, param);
+
+        $(document).off('click', '.query-item').on('click', '.query-item', function () {
+            var id = $(this).attr('data-id'),
+                searchObj = $('input[value="' + id + '"]').parents('tr'),
+                table = $('#' + tabArr).find('.screen-counter-table'),
+                top = searchObj.prevAll().length * 39;
+ 
+            table.find('tr').removeClass('search-now');
+
+            searchObj.addClass('search-now');
+
+            table.scrollTop(top + 39);
+        });
+    });
+
+    // 全屏按钮
+    $(document).on('click', '.full-switch .btn', function () {
+        var docElm = document.documentElement;
+
+        //W3C  
+        if (docElm.requestFullscreen) {  
+            docElm.requestFullscreen();  
+        }
+
+        //FireFox  
+        else if (docElm.mozRequestFullScreen) {  
+            docElm.mozRequestFullScreen();  
+        }
+
+        //Chrome等  
+        else if (docElm.webkitRequestFullScreen) {  
+            docElm.webkitRequestFullScreen();  
+        }
+
+        //IE11
+        else if (elem.msRequestFullscreen) {
+          elem.msRequestFullscreen();
+        }
+    });
+
+    document.addEventListener("fullscreenchange", function () {  
+        runFullScreen();
+    }, false);  
+
+    document.addEventListener("mozfullscreenchange", function () {  
+        runFullScreen();
+    }, false);  
+
+    document.addEventListener("webkitfullscreenchange", function () {  
+        runFullScreen();
+    }, false);
+
+    document.addEventListener("msfullscreenchange", function () {
+        runFullScreen();
+    }, false);
+
+    // 全屏执行函数
+    function runFullScreen() {
+        $('#my_tabs, .h-nav, .header, .param-form, .screen-tool-menu').toggleClass('hide');
+        $('.u-chart').toggleClass('m0');
+        $('.charts-wrap').toggleClass('mh1000');
+    }
+
+    // 标题模糊查询
+    $(document).on('input', '.title-lastname', function () {
+        var e = $(this),
+            value = e.val(),
+            url = '/screen_list/ajax_get_plugin/';
+
+        if (value.indexOf('@') === 0) {
+            var txt = value.substring(1),
+                param = {
+                    plugin_txt: txt,
+                    id_str: $('#edit_chart_id').val()
+                };
+
+            autoQuery(e, url, param);
+        }
+    });
+
+    // 编辑标题
+    $(document).on('click', '.edit-title', function () {
+        var chartId = $(this).parents('.c-highchart').find('.chart-box').prop('id'),
+            firstName = $('.title-firstname'),
+            lastName = $('.title-lastname');
+
+        firstName.html('');
+        lastName.val('');
+
+        $('#edit_chart_id').val(chartId);
+
+        $.ajax({
+            url: '/screen_list/graph_name_edit/?id_str=' + chartId,
+            type: 'GET',
+            dataType: 'json'
+        })
+        .done(function (data) {
+            firstName.html(data.title);
+
+            lastName.val(data.name);
+        })
+        .fail(function () {
+            showAlert('jError', '出错了 :(', false);
+        });
+    });
+
+    // 保存标题
+    $(document).on('click', '#confirm_edit_title', function () {
+        var lastName = $('.title-lastname').val().trim(),
+            chartId = $('#edit_chart_id').val();
+
+        if (!lastName) {
+            showAlert('jNotify', '请输入标题名称 :(', true);
+
+            return false;
+        }
+
+        $.ajax({
+            url: '/screen_list/graph_name_edit/',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                id_str: chartId,
+                name: lastName
+            }
+        })
+        .done(function (data) {
+            if (data.ret === 1) {
+                var title = data.title + '_' + data.name;
+
+                $('#' + chartId).parents('.c-highchart').find('.chart-title').html(title);
+                $('input:checkbox[value="' + chartId + '"]').parent().next().text(title);
+
+                showAlert('jSuccess', data.msg, true);
+
+                $('#edit_title').modal('hide');
+            } else {
+                showAlert('jError', data.msg, false);
+            }
+        })
+        .fail(function () {
+            showAlert('jError', '出错了 :(', false);
+        });
+    });
+
+    // 提示信息
+    $('.title-lastname').tooltip({
+        trigger: 'focus'
+    });
+
+    /*// 圆形统计图 cpu 内存
+    $('#circle_status_cpu').circliful({
+        percent: 12
+    });
+
+    $('#circle_status_room').circliful({
+        percent: 85,
+        foregroundColor: '#d9534f'
+    });
+
+    // 开启popover
+    $('.timeline-content').popover();
+
+    // 状态统计图
+    var statusData = [{"graph_id": "4627", "g_id": "365308", "min": 1.0, "last": 1.0, "max": 7.0, "y_max": null, "pointInterval": 60000, "cf": "AVERAGE", "name": "总在线", "header": "\u97f3\u4e50\u4fa0_\u5728\u7ebf\u4eba\u6570", "pointStart": 1457101620000, "marker": {"enabled": false}, "graph_type": "h", "avg": 3.4237288135593222, "data": [7.0, 6.0, 5.0, 5.0, 5.0, 5.0, 6.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 4.0, 4.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 4.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "color": "#7cb5ec", "y_min": null}];
+    
+    setCharts('chartline_1', statusData, '#F5F5F5');
+    setCharts('chartline_2', statusData, '#F5F5F5');
+    $('#chartline_3').circliful({
+        percent: 24
+    });*/
+
+    // 打开状态tab
+    $('.game-wrap .health-doc').on('click', getStatusData);
+
+    // 获取状态标签页数据
+    function getStatusData() {
+        var e = $(this),
+            productName = e.parent().prev('.showbar').find('.text b').text(),
+            tabArr = productName + '_' + e.parents('li').index(),
+            valueArr = '业务健康状态--' + productName;
+
+        // TODO AJAX
+        var dataArr = {
+            category: 0, // 运维为0, 运营为1
+            area: {
+                华东: [['机房A', '300ms', '4%'], ['机房B', '300ms', '4%']],
+                华南: [['机房A', '300ms', '4%'], ['机房B', '300ms', '4%']],
+                华西: [['机房A', '300ms', '4%'], ['机房B', '300ms', '4%']],
+                华北: [['机房A', '300ms', '4%'], ['机房B', '300ms', '4%']],
+                华中: [['机房A', '300ms', '4%'], ['机房B', '300ms', '4%']]
+            },
+            percent: {
+                cpu: 12,
+                room: 65
+            },
+            status: [{
+                step: 2,
+                module: [{
+                    name: '应用',
+                    tip: '异常IP为：<span class="text-danger">127.0.0.1</span>'
+                }]
+            }]
+        };
+
+        var dataArr2 = {
+            category: 1, // 运维为0, 运营为1
+            area: {
+                华东: [['机房A', '300ms', '4%'], ['机房B', '300ms', '4%']],
+                华南: [['机房A', '300ms', '4%'], ['机房B', '300ms', '4%']],
+                华西: [['机房A', '300ms', '4%'], ['机房B', '300ms', '4%']],
+                华北: [['机房A', '300ms', '4%'], ['机房B', '300ms', '4%']],
+                华中: [['机房A', '300ms', '4%'], ['机房B', '300ms', '4%']]
+            },
+            msg: [['酒仙桥机房故障', '2016-03-04 15:53'], ['酒仙桥机房故障', '2016-03-04 15:53'], ['酒仙桥机房故障', '2016-03-04 15:53'], ['酒仙桥机房故障', '2016-03-04 15:53'], ['酒仙桥机房故障', '2016-03-04 15:53']],
+            online: [{"graph_id": "4627", "g_id": "365308", "min": 1.0, "last": 1.0, "max": 7.0, "y_max": null, "pointInterval": 60000, "cf": "AVERAGE", "name": "总在线", "header": "\u97f3\u4e50\u4fa0_\u5728\u7ebf\u4eba\u6570", "pointStart": 1457101620000, "marker": {"enabled": false}, "graph_type": "h", "avg": 3.4237288135593222, "data": [7.0, 6.0, 5.0, 5.0, 5.0, 5.0, 6.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 4.0, 4.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 4.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "color": "#7cb5ec", "y_min": null}],
+            people: [{"graph_id": "4627", "g_id": "365308", "min": 1.0, "last": 1.0, "max": 7.0, "y_max": null, "pointInterval": 60000, "cf": "AVERAGE", "name": "总人数", "header": "\u97f3\u4e50\u4fa0_\u5728\u7ebf\u4eba\u6570", "pointStart": 1457101620000, "marker": {"enabled": false}, "graph_type": "h", "avg": 3.4237288135593222, "data": [7.0, 6.0, 5.0, 5.0, 5.0, 5.0, 6.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 4.0, 4.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 4.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "color": "#7cb5ec", "y_min": null}],
+            percent: {
+                total: 24
+            }
+        };
+
+        Math.random() >= 0.5 ? addStatusTab(tabArr, valueArr, dataArr) : addStatusTab(tabArr, valueArr, dataArr2);
+    }
+
+    // 添加状态标签页
+    function addStatusTab(tabArr, valueArr, dataArr) {
+        var obj = $('#my_tabs a[href="#' + tabArr + '"]');
+
+        if (obj.length) {
+            obj.tab('show');
+        } else {
+            $('#my_tabs').append('<li role="presentation" style="position: relative;">\
+                    <i class="glyphicon glyphicon-remove mytab-close"></i>\
+                    <a href="#' + tabArr + '" aria-controls="' + tabArr + '" role="tab" data-toggle="tab" style="padding-right: 24px;">\
+                        ' + valueArr + '\
+                    </a>\
+                </li>');
+
+            $('#my_contents').append('<div role="tabpanel" class="tab-pane status-pannel" id="' + tabArr + '"></div>');
+
+            $('#my_tabs a:last').tab('show');
+        }
+
+        var $wrap = $('#' + tabArr);
+
+        if (dataArr.category === 0) {
+            setBaseHtml($wrap, tabArr); // 渲染基础模板
+            showRoom($wrap, dataArr); // 渲染各区域
+            showCircle(tabArr, dataArr); // 渲染圆形图
+            showErrorStatus($wrap, dataArr); // 渲染异常状态
+        } else {
+            setBaseHtml2($wrap, tabArr);
+            showRoom($wrap, dataArr);
+            showStatusMsg($wrap, dataArr) // 渲染实时信息
+            setCharts(tabArr + '_chartline_1', dataArr.online, '#F5F5F5'); // 渲染总在线
+            setCharts(tabArr + '_chartline_2', dataArr.people, '#F5F5F5'); // 渲染总人数
+            showCircle2(tabArr, dataArr);
+        }
+    }
+
+    // 状态基础模板 -- 运维人员显示
+    function setBaseHtml(wrap, tabArr) {
+        var html = '<div class="product-status-box clearfix">\
+                <div class="status-left pull-left col-sm-6">\
+                </div>\
+                <div class="status-right pull-left col-sm-6">\
+                    <div class="col-sm-6">\
+                        <div id="circle_cpu_' + tabArr +'" class="circle-status"></div>\
+                        <div class="text-center circle-name">CPU</div>\
+                    </div>\
+                    <div class="col-sm-6">\
+                        <div id="circle_room_' + tabArr + '" class="circle-status"></div>\
+                        <div class="text-center circle-name">内存</div>\
+                    </div>\
+                </div>\
+            </div>\
+            <div class="timeline clearfix">\
+                <div class="timeline-item">\
+                    <div class="timeline-icon">注册</div>\
+                    <div class="timeline-content down" data-module="应用" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">应用<span class="downline line"></span></div>\
+                </div>\
+                <div class="timeline-item">\
+                    <div class="timeline-icon">更新/下载</div>\
+                    <div class="timeline-content up" data-module="CDN" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">CDN<span class="topline line"></span></div>\
+                    <div class="timeline-content down" data-module="应用" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">应用<span class="downline line"></span></div>\
+                </div>\
+                <div class="timeline-item">\
+                    <div class="timeline-icon">登陆</div>\
+                    <div class="timeline-content down" data-module="应用" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">应用<span class="downline line"></span></div>\
+                </div>\
+                <div class="timeline-item">\
+                    <div class="timeline-icon">主逻辑</div>\
+                    <div class="timeline-content up" data-module="在线" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">在线<span class="topline line"></span></div>\
+                    <div class="timeline-content down" data-module="应用" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">应用<span class="downline line"></span></div>\
+                </div>\
+                <div class="timeline-item">\
+                    <div class="timeline-icon">消费</div>\
+                    <div class="timeline-content up" data-module="充值" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">充值<span class="topline line"></span></div>\
+                    <div class="timeline-content down" data-module="消费" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">消费<span class="downline line"></span></div>\
+                </div>\
+            </div>';
+
+        wrap.empty().append(html);
+    }
+
+    // 状态基础模板 -- 运营人员显示
+    function setBaseHtml2(wrap, tabArr) {
+        var html = '<div class="product-status-box clearfix">\
+                <div class="status-left pull-left col-sm-6">\
+                </div>\
+                <div class="status-right pull-left col-sm-6">\
+                    <div class="panel panel-default">\
+                        <div class="panel-heading">\
+                            <h3 class="panel-title"><span class="glyphicon glyphicon-list-alt text-success"></span> 实时信息</h3>\
+                        </div>\
+                        <table class="table table-center table-hover">\
+                            <thead>\
+                                <tr>\
+                                    <th>序号</th>\
+                                    <th>内容</th>\
+                                    <th>时间</th>\
+                                </tr>\
+                            </thead>\
+                            <tbody>\
+                            </tbody>\
+                        </table>\
+                    </div>\
+                </div>\
+            </div>\
+            <div class="chartline clearfix">\
+                <div id="' + tabArr + '_chartline_1" class="col-sm-5"></div>\
+                <div id="' + tabArr + '_chartline_2" class="col-sm-5"></div>\
+                <div class="col-sm-2 chartline-pd">\
+                    <div id="' + tabArr +'_chartline_3"></div>\
+                    <div class="text-center circle-name">统计</div>\
+                </div>\
+            </div>';
+
+        wrap.empty().append(html);
+    }
+
+    // 各区域状态模板
+    function setAreaHtml(area, areaName) {
+        var html = '<div class="area-status panel panel-default col-xs-4 pd0" data-area="' + areaName +'">\
+            <div class="panel-heading">\
+                <h3 class="panel-title">\
+                    <span class="glyphicon glyphicon-map-marker text-success"></span> ' + areaName +'</h3>\
+            </div>\
+            <table class="table table-center table-hover">\
+                <thead>\
+                    <tr>\
+                        <th>机房</th>\
+                        <th>延时</th>\
+                        <th>丢包</th>\
+                    </tr>\
+                </thead>\
+                <tbody>\
+                </tbody>\
+            </table>\
+        </div>';
+
+        area.append(html);
+
+        area.find('.area-status').eq(3).addClass('clear-both');
+    }
+
+    // 渲染各区域
+    function showRoom(wrap, dataArr) {
+        var $area = wrap.find('.status-left'),
+            areaName;
+
+        for (areaName in dataArr.area) {
+            var areaData = dataArr.area[areaName];
+
+            if (areaData.length) {
+                setAreaHtml($area, areaName); // 渲染各区域table
+
+                var obj = $area.find('.area-status[data-area="' + areaName +'"] table tbody'),
+                    html = '';
+
+                // 循环插入机房信息
+                areaData.forEach(function (e) {
+                    html += '<tr><td>' + e[0] + '</td><td class="text-danger">' + e[1] + '</td><td>' + e[2] + '</td></tr>';
+                });
+
+                obj.append(html);
+            }
+        }
+    }
+
+    // 渲染圆形统计图
+    function showCircle(tabArr, dataArr) {
+        var cpu = dataArr.percent.cpu,
+            room = dataArr.percent.room,
+            bgcpu,
+            bgroom;
+
+        cpu >= 60 ? bgcpu = '#d9534f' : bgcpu = '#3498DB';
+        room >= 60 ? bgroom = '#d9534f' : bgroom = '#3498DB';
+
+        $('#circle_cpu_' + tabArr).circliful({
+            percent: cpu,
+            foregroundColor: bgcpu
+        });
+
+        $('#circle_room_' + tabArr).circliful({
+            percent: room,
+            foregroundColor: bgroom
+        });
+    }
+
+    function showCircle2(tabArr, dataArr) {
+        var total = dataArr.percent.total,
+            bgtotal;
+
+        total >= 60 ? bgtotal = '#d9534f' : bgtotal = '#3498DB';
+
+        $('#' + tabArr + '_chartline_3').circliful({
+            percent: total,
+            foregroundColor: bgtotal
+        });
+    }
+
+    // 渲染状态异常
+    function showErrorStatus(wrap, dataArr) {
+        var data = dataArr.status;
+
+        if (data.length) {
+            data.forEach(function(e) {
+                var obj = wrap.find('.timeline-item').eq(e.step - 1);
+
+                obj.find('.timeline-icon').addClass('border-danger');
+
+                e.module.forEach(function(i) {
+                    var md = obj.find('.timeline-content[data-module="' + i.name + '"]');
+                    
+                    md.addClass('ani-danger').attr('data-content', i.tip);
+                    md.find('.line').addClass('line-danger');
+                });  
+            });
+        }
+
+        wrap.find('.timeline-content').popover();
+    }
+
+    // 渲染实时信息
+    function showStatusMsg(wrap, dataArr) {
+        var html = '';
+
+        if (dataArr.msg.length) {
+            dataArr.msg.forEach(function(e, i) {
+                html += '<tr>\
+                    <td>' + parseInt(i + 1) + '</td>\
+                    <td class="text-danger">' + e[0] + '</td>\
+                    <td>' + e[1] + '</td>\
+                </tr>';
+            });
+        } else {
+            html = '<tr><td colspan="3">暂无信息</td></tr>'
+        }
+
+        wrap.find('.status-right table tbody').append(html);
+    }
+});

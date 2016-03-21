@@ -1,0 +1,51 @@
+<div class="form-group">
+    <label class="col-sm-offset-1 col-sm-2 control-label text-muted">操作：<span class="red">*</span></label>
+    <div class="col-sm-6">
+        <select id="acreen_setting_type" class="form-control" disabled>
+            <option value="1" {% if stype == 1 %}selected{% endif %}>创建屏幕</option>
+            <option value="2" {% if stype == 2 %}selected{% endif %}>编辑屏幕</option>
+            <option value="3" {% if stype == 3 %}selected{% endif %}>+graph</option>
+        </select>
+    </div>
+</div>
+<div class="form-group">
+    <label class="col-sm-offset-1 col-sm-2 control-label text-muted">屏幕名称：<span class="red">*</span></label>
+    <div class="col-sm-6">
+        <input id="screen_name" class="form-control" placeholder="请输入屏幕名称" value="{{screen_name}}">
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-offset-1 col-sm-2 control-label text-muted">所属业务：<span class="red">*</span></label>
+    <div class="col-sm-6">
+        <select id="product_name" class="form-control" {% if stype != 1%}disabled{% endif %}>
+            <option value=''>--请选择所属业务--</option>
+            {% if stype == 1 %}
+                {% for p in p_list %}
+                <option value="{{p}}" {% if p == product_name %}selected{% endif %}>{{p}}</option>
+                {% endfor %}
+            {% else %}
+                <option value="{{product_name}}" selected>{{product_name}}</option>
+            {% endif %}
+        </select>
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-offset-1 col-sm-2 control-label text-muted">设定标题：<span class="red">*</span></label>
+    <div class="col-sm-6">
+        <input id="screen_title" class="form-control" placeholder="请输入标题" value="{{title}}">
+    </div>
+</div>
+
+<div class="form-group">
+    <button class="btn next-step" style="margin: 50px 0 0 270px;width: 150px;" onclick="return false;">
+        <span class="glyphicon glyphicon-arrow-down"></span>
+        下一步
+    </button>
+    <button class="btn save-step hide" style="margin: 50px 0 0 10px;width: 150px;" onclick="return false;">
+        <span class="glyphicon glyphicon-save"></span>
+        保存
+    </button>
+    <input id="screen_id_hide" type="hidden">
+</div>

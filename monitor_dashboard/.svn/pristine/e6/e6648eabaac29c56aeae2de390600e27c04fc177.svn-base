@@ -1,0 +1,123 @@
+<div class="charts-wrap">
+
+</div>
+<div class="screen-tool-menu">
+    <span class="glyphicon glyphicon-indent-right"></span>
+</div>
+<div class="screen-tool-bar">
+    <span class="left-menu glyphicon glyphicon-indent-left"></span>
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#filter_tab" aria-controls="filter_tab" role="tab" data-toggle="tab">筛选</a></li>
+        <li role="presentation"><a href="#screen_tab" aria-controls="screen_tab" role="tab" data-toggle="tab">已选</a></li>
+    </ul>
+
+    <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active" id="filter_tab">
+            <form>
+                <input type="text" class="chart-search form-control" placeholder="请输入counter">
+                <table class="screen-counter-table table table-hover table-striped">
+                    <thead>
+                        <tr>
+                            <th width="50px">
+                                <input class="chart-all" type="checkbox">
+                            </th>
+                            <th width="215px">Counters</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <input class="chart-it" type="checkbox">
+                            </td>
+                            <td>cpu.idle</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input class="chart-it" type="checkbox">
+                            </td>
+                            <td>cpu.idle</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input class="chart-it" type="checkbox">
+                            </td>
+                            <td>cpu.idle</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input class="chart-it" type="checkbox">
+                            </td>
+                            <td>cpu.idle</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input class="chart-it" type="checkbox">
+                            </td>
+                            <td>cpu.idle</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input class="chart-it" type="checkbox">
+                            </td>
+                            <td>cpu.idle</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>
+        </div>
+        <div role="tabpanel" class="tab-pane" id="screen_tab">
+            <button class="btn btn-default btn-block mt15">
+                <span class="glyphicon glyphicon-repeat"></span>
+                清空
+            </button>
+            <table class="screen-selected-table table table-hover table-striped mt15">
+                <thead>
+                    <tr>
+                        <th width="200px">Counters</th>
+                        <th width="65px">
+                            <span>操作</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>cpu.idle</td>
+                        <td>
+                            <span class="pointer glyphicon glyphicon-trash"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>cpu.idle</td>
+                        <td>
+                            <span class="pointer glyphicon glyphicon-trash"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>cpu.idle</td>
+                        <td>
+                            <span class="pointer glyphicon glyphicon-trash"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>cpu.idle</td>
+                        <td>
+                            <span class="pointer glyphicon glyphicon-trash"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>cpu.idle</td>
+                        <td>
+                            <span class="pointer glyphicon glyphicon-trash"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>cpu.idle</td>
+                        <td>
+                            <span class="pointer glyphicon glyphicon-trash"></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

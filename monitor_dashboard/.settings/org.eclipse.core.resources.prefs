@@ -1,0 +1,21 @@
+#Thu Mar 17 13:45:01 CST 2016
+eclipse.preferences.version=1
+encoding//monitor_dashboard/monitor_dashboard/bin/init/add_users.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/config/dashboard.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/config/graph.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/config/monitor.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/config/monitor_event.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/config/portal.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/config/query.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/enums/enum_page.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/page/monitor_query.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/page/overview.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/page/user_self.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/page/warning_query.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/releaseinfo.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/settings.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/utils/chart.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/utils/common.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/utils/db_conn.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/utils/rrdgraph.py=utf-8
+encoding//monitor_dashboard/monitor_dashboard/utils/util.py=utf-8

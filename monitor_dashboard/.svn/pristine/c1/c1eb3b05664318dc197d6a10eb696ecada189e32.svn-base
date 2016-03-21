@@ -1,0 +1,48 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-05 16:58
+ * @msg     主页面js
+ */
+
+$(function() {
+
+    // 导航高亮
+    (function lightNavbar() {
+        var path = window.location.pathname,
+            first_path = path.substring(0, path.indexOf('/', 1));
+
+        $('.h-menu a[href^="' + first_path + '"]').addClass("active");
+        $('.h-nav a[href="' + path + '"]').addClass("active");
+
+        var index = $('.h-menu .active').parent().index();
+
+        $('.h-nav>div').eq(index).removeClass('hide').siblings().addClass('hide');
+    })();
+
+    // 显示面板
+    $('.creat-views label').on('click', function() {
+        var e = $(this),
+            dataId = e.attr('data-id'),
+            obj = $('#' + dataId);
+
+        if (e.hasClass('active')) {
+            obj.addClass('hide');
+        } else {
+            obj.removeClass('hide');
+        }
+    });
+
+    // 右边栏效果
+    $(window).scroll(function() {
+        var top = $(window).scrollTop(),
+            obj = $('.view-right-box'),
+            mTop = top - 120;
+
+        if (top >= 120) {
+            obj.addClass('sticky');
+        } else {
+            obj.removeClass('sticky');
+        }
+    });
+});

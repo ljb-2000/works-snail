@@ -1,0 +1,1011 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json
+import datetime, time
+import logging
+import traceback
+from utils.ctranslate import LazyEncoder
+from django.db.transaction import commit_on_success
+from utils.db_conn import DB
+from config import dashboard
+from utils.common import get_user_perm, get_product_list_by_user
+from releaseinfo import SPECIAL_USERS, SPECIAL_USER_NAME
+from utils.common import send_log
+from utils.chart import get_tmp_graph, add_tmpgraph,_get_chart_data_h,_get_chart_data_k,_get_chart_data_a,_get_chart_data_q, get_info_by_graph, get_name_trans, get_name_by_graph
+from service import _user, _screen, _plugin
+from apps.screen.models import PERM_TYPE_WHITE, PERM_TYPE_BLACK
+import requests
+from utils.util import get_unsolved_alarms, get_product_of_host
+
+logger = logging.getLogger("logger")
+
+@login_required
+@csrf_exempt
+@render_to('overview/screen_setting.html')
+def screen_setting_index(request):
+    user = request.user
+    #permission
+    user = get_user_perm(user)
+    cnname = request.user.first_name
+    if request.user.username in SPECIAL_USERS:
+        cnname = SPECIAL_USER_NAME
+    p_list = get_product_list_by_user(cnname)
+    return locals()
+
+@login_required
+@csrf_exempt
+def screen_setting_list(request):
+    user = request.user
+    screen_name = request.GET.get('screen_name','')
+    product_name = request.GET.get('product_name','')
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength',10))
+    iDisplayStart = int(request.GET.get('iDisplayStart',0))
+    sEcho = int(request.GET.get('sEcho',1))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, 'name', 'product_name', None, None, None]
+    order_item = order_list[iSortCol_0]
+    
+    dashboard_db_conn = DB(
+        dashboard.DASHBOARD_DB_HOST,
+        dashboard.DASHBOARD_DB_PORT,
+        dashboard.DASHBOARD_DB_USER,
+        dashboard.DASHBOARD_DB_PASSWD,
+        dashboard.DASHBOARD_DB_NAME)
+    
+    sql_total = '''
+                select count(*) as total
+                from dashboard_screen
+                where pid > 0
+                '''
+
+    sql_query = '''
+        select id, name, product_name
+        from dashboard_screen
+        where pid > 0
+        '''
+    
+    #product_name匹配查询
+    if product_name:
+        sql_total += " and product_name = \'%s\'"%product_name
+        sql_query += " and product_name = \'%s\'"%product_name
+    
+    #screen_name模糊查询
+    if screen_name:
+        sql_total += " and name like \'%%%s%%\'"%screen_name
+        sql_query += " and name like \'%%%s%%\'"%screen_name
+    
+    #排序
+    if order_item:
+        if sSortDir_0 == "desc":
+            sql_query += ' order by `%s` desc, `id` desc'%order_item
+        else:
+            sql_query += ' order by `%s`, `id` desc'%order_item
+    else:
+        sql_query += ' order by `id` desc'
+    
+    
+    result_total = dashboard_db_conn.query_all(sql_total)
+    total = result_total[0].get('total')
+    
+    sql_query += ' limit %s, %s'%(iDisplayStart, iDisplayLength)
+    result_query = dashboard_db_conn.query_all(sql_query)
+
+    object_list = result_query
+    
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+
+    for obj in object_list:
+        #封装数组，按照列数填入对应的值
+        check_html = u"<input type='checkbox' value='%s' class='screen-it'/>" % obj.get('id')
+        change_html = u'<a href="/overview/index/?screen_id=%s&name=%s--%s">%s</a>' % (obj.get('id'), obj.get('name'), obj.get('product_name'), obj.get('name'))
+        operation = u'''
+                <button title="添加图形" class="add-graph pointer"><span class="glyphicon glyphicon-picture"></span></button>&nbsp;&nbsp;
+                <button title="编辑" class="edit-screen" data-toggle="modal" data-target="#edit_screen"><span class="glyphicon glyphicon-edit pointer"></span></button>&nbsp;&nbsp;
+                <!--<span class="pointer" data-toggle="modal" data-target="#clone_screen">克隆</span>&nbsp;&nbsp;-->
+                <button class="edit-white edit-list" title="编辑白名单" data-type="whitelist" data-toggle="modal" data-target="#edit_white"><span class="glyphicon glyphicon-user pointer"></span></button>&nbsp;&nbsp;
+                <button class="edit-black edit-list" title="编辑黑名单" data-type="blacklist" data-toggle="modal" data-target="#edit_black"><span class="glyphicon glyphicon-user pointer"></span></button>&nbsp;&nbsp;
+                <button title="删除" class="delete-screen pointer"><span class="glyphicon glyphicon-trash"></span></button>&nbsp;&nbsp;
+                '''
+        
+        perms_white = _screen.get_perms_by_params(screen_id=obj.get('id'), p_type=PERM_TYPE_WHITE)
+        names_white = [p.to_user.first_name for p in perms_white]
+        perms_black = _screen.get_perms_by_params(screen_id=obj.get('id'), p_type=PERM_TYPE_BLACK)
+        names_black = [p.to_user.first_name for p in perms_black]
+        data = [check_html, change_html, obj.get('product_name'), ','.join(names_white), ','.join(names_black), operation]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def screen_add(request):
+    user = request.user
+    sdict = {}
+    if request.method == 'GET':
+        stype = 1
+        cnname = request.user.first_name
+        if request.user.username in SPECIAL_USERS:
+            cnname = SPECIAL_USER_NAME
+        p_list = get_product_list_by_user(cnname)
+        
+        template_file = "overview/step.html"
+        html = render_to_string(template_file, locals())
+        sdict['html'] = html
+        return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+    else:
+        try:
+            pid = request.POST.get("pid", '1')
+            screen_name = request.POST.get("screen_name",'')
+            product_name = request.POST.get("product_name",'')
+            
+            dashboard_db_conn = DB(
+                dashboard.DASHBOARD_DB_HOST,
+                dashboard.DASHBOARD_DB_PORT,
+                dashboard.DASHBOARD_DB_USER,
+                dashboard.DASHBOARD_DB_PASSWD,
+                dashboard.DASHBOARD_DB_NAME)
+        
+            #screen
+            sql_screen = '''insert into dashboard_screen (pid, name, product_name) values(\'%s\', \'%s\', \'%s\')'''%(pid, screen_name, product_name)
+            cursor = dashboard_db_conn.execute(sql_screen)
+            screen_id = cursor.lastrowid
+            dashboard_db_conn.commit()
+            cursor.close()
+            
+            logger.debug("## add screen [%s] success, user:%s"%(screen_name, user.username))
+            send_log(user.username,"add",u"创建screen[%s]成功"%screen_name,"userself")
+            
+            sdict['ret'] = 1
+            sdict['screen_id'] = screen_id
+        except:
+            sdict['ret'] = 0
+            logger.debug("## add screen [%s] fail, user:%s"%(screen_name, user.username))
+            error = traceback.format_exc()
+            logger.error(error)
+            print error
+            send_log(user.username,"add",u"创建screen[%s]失败"%screen_name,"userself")
+        
+        template_file = "overview/step2.html"
+        html = render_to_string(template_file, locals())
+        sdict['html'] = html
+        return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def graph_add(request):
+    user = request.user 
+    sdict = {}
+    try:
+        screen_id = request.POST.get("screen_id")
+        title = request.POST.get("title")
+        product_name = request.POST.get("product_name",'')
+        hosts = request.POST.getlist("hosts[]", [])
+        counters = request.POST.getlist("counters[]", [])
+    
+        timespan = request.POST.get("timespan", 3600)
+        graph_type = request.POST.get("graph_type", 'h')
+        sum = request.POST.get("is_sum", '')
+        sumonly = ''
+        if product_name == u'求和统计':
+            sumonly = 'on'
+        position = request.POST.get("position", 0)
+        
+        dashboard_db_conn = DB(
+            dashboard.DASHBOARD_DB_HOST,
+            dashboard.DASHBOARD_DB_PORT,
+            dashboard.DASHBOARD_DB_USER,
+            dashboard.DASHBOARD_DB_PASSWD,
+            dashboard.DASHBOARD_DB_NAME)
+        
+        #graph
+        sql_graph = '''insert into dashboard_graph (title, hosts, counters, screen_id,
+                timespan, graph_type, method, sumonly, position)
+                values(\'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\')'''%\
+                (title, dashboard.ENDPOINT_DELIMITER.join(hosts) or "", dashboard.ENDPOINT_DELIMITER.join(counters) or "", screen_id,\
+                timespan, graph_type, sum, sumonly, position)
+
+        cursor = dashboard_db_conn.execute(sql_graph)
+        id_ = cursor.lastrowid
+        dashboard_db_conn.execute('''update dashboard_graph set position=%s where id=%s''', (id_, id_))
+        dashboard_db_conn.commit()
+        cursor.close()
+    
+        logger.debug("## add graph [%s] success, user:%s"%(title, user.username))
+        send_log(user.username,"add",u"添加graph[%s]成功"%title,"userself")
+        
+        sdict['ret'] = 1
+        sdict['msg'] = u'创建屏幕成功 :)'
+    except:
+        sdict['ret'] = 0
+        sdict['msg'] = u'创建屏幕失败 :('
+        logger.debug("## add graph [%s] fail, user:%s"%(title, user.username))
+        error = traceback.format_exc()
+        logger.error(error)
+        print error
+        send_log(user.username,"add",u"添加graph[%s]失败"%title,"userself")
+        
+    return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def screen_get_title(request):
+    screen_id = request.POST.get('screen_id')
+    
+    dashboard_db_conn = DB(
+        dashboard.DASHBOARD_DB_HOST,
+        dashboard.DASHBOARD_DB_PORT,
+        dashboard.DASHBOARD_DB_USER,
+        dashboard.DASHBOARD_DB_PASSWD,
+        dashboard.DASHBOARD_DB_NAME)
+    
+    sql = '''select g.id, g.title
+            from dashboard.dashboard_graph g, dashboard.dashboard_screen s
+            where g.screen_id = s.id and s.id = %s '''%screen_id
+    rows = dashboard_db_conn.query_all(sql)
+    return HttpResponse(json.dumps(rows, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def screen_edit(request):
+    #GET编辑screen
+    user = request.user
+    sdict = {}
+    if request.method == 'GET':
+        graph_id = request.GET.get('graph_id')
+        stype = 2
+        
+        dashboard_db_conn = DB(
+            dashboard.DASHBOARD_DB_HOST,
+            dashboard.DASHBOARD_DB_PORT,
+            dashboard.DASHBOARD_DB_USER,
+            dashboard.DASHBOARD_DB_PASSWD,
+            dashboard.DASHBOARD_DB_NAME)
+    
+        sql = '''select s.name, s.product_name, g.title, g.hosts, g.counters, g.timespan, g.graph_type, g.method
+                from dashboard.dashboard_graph g, dashboard.dashboard_screen s
+                where g.screen_id = s.id and g.id = %s'''%graph_id
+    
+        row = dashboard_db_conn.query_one(sql)
+    
+        title = row.get('title','')
+        screen_name = row.get('name','')
+        product_name = row.get('product_name','')
+        
+        hosts = row.get('hosts')
+        hosts = hosts.split(dashboard.ENDPOINT_DELIMITER) or []
+        counters = row.get('counters')
+        counters = counters.split(dashboard.ENDPOINT_DELIMITER) or []
+        timespan = '%s'%row.get('timespan')
+        graph_type = row.get('graph_type')
+        sum = row.get('method')
+        
+        template_file = "overview/step.html"
+        template_file2 = "overview/step2.html"
+        template_file3 = "overview/step3.html"
+        html = render_to_string(template_file, locals())
+        html2 = render_to_string(template_file2, locals())
+        html3 = render_to_string(template_file3, locals())
+        sdict['ret'] = 1
+        sdict['html'] = html
+        sdict['html2'] = html2
+        sdict['html3'] = html3
+        return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+    else:
+        try:
+            screen_id = request.POST.get("screen_id")
+            screen_name = request.POST.get("screen_name",'')
+            product_name = request.POST.get("product_name",'')
+            
+            graph_id = request.POST.get("graph_id")
+            title = request.POST.get("title")
+            hosts = request.POST.getlist("hosts[]", [])
+            counters = request.POST.getlist("counters[]", [])
+            timespan = request.POST.get("timespan", 3600)
+            graph_type = request.POST.get("graph_type", 'h')
+            sum = request.POST.get("is_sum", '')
+            
+            dashboard_db_conn = DB(
+                dashboard.DASHBOARD_DB_HOST,
+                dashboard.DASHBOARD_DB_PORT,
+                dashboard.DASHBOARD_DB_USER,
+                dashboard.DASHBOARD_DB_PASSWD,
+                dashboard.DASHBOARD_DB_NAME)
+            
+            #screen
+            sql_screen = '''update dashboard_screen set `name`=\'%s\' where `id`=%s'''%(screen_name, screen_id)
+            cursor = dashboard_db_conn.execute(sql_screen)
+            dashboard_db_conn.commit()
+            cursor.close()
+            
+            #graph
+            sql_graph = '''update dashboard_graph set `title`=\'%s\', `hosts`=\'%s\', `counters`=\'%s\',
+                        `timespan`=\'%s\', `graph_type`=\'%s\', `method`=\'%s\' where `id`=%s
+                        '''%(title, dashboard.ENDPOINT_DELIMITER.join(hosts) or "", dashboard.ENDPOINT_DELIMITER.join(counters) or "", \
+                        timespan, graph_type, sum, graph_id)
+            
+            cursor = dashboard_db_conn.execute(sql_graph)
+            dashboard_db_conn.commit()
+            cursor.close()
+            
+            logger.debug("## edit screen [%s] success, user:%s"%(screen_name, user.username))
+            logger.debug("## edit graph [%s] success, user:%s"%(title, user.username))
+            send_log(user.username,"update",u"修改screen[%s]成功"%screen_name,"userself")
+            send_log(user.username,"update",u"修改graph[%s]成功"%title,"userself")
+            
+            sdict['ret'] = 1
+            sdict['msg'] = u'修改屏幕成功 :)'
+        except:
+            sdict['ret'] = 0
+            sdict['msg'] = u'修改屏幕失败 :('
+            error = traceback.format_exc()
+            logger.error(error)
+            print error
+            send_log(user.username,"update",u"修改screen[%s]失败"%screen_name,"userself")
+            send_log(user.username,"update",u"修改graph[%s]失败"%title,"userself")
+            
+        return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+    
+@login_required
+@csrf_exempt
+def screen_graph_add(request):
+    #GET编辑screen
+    user = request.user
+    sdict = {}
+    if request.method == 'GET':
+        screen_id = request.GET.get("screen_id")
+        stype = 3
+        
+        dashboard_db_conn = DB(
+            dashboard.DASHBOARD_DB_HOST,
+            dashboard.DASHBOARD_DB_PORT,
+            dashboard.DASHBOARD_DB_USER,
+            dashboard.DASHBOARD_DB_PASSWD,
+            dashboard.DASHBOARD_DB_NAME)
+    
+        sql = '''select id, name, product_name
+                from dashboard_screen
+                where id = %s'''%screen_id
+    
+        row = dashboard_db_conn.query_one(sql)
+    
+        screen_name = row.get('name','')
+        product_name = row.get('product_name','')
+        
+        template_file = "overview/step.html"
+        template_file2 = "overview/step2.html"
+        template_file3 = "overview/step3.html"
+        html = render_to_string(template_file, locals())
+        html2 = render_to_string(template_file2, locals())
+        html3 = render_to_string(template_file3, locals())
+        sdict['ret'] = 1
+        sdict['html'] = html
+        sdict['html2'] = html2
+        sdict['html3'] = html3
+        return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+    else:
+        try:
+            screen_id = request.POST.get("screen_id")
+            screen_name = request.POST.get("screen_name",'')
+            product_name = request.POST.get("product_name",'')
+            title = request.POST.get("title",'')
+            
+            hosts = request.POST.getlist("hosts[]", [])
+            counters = request.POST.getlist("counters[]", [])
+        
+            timespan = request.POST.get("timespan", 3600)
+            graph_type = request.POST.get("graph_type", 'h')
+            sum = request.POST.get("is_sum", '')
+            sumonly = ''
+            if product_name == u'求和统计':
+                sumonly = 'on'
+            position = request.POST.get("position", 0)
+            
+            dashboard_db_conn = DB(
+                dashboard.DASHBOARD_DB_HOST,
+                dashboard.DASHBOARD_DB_PORT,
+                dashboard.DASHBOARD_DB_USER,
+                dashboard.DASHBOARD_DB_PASSWD,
+                dashboard.DASHBOARD_DB_NAME)
+            
+            #screen
+            sql_screen = '''update dashboard_screen set `name`=\'%s\' where `id`=%s'''%(screen_name, screen_id)
+            cursor = dashboard_db_conn.execute(sql_screen)
+            dashboard_db_conn.commit()
+            cursor.close()
+            
+            #graph
+            sql_graph = '''insert into dashboard_graph (title, hosts, counters, screen_id,
+                    timespan, graph_type, method, sumonly, position)
+                    values(\'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\')'''%\
+                    (title, dashboard.ENDPOINT_DELIMITER.join(hosts) or "", dashboard.ENDPOINT_DELIMITER.join(counters) or "", screen_id,\
+                    timespan, graph_type, sum, sumonly, position)
+    
+            cursor = dashboard_db_conn.execute(sql_graph)
+            id_ = cursor.lastrowid
+            dashboard_db_conn.execute('''update dashboard_graph set position=%s where id=%s''', (id_, id_))
+            dashboard_db_conn.commit()
+            cursor.close()
+            
+            logger.debug("## edit screen [%s] success, user:%s"%(screen_name, user.username))
+            logger.debug("## add graph [%s] success, user:%s"%(title, user.username))
+            send_log(user.username,"update",u"修改screen[%s]成功"%screen_name,"userself")
+            send_log(user.username,"update",u"添加graph[%s]成功"%title,"userself")
+            
+            sdict['ret'] = 1
+            sdict['msg'] = u'添加graph成功 :)'
+        except:
+            sdict['ret'] = 0
+            sdict['msg'] = u'添加graph失败 :('
+            error = traceback.format_exc()
+            logger.error(error)
+            print error
+            send_log(user.username,"update",u"修改screen[%s]失败"%screen_name,"userself")
+            send_log(user.username,"update",u"添加graph[%s]失败"%title,"userself")
+            
+        return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def ajax_filter_user(request):
+    user_txt = request.POST.get('user_txt')
+    data = {'action':'getUser', 'name':'%s'%user_txt}
+    r = requests.get("http://10.103.4.19/server/Api/Api.ashx", params=data)
+    user_list = []
+    if r.status_code == 200:
+        r_list = json.loads(r.text)
+        for r_dict in r_list:
+            try:
+                u,c = _user.get_or_create_user_by_params(username=r_dict.get('sDomain'), first_name=r_dict.get('sName'))
+                user_list.append({'id':u.id, 'name':u.first_name})
+            except:
+                pass
+    return HttpResponse(json.dumps(user_list, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def screen_perm_add(request):
+    sdict = {}
+    user = request.user
+    p_type = int(request.POST.get("type"))
+    screen_ids = request.POST.getlist("screen_id[]", [])
+    user_id_list = request.POST.getlist("users[]", [])
+    try:
+        if p_type == PERM_TYPE_WHITE:
+            for screen_id in screen_ids:
+                for user_id in user_id_list:
+                    u = _user.get_user_by_params(id=user_id)
+                    _screen.get_or_create_perm_by_params(screen_id=screen_id,to_user=u,p_type=PERM_TYPE_WHITE)
+                    perm_black = _screen.get_perms_by_params(screen_id=screen_id,to_user=u,p_type=PERM_TYPE_BLACK)
+                    if perm_black:
+                        perm_black[0].delete()
+            send_log(user.username,"add",u"添加screen[%s]白名单[%s]成功"%(screen_id,','.join(user_id_list)),"screen")
+            sdict['msg'] = u'添加白名单成功 :)'
+        else:
+            for screen_id in screen_ids:
+                for user_id in user_id_list:
+                    u = _user.get_user_by_params(id=user_id)
+                    _screen.get_or_create_perm_by_params(screen_id=screen_id,to_user=u,p_type=PERM_TYPE_BLACK)
+                    perm_white = _screen.get_perms_by_params(screen_id=screen_id,to_user=u,p_type=PERM_TYPE_WHITE)
+                    if perm_white:
+                        perm_white[0].delete()
+#            send_log(user.username,"add",u"添加screen[%s]黑名单[%s]成功"%(screen_id,','.join(user_id_list)),"screen")
+            sdict['msg'] = u'添加黑名单成功 :)'
+        sdict['ret'] = 1
+    except:
+        sdict['ret'] = 0
+        if p_type == PERM_TYPE_WHITE:
+            send_log(user.username,"add",u"添加screen[%s]白名单[%s]失败"%(screen_id,','.join(user_id_list)),"screen")
+            sdict['msg'] = u'添加白名单失败 :('
+        else:
+#            send_log(user.username,"add",u"添加screen[%s]黑名单[%s]失败"%(screen_id,','.join(user_id_list)),"screen")
+            sdict['msg'] = u'添加黑名单失败 :('
+        error = traceback.format_exc()
+        logger.error(error)
+        print error
+        
+    return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def screen_perm_edit(request):
+    if request.method == 'GET':
+        screen_id = request.GET.get("screen_id", 0)
+        p_type = int(request.GET.get("type"))
+        user_list = []
+        if p_type == PERM_TYPE_WHITE:
+            perms = _screen.get_perms_by_params(screen_id=screen_id,p_type=PERM_TYPE_WHITE)
+        else:
+            perms = _screen.get_perms_by_params(screen_id=screen_id,p_type=PERM_TYPE_BLACK)
+        for perm in perms:
+            user_list.append({'id':perm.to_user.id, 'name':perm.to_user.first_name})
+        return HttpResponse(json.dumps(user_list, cls=LazyEncoder))
+    else:
+        sdict = {}
+        user = request.user
+        screen_id = request.POST.get("screen_id", 0)
+        p_type = int(request.POST.get("type"))
+        checked_users = request.POST.getlist("checked_users[]", [])
+        unchecked_users = request.POST.getlist("unchecked_users[]", [])
+        
+        try:
+            #修改白名单
+            if p_type == PERM_TYPE_WHITE:
+                for u_id in checked_users:
+                    u = _user.get_user_by_params(id=u_id)
+                    _screen.get_or_create_perm_by_params(screen_id=screen_id,to_user=u,p_type=PERM_TYPE_WHITE)
+                    perm_black = _screen.get_perms_by_params(screen_id=screen_id,to_user=u,p_type=PERM_TYPE_BLACK)
+                    if perm_black:
+                        perm_black[0].delete()
+                for u_id in unchecked_users:
+                    u = _user.get_user_by_params(id=u_id)
+                    perm_white = _screen.get_perms_by_params(screen_id=screen_id,to_user=u,p_type=PERM_TYPE_WHITE)
+                    if perm_white:
+                        perm_white[0].delete()
+#                send_log(user.username,"update",u"修改screen[%s]白名单[%s]成功"%(screen_id,','.join(user_id_list)),"screen")
+                sdict['msg'] = u'修改白名单成功 :)'
+            #修改黑名单
+            else:
+                for u_id in checked_users:
+                    u = _user.get_user_by_params(id=u_id)
+                    _screen.get_or_create_perm_by_params(screen_id=screen_id,to_user=u,p_type=PERM_TYPE_BLACK)
+                    perm_white = _screen.get_perms_by_params(screen_id=screen_id,to_user=u,p_type=PERM_TYPE_WHITE)
+                    if perm_white:
+                        perm_white[0].delete()
+                for u_id in unchecked_users:
+                    u = _user.get_user_by_params(id=u_id)
+                    perm_black = _screen.get_perms_by_params(screen_id=screen_id,to_user=u,p_type=PERM_TYPE_BLACK)
+                    if perm_black:
+                        perm_black[0].delete()
+#                send_log(user.username,"update",u"修改screen[%s]黑名单[%s]成功"%(screen_id,','.join(user_id_list)),"screen")
+                sdict['msg'] = u'修改黑名单成功 :)'
+                
+            sdict['ret'] = 1
+        except:
+            sdict['ret'] = 0
+            if p_type == PERM_TYPE_WHITE:
+                send_log(user.username,"add",u"修改screen[%s]白名单失败"%(screen_id),"screen")
+                sdict['msg'] = u'修改白名单失败 :('
+            else:
+                send_log(user.username,"add",u"修改screen[%s]黑名单失败"%(screen_id),"screen")
+                sdict['msg'] = u'修改黑名单失败 :('
+            error = traceback.format_exc()
+            logger.error(error)
+            print error
+            
+        return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def screen_delete(request):
+    sdict = {}
+    screen_id = request.POST.get("screen_id")
+    
+    if not screen_id:
+        sdict['ret'] = 0
+        sdict['msg'] = u'删除屏幕失败 :('
+        
+    else:
+        try:
+            dashboard_db_conn = DB(
+                dashboard.DASHBOARD_DB_HOST,
+                dashboard.DASHBOARD_DB_PORT,
+                dashboard.DASHBOARD_DB_USER,
+                dashboard.DASHBOARD_DB_PASSWD,
+                dashboard.DASHBOARD_DB_NAME)
+        
+            dashboard_db_conn.execute('''delete from dashboard_screen where id=%s'''%screen_id)
+            dashboard_db_conn.execute('''delete from dashboard_graph where screen_id=%s'''%screen_id)
+            dashboard_db_conn.commit()
+            sdict['ret'] = 1
+            sdict['msg'] = u'删除屏幕成功 :)'
+        except Exception,e:
+            print e
+            sdict['ret'] = 0
+            sdict['msg'] = u'删除屏幕失败 :('
+    return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+    
+@login_required
+@csrf_exempt
+@render_to('overview/screen_show.html')
+def screen_show_index(request):
+    user = request.user
+    #permission
+    user = get_user_perm(user)
+    return locals()
+
+@login_required
+@csrf_exempt
+def ajax_get_screens_by_product(request):
+    user = request.user
+    cnname = request.user.first_name
+    if request.user.username in SPECIAL_USERS:
+        cnname = SPECIAL_USER_NAME
+    p_list = get_product_list_by_user(cnname)
+    
+    screen_list = []
+    product_name = request.POST.get('product_name','')
+    txt = request.POST.get('txt','')
+    if product_name:
+        dashboard_db_conn = DB(
+            dashboard.DASHBOARD_DB_HOST,
+            dashboard.DASHBOARD_DB_PORT,
+            dashboard.DASHBOARD_DB_USER,
+            dashboard.DASHBOARD_DB_PASSWD,
+            dashboard.DASHBOARD_DB_NAME)
+        
+        sql = '''select `id`, `name` from dashboard_screen where pid > 0 and `product_name`=\'%s\''''%product_name
+        if txt:
+            sql += " and name like \'%%%s%%\'"%txt
+        
+        sql += " order by `id`"
+        rows = dashboard_db_conn.query_all(sql)
+            
+        for row in rows:
+            screen_id = row.get('id')
+            screen_name = row.get('name')
+            #去除黑名单
+            if product_name in p_list:
+                perm_black = _screen.get_perms_by_params(screen_id=screen_id, to_user=user, p_type=PERM_TYPE_BLACK)
+                if not perm_black:
+                    screen_list.append({'id':screen_id, 'name':screen_name})
+            #添加白名单
+            else:
+                perm_white = _screen.get_perms_by_params(screen_id=screen_id, to_user=user, p_type=PERM_TYPE_WHITE)
+                if perm_white:
+                    screen_list.append({'id':screen_id, 'name':screen_name})
+    return HttpResponse(json.dumps(screen_list, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def ajax_show_screen(request):
+    sdict = {}
+    time.sleep(1)
+    now = int(time.time())
+    screen_id = request.POST.get("screen_id")
+    legend = request.POST.get("legend") or "off"
+    start = int(request.POST.get("start") or -3600)
+    if start < 0:
+        start = now + start
+    end = int(request.POST.get("end") or 0)
+    if end <= 0:
+        end = now + end
+    end = end - 60
+#     sum = request.POST.get("sum") or "off" #是否求和
+#     sumonly = request.POST.get("sumonly") or "off" #是否只显示求和
+    cf = (request.POST.get("cf") or "AVERAGE").upper() # MAX, MIN, AVGRAGE, LAST
+    
+    dashboard_db_conn = DB(
+        dashboard.DASHBOARD_DB_HOST,
+        dashboard.DASHBOARD_DB_PORT,
+        dashboard.DASHBOARD_DB_USER,
+        dashboard.DASHBOARD_DB_PASSWD,
+        dashboard.DASHBOARD_DB_NAME)
+    
+    sql = '''select id, title, hosts, counters, screen_id, timespan, graph_type, method, sumonly, position 
+            from dashboard_graph where screen_id=%s order by position
+            '''%(screen_id)
+            
+    cursor = dashboard_db_conn.execute(sql)
+    graphs = cursor.fetchall()
+    cursor and cursor.close()
+
+    series_list= []
+    chart_id_list = []
+    for graph in graphs:
+        graph_id = graph.get("id")
+        title = graph.get('title')
+        counters = graph.get('counters')
+        sum = graph.get('method','off')
+        sumonly = graph.get('sumonly','off')
+        
+        if not counters:
+            raise(400, "no counters of %s" %graph_id)
+        counters = counters.split(dashboard.ENDPOINT_DELIMITER)
+    
+        endpoints = graph.get('hosts')
+        if not endpoints:
+            raise(400, "no endpoints of %s" %graph_id)
+        endpoints = endpoints.split(dashboard.ENDPOINT_DELIMITER)
+        
+        graph_type = graph.get('graph_type')
+
+        if graph_type == dashboard.GRAPH_TYPE_HOST:
+            for x in counters:
+                id_ = add_tmpgraph(endpoints, [x])
+                if not id_:
+                    continue
+                chart_id_list.append({'graph_id':graph_id, 'g_id':id_, 'graph_type':graph_type, 'title':title, 'sum':sum, 'sumonly':sumonly})
+        elif graph_type == dashboard.GRAPH_TYPE_KEY:
+            for x in endpoints:
+                id_ = add_tmpgraph([x], counters)
+                if not id_:
+                    continue
+                chart_id_list.append({'graph_id':graph_id, 'g_id':id_, 'graph_type':graph_type, 'title':title, 'sum':sum, 'sumonly':sumonly})
+        elif graph_type == dashboard.GRAPH_TYPE_MIX:
+            id_ = add_tmpgraph(endpoints, counters)
+            if id_:
+                chart_id_list.append({'graph_id':graph_id, 'g_id':id_, 'graph_type':graph_type, 'title':title, 'sum':sum, 'sumonly':sumonly})
+        else:
+            id_ = add_tmpgraph(endpoints, counters)
+            if id_:
+                chart_id_list.append({'graph_id':graph_id, 'g_id':id_, 'graph_type':graph_type, 'title':title, 'sum':sum, 'sumonly':sumonly})
+    
+    g_id_list = []
+    for index,chart_dict in enumerate(chart_id_list):
+        graph_id = chart_dict.get('graph_id')
+        g_id = chart_dict.get('g_id')
+        g_type = chart_dict.get('graph_type')
+        sum = chart_dict.get('sum')
+        sumonly = chart_dict.get('sumonly')
+        g_id_list.append('%s_%s_%s_%s'%(screen_id, graph_id, g_id, g_type))
+        
+        title = chart_dict.get('title')
+        name = get_name_trans(g_id)
+        chart_dict['name'] = name
+        header = '%s_%s'%(title, name)
+        
+        if index >= 4:
+            continue
+        if g_type == dashboard.GRAPH_TYPE_HOST:
+            series = _get_chart_data_h(cf, start, end, sum, sumonly, g_id, graph_id, header)
+        elif g_type == dashboard.GRAPH_TYPE_KEY:
+            series = _get_chart_data_k(cf, start, end, sum, sumonly, g_id,graph_id, header)
+        elif g_type == dashboard.GRAPH_TYPE_MIX:
+            series = _get_chart_data_a(cf, start, end, sum, sumonly, g_id, graph_id, header)
+        else:
+            series = _get_chart_data_q(cf, start, end, sum, sumonly, g_id, graph_id, header)
+        series_list.append(series)
+    g_id_str = ','.join(g_id_list)
+    
+    template_file = "overview/tab.html"
+    html = render_to_string(template_file, locals())
+    sdict['html'] = html
+    sdict['series_list'] = series_list
+    return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def ajax_get_graph_data(request):
+    now = int(time.time())
+    g_str = request.POST.get("g_str")
+    graph_id = g_str.split('_')[1]
+    g_id = g_str.split('_')[2]
+    g_type = g_str.split('_')[3]
+    
+    legend = request.POST.get("legend") or "off"
+    start = int(request.POST.get("start") or -3600)
+    if start < 0:
+        start = now + start
+    end = int(request.POST.get("end") or 0)
+    if end <= 0:
+        end = now + end
+    end = end - 60
+    sum = request.POST.get("sum") #是否求和
+#     sumonly = request.POST.get("sumonly") or "off" #是否只显示求和
+    cf = (request.POST.get("cf") or "AVERAGE").upper() # MAX, MIN, AVGRAGE, LAST
+    
+    title, sum_, sumonly = get_info_by_graph(graph_id)
+    if not sum:
+        sum = sum_
+    name = get_name_trans(g_id)
+    header = '%s_%s'%(title, name)
+
+    if g_type == dashboard.GRAPH_TYPE_HOST:
+        series = _get_chart_data_h(cf, start, end, sum, sumonly, g_id, graph_id, header)
+    elif g_type == dashboard.GRAPH_TYPE_KEY:
+        series = _get_chart_data_k(cf, start, end, sum, sumonly, g_id,graph_id, header)
+    elif g_type == dashboard.GRAPH_TYPE_MIX:
+        series = _get_chart_data_a(cf, start, end, sum, sumonly, g_id, graph_id, header)
+    elif g_type == dashboard.GRAPH_TYPE_TREND:
+        series = _get_chart_data_q(cf, start, end, sum, sumonly, g_id, graph_id, header)
+        
+    return HttpResponse(json.dumps(series, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def ajax_filter_graph(request):
+    graph_txt = request.POST.get("graph_txt")
+    ids = request.POST.get("ids")
+    
+    ret = []
+    chart_id_list = ids.split(',')
+    for chart_id_str in chart_id_list:
+        chart_id = chart_id_str.split('_')
+        graph_id = chart_id[1]
+        g_id = chart_id[2]
+        
+        dashboard_db_conn = DB(
+            dashboard.DASHBOARD_DB_HOST,
+            dashboard.DASHBOARD_DB_PORT,
+            dashboard.DASHBOARD_DB_USER,
+            dashboard.DASHBOARD_DB_PASSWD,
+            dashboard.DASHBOARD_DB_NAME)
+        
+        sql = '''select title
+            from dashboard.dashboard_graph
+            where id = %s'''%graph_id
+            
+        graph = dashboard_db_conn.query_one(sql)
+        title = graph.get('title')
+        name = get_name_trans(g_id)
+        header = u'%s_%s'%(title,name)
+        if graph_txt in header:
+            ret.append({'id':chart_id_str, 'name':header})
+    
+    return HttpResponse(json.dumps(ret, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def graph_name_edit(request):
+    #GET编辑graph
+    user = request.user
+    sdict = {}
+    if request.method == 'GET':
+        id_str = request.GET.get("id_str")
+        chart_id = id_str.split('_')
+        graph_id = chart_id[1]
+        g_id = chart_id[2]
+        
+        title,sum,sumonly = get_info_by_graph(graph_id)
+        name = get_name_by_graph(g_id)
+        
+        sdict['title'] = title
+        sdict['name'] = name
+        return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+    else:
+        try:
+            id_str = request.POST.get("id_str")
+            name = request.POST.get("name",'')
+            name_trans = name
+            
+            if name:
+                chart_id = id_str.split('_')
+                graph_id = chart_id[1]
+                g_id = chart_id[2]
+                title,sum,sumonly = get_info_by_graph(graph_id)
+                
+                if '@' in name:
+                    tmp_graph =  get_tmp_graph(g_id)
+                    endpoints = tmp_graph.get('endpoints')
+                    endpoints = sorted(set(endpoints))
+                
+                    plugin_txt = name.split('@')[1]
+                    plugins = _plugin.get_plugins_by_params(ip=endpoints[0], key=plugin_txt)
+                    if plugins:
+                        name_trans = plugins[0].value
+                    else:
+                        logger.debug("## edit tmp_graph[%s] name undo, user:%s"%(g_id, user.username))
+                        send_log(user.username,"update",u"修改tmp_graph[%s]名称未操作 "%g_id,"screen")
+                        sdict['ret'] = 0
+                        sdict['msg'] = u'不存在的插件名称 :('
+                        return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+
+                dashboard_db_conn = DB(
+                    dashboard.DASHBOARD_DB_HOST,
+                    dashboard.DASHBOARD_DB_PORT,
+                    dashboard.DASHBOARD_DB_USER,
+                    dashboard.DASHBOARD_DB_PASSWD,
+                    dashboard.DASHBOARD_DB_NAME)
+                
+                sql = '''update tmp_graph set name = \'%s\' where id=%s'''%(name, g_id)
+                cursor = dashboard_db_conn.execute(sql)
+                dashboard_db_conn.commit()
+                cursor.close()
+                
+                logger.debug("## edit tmp_graph[%s] name success, user:%s"%(g_id, user.username))
+                send_log(user.username,"update",u"修改tmp_graph[%s]名称成功"%g_id,"screen")
+                
+                sdict['ret'] = 1
+                sdict['title'] = title
+                sdict['name'] = name_trans
+                sdict['msg'] = u'修改标题成功 :)'
+        except:
+            sdict['ret'] = 0
+            sdict['msg'] = u'修改标题失败 :('
+            error = traceback.format_exc()
+            logger.error(error)
+            print error
+            logger.debug("## edit tmp_graph[%s] name fail, user:%s"%(g_id, user.username))
+            send_log(user.username,"update",u"修改tmp_graph[%s]名称失败"%g_id,"screen")
+            
+        return HttpResponse(json.dumps(sdict, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def ajax_get_plugin(request):
+    plugin_txt = request.POST.get('plugin_txt','')
+    id_str = request.POST.get("id_str")
+    
+    chart_id = id_str.split('_')
+    g_id = chart_id[2]
+    
+    tmp_graph =  get_tmp_graph(g_id)
+    endpoints = tmp_graph.get('endpoints')
+    endpoints = sorted(set(endpoints))
+    
+    ret = []
+    if len(endpoints) == 1:
+        endpoint = endpoints[0]
+        plugins = _plugin.get_plugins_by_params(ip=endpoint, key__icontains=plugin_txt)
+        for plugin in plugins:
+            ret.append(plugin.key)
+    
+    return HttpResponse(json.dumps(ret, cls=LazyEncoder))
+
+
+@login_required
+@render_to("overview/monitor.html")
+def monitor(request):
+    user = request.user
+    #permission
+    user = get_user_perm(user)
+
+    #lastest 10 alarms
+    alarms = get_unsolved_alarms()
+    alarms = alarms[:10]
+    for obj in alarms:
+        info =  get_product_of_host(obj.get('endpoint'))
+        obj['p_name'] = info.get("p_name",'')
+        obj['p_set'] = info.get("p_set",'')
+        obj['p_module'] = info.get("p_module",'')
+        
+        monitor_item = " ".join([obj.get('metric'),obj.get('func'),obj.get('operator'),obj.get('rightValue')])
+        obj['monitor_item'] = monitor_item
+        
+        leftValue = obj.get('leftValue',"")
+        obj['leftValue'] = leftValue
+    
+    return locals()
+
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    #屏幕展示
+    url(r'^overview/index/$', screen_show_index, name='index'),
+    url(r'^overview/ajax_get_screens_by_product/$', ajax_get_screens_by_product, name='ajax_get_screens_by_product'),
+    url(r'^overview/ajax_show_screen/$', ajax_show_screen, name='ajax_show_screen'),
+    url(r'^overview/ajax_get_graph_data/$', ajax_get_graph_data, name='ajax_get_graph_data'),
+    url(r'^overview/ajax_filter_graph/$', ajax_filter_graph, name='ajax_filter_graph'),
+    url(r'^overview/graph_name_edit/$', graph_name_edit, name='graph_name_edit'),
+    url(r'^overview/ajax_get_plugin/$', ajax_get_plugin, name='ajax_get_plugin'),
+                       
+                       
+    #屏幕设定
+    url(r'^overview/screen_setting/$', screen_setting_index, name='screen_setting_index'),
+    url(r'^overview/screen_list/$', screen_setting_list, name='screen_setting_list'),
+    
+    #创建屏幕
+    url(r'^overview/screen_add/$', screen_add, name='screen_add'),
+    url(r'^overview/graph_add/$', graph_add, name='graph_add'),
+    
+    #编辑屏幕
+    url(r'^overview/screen_get_title/$', screen_get_title, name='screen_get_title'),
+    url(r'^overview/screen_edit/$', screen_edit, name='screen_edit'),
+    
+    #添加graph
+    url(r'^overview/screen_graph_add/$', screen_graph_add, name='screen_graph_add'),
+    
+    #添加白/黑名单
+    url(r'^overview/ajax_filter_user/$', ajax_filter_user, name='ajax_filter_user'),
+    url(r'^overview/screen_perm_add/$', screen_perm_add, name='screen_perm_add'),
+    url(r'^overview/screen_perm_edit/$', screen_perm_edit, name='screen_perm_edit'),
+    
+    #删除屏幕
+    url(r'^overview/screen_delete/$', screen_delete, name='screen_delete'),
+    
+    #监控总览
+    url(r'^overview/monitor/$', monitor, name='monitor'),
+)

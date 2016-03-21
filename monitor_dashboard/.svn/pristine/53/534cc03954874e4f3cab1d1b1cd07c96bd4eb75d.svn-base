@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html ng-app="myBigChart">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛智能监控平台</title>
+<link type="text/css" rel="stylesheet" href="/static/css/bootstrap.min.css">
+<link type="text/css" rel="stylesheet" href="/static/css/common.css">
+<link type="text/css" rel="stylesheet" href="/static/css/style.css">
+<link type="text/css" rel="stylesheet" href="/static/src/tool/ng_datetimepicker/css/datetimepicker.css">
+<style>
+    .chart-opt {
+        font-size: 12px;
+        padding: 2px 10px;
+    }
+
+    .chart-opt:hover {
+        cursor:pointer;
+    }
+
+    #big_table td {
+        border-top:none;
+    }
+
+    .chart-container-big {
+        width: 92%;
+        margin: 5px auto;
+        height: 450px;
+    }
+
+    .enable {
+        border: 1px solid #00f;
+    }
+</style>
+</head>
+<body style="background:#fff;min-width:1350px;" ng-controller="BigChart as vm">
+    <form class="form-inline clearfix c-form">
+        <div class="form-group" style="position:relative;">
+            <label class="control-label">起始：</label>
+            <a class="dropdown-toggle form-control input-sm date-area" id="dropdown1" role="button" data-toggle="dropdown" href="javascript:;">
+                <div class="input-group">
+                    <span><i class="glyphicon glyphicon-calendar mr10"></i></span>
+                    <span class="pull-right" ng-bind="vm.globalParam.start | date: 'yyyy-MM-dd HH:mm'"></span>
+                </div>
+            </a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel1">
+                <datetimepicker ng-model="vm.globalParam.start" datetimepicker-config="{ dropdownSelector: '#dropdown1' }"/>
+            </ul>
+        </div>
+        <div class="form-group" style="position:relative;">
+            <label class="form-group">结束：</label>
+            <a class="dropdown-toggle form-control input-sm date-area" id="dropdown2" role="button" data-toggle="dropdown" href="javascript:;">
+                <div class="input-group">
+                    <span><i class="glyphicon glyphicon-calendar mr10"></i></span>
+                    <span class="pull-right" ng-bind="vm.globalParam.end | date: 'yyyy-MM-dd HH:mm'"></span>
+                </div>
+            </a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel2">
+                <datetimepicker ng-model="vm.globalParam.end" datetimepicker-config="{ dropdownSelector: '#dropdown2' }"/>
+            </ul>
+        </div>
+        <div class="form-group">
+            <label class="control-label">采样方法：</label>
+            <select class="form-control" ng-model="vm.watchParam.cf">
+                <option value='AVERAGE'>AVERAGE</option>
+                <option value='MAX'>MAX</option>
+                <option value='MIN'>MIN</option>
+            </select>
+        </div>
+        <div class="form-group" style="position:relative;">
+            <label class="control-label">对比：</label>
+            <a class="dropdown-toggle form-control input-sm date-area" id="dropdown3" role="button" data-toggle="dropdown" href="javascript:;">
+                <div class="input-group">
+                    <span><i class="glyphicon glyphicon-calendar mr10"></i></span>
+                    <span class="pull-right" ng-bind="vm.watchParam.compare | date: 'yyyy-MM-dd'"></span>
+                </div>
+            </a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel1">
+                <datetimepicker ng-model="vm.watchParam.compare" datetimepicker-config="{ dropdownSelector: '#dropdown3', minView: 'day' }"/>
+            </ul>
+        </div>
+        <div class="form-group">
+            <div class="dropdown">
+                <button class="btn btn-default btn-block" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    其他
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a ng-click="vm.watchParam.sum='on';vm.watchParam.sumonly='off'" class="chart-opt">求和</a></li>
+                    <li><a ng-click="vm.watchParam.sum='on';vm.watchParam.sumonly='on'" class="chart-opt">只显示sum</a></li>
+                    <li><a ng-click="vm.watchParam.sum='off';vm.watchParam.sumonly='off'" class="chart-opt">取消求和</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="form-group">
+            <button class="btn btn-default" ng-click="vm.show()">
+                <span class="glyphicon glyphicon-eye-open"></span>
+                看图
+            </button>
+        </div>
+        <div class="form-group">
+            <button class="btn btn-default" ng-click="vm.reset()">
+                <span class="glyphicon glyphicon-repeat"></span>
+                重置条件
+            </button>
+        </div>
+    </form>
+    <div id="container" class="container-fluid mt15">
+        <div class="row" style="margin:0px;">
+            <div class="clearfix">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <!-- <div class="btn-group pull-right chart-config">
+                            <a class="btn btn-xs btn-default dropdown-toggle" data-toggle="dropdown" href="javascript:;" style="margin-left:0px; vertical-align:top;">
+                                <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu" style="min-width:400px; margin:0 0 0 0px;">
+                                <table id="big_table" class="table table-striped">
+                                    <tbody>
+                                        <tr>
+                                            <td width="100px;"><span>时间跨度</span></td>
+                                            <td>
+                                                <a ng-class="{enable: vm.watchParam.start == -3600}" ng-click="vm.watchParam.start=-3600" class="chart-opt">1h</a>
+                                                <a ng-class="{enable: vm.watchParam.start == -21600}" ng-click="vm.watchParam.start=-21600" class="chart-opt">6h</a>
+                                                <a ng-class="{enable: vm.watchParam.start == -43200}" ng-click="vm.watchParam.start=-43200" class="chart-opt">12h</a>
+                                                <a ng-class="{enable: vm.watchParam.start == -86400}" ng-click="vm.watchParam.start=-86400" class="chart-opt">24h</a>
+                                                <a ng-class="{enable: vm.watchParam.start == -259200}" ng-click="vm.watchParam.start=-259200" class="chart-opt">3d</a>
+                                                <a ng-class="{enable: vm.watchParam.start == -604800}" ng-click="vm.watchParam.start=-604800" class="chart-opt">7d</a>
+                                                <a ng-class="{enable: vm.watchParam.start == -2592000}" ng-click="vm.watchParam.start=-2592000" class="chart-opt">1m</a>
+                                            </td>
+                                        </tr>
+                        
+                                        <tr>
+                                            <td><span>采样方法</span></td>
+                                            <td>
+                                                <a ng-class="{enable: vm.watchParam.cf=='MAX'}" ng-click="vm.watchParam.cf='MAX'" class="chart-opt">最大值</a>
+                                                <a ng-class="{enable: vm.watchParam.cf=='MIN'}" ng-click="vm.watchParam.cf='MIN'" class="chart-opt">最小值</a>
+                                                <a ng-class="{enable: vm.watchParam.cf=='AVERAGE'}" ng-click="vm.watchParam.cf='AVERAGE'" class="chart-opt">平均值</a>
+                                            </td>
+                                        </tr>
+                        
+                                        <tr>
+                                            <td><span>其他</span></td>
+                                            <td>
+                                                <a ng-click="vm.watchParam.sum='on';vm.watchParam.sumonly='off'" class="chart-opt">求和</a>
+                                                <a ng-click="vm.watchParam.sum='on';vm.watchParam.sumonly='on'" class="chart-opt">只显示sum</a>
+                                                <a ng-click="vm.watchParam.sum='off';vm.watchParam.sumonly='off'" class="chart-opt">取消求和</a>
+                                                <a ng-click="vm.reset()" class="chart-opt"><b>重置</b></a>
+                                            </td>
+                                        </tr>
+                                </tbody></table>
+                            </ul>
+                        </div> -->
+                        <span class="panel-title graph-title" ng-bind="vm.charts.title.header"></span>
+                    </div>
+                    <div class="panel-body">
+                        <highchart class="chart-container-big" title='vm.charts.title' series="vm.charts.series" options="vm.charts.options">
+                            
+                        </highchart>
+                        <table class="table table-striped table-hover" style="color:#63524D;">
+                            <thead>
+                                <tr>
+                                    <th width='200px'></th>
+                                    <th width='100px'>last</th>
+                                    <th width='100px'>min</th>
+                                    <th width='100px'>avg</th>
+                                    <th width='100px'>max</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="serie in vm.charts.series">
+                                    <td ng-bind="serie.name"></td>
+                                    <td ng-bind="serie.last | number:2"></td>
+                                    <td ng-bind="serie.min | number:2"></td>
+                                    <td ng-bind="serie.avg | number:2"></td>
+                                    <td ng-bind="serie.max | number:2"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <input id="path" type="hidden" value="{{g_id}}">
+            <input id="graph_type" type="hidden" value="{{graph_type}}">
+        </div>
+    </div>
+    <script type="text/javascript" src="/static/src/tool/jquery/2.1.4/jquery-2.1.4.min.js?v=201511301743"></script>
+    <script type="text/javascript" src="/static/src/tool/angular/angular.min.js?v=201511301743"></script>
+    <script type="text/javascript" src="/static/src/tool/highcharts/highcharts.js?v=201511301743"></script>
+    <script type="text/javascript" src="/static/src/tool/highcharts/highcharts-ng.js?v=201511301743"></script>
+    <script type="text/javascript" src="/static/src/tool/bootstrap/bootstrap.min.js?v=201511301743"></script>
+    <script type="text/javascript" src="/static/src/tool/ng_datetimepicker/js/moment.min.js?v=201511301743"></script>
+    <script type="text/javascript" src="/static/src/tool/ng_datetimepicker/js/datetimepicker.js?v=201511301743"></script>
+    <script type="text/javascript" src="/static/src/ng/big_ng.js?v=201512161743"></script>
+</body>
+</html>

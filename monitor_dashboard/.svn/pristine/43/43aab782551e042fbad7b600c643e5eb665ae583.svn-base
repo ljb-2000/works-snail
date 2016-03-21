@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛智能监控平台</title>
+{% include "import_css.html" %}
+</head>
+<body>
+    <!--主界面开始-->
+    <div class="container-fluid">
+        {% include "header.html" %}
+        <!-- 页面主体开始-->
+        <div class="row clearfix">
+            <!--左侧部分开始-->
+            <div class="pull-left u-left">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#tab1" aria-controls="tab1" role="tab" data-toggle="tab">IP筛选</a></li>
+                    <li role="presentation"><a href="#tab2" aria-controls="tab2" role="tab" data-toggle="tab">主机组筛选</a></li>
+                </ul>
+
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="tab1">
+                        <form>
+                            <div class="form-group">
+                                <label for="u_fliter">ip信息：<span class="red">*</span></label>
+                                <textarea class="form-control" id="u_fliter" placeholder="请输入ip，多个ip以‘回车’分隔"></textarea>
+                            </div>
+                            <div class="form-group mt30">
+                                <button id="plug_filter" class="btn btn-primary btn-block" onclick="return false;">
+                                    <span class="glyphicon glyphicon-ok"></span>
+                                    确定
+                                </button>
+                            </div>
+                            <div class="form-group text-center">
+                                <span class="filter-msg u-red"></span>
+                            </div>
+                        </form>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="tab2">
+                        <div id="u_jstree">
+                            
+                        </div>
+                        <button id="confirm_tree" class="btn btn-primary btn-block mt20">
+                            <span class="glyphicon glyphicon-ok"></span>
+                            确定
+                        </button>
+                    </div>
+                    <input id="node_arr" type="hidden">
+                </div>
+            </div>
+            <!--左侧部分结束-->
+            <!--右侧部分开始-->
+            <div class="u-right">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">插件配置</h3>
+                    </div>
+                    <div class="panel-body pb0">
+                        <form class="form-inline">
+                            <div class="form-group">
+                                <input id="search_ip" type="text" class="form-control" placeholder="请输入IP">
+                                <input id="search_key" type="text" class="form-control" placeholder="请输入KEY">
+                                <button id="plug_search" class="btn btn-primary" onclick="return false;">
+                                    <span class="glyphicon glyphicon-search"></span>
+                                    查询
+                                </button>
+                                <button id="plug_upload" class="btn btn-info" onclick="return false;">
+                                    <span class="glyphicon glyphicon-plus"></span>
+                                    添加
+                                </button>
+                                <button id="plug_upload" class="btn btn-info" onclick="return false;">
+                                    <span class="glyphicon glyphicon-upload"></span>
+                                    导入
+                                </button>
+                            </div>
+                            <table id="plug_table" class="table table-hover table-striped mt30">
+                                <thead>
+                                    <tr>
+                                        <th>IP</th>
+                                        <th>KEY</th>
+                                        <th>VALUE</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!--右侧部分结束-->
+        </div>
+        <!-- 页面主体结束-->
+    </div>
+{% include "import_js.html" %}
+{% include "import_tooljs.html" %}
+<script type="text/javascript" src="/static/src/jq/common.js"></script>
+<script type="text/javascript" src="/static/src/jq/server_plug/plug.js"></script>
+</body>
+</html>

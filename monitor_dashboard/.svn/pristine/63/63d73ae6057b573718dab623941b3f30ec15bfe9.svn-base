@@ -1,0 +1,30 @@
+/**
+ * 
+ * @authors Your Name (you@example.org)
+ * @date    2015-11-24 15:07:09
+ * @version $Id$
+ */
+
+ $(function() {
+
+     // datatable
+     var plugTable = $('#plug_table').dataTable({
+         "sDom": 'lfrtip',
+         "bLengthChange": false,
+         "iDisplayLength": 10,
+         "aoColumnDefs": [{
+             "bSortable": false,
+             "aTargets": [1, 2, 3]
+         }],
+
+         "aaSorting": [[ 3, "desc" ]],
+         //"bProcessing": true,
+         //"bServerSide": true,
+         "sPaginationType": "full_numbers",
+         //"sAjaxSource": "/user_self_host_list/",
+         "bFilter": false,
+         "oLanguage": {
+             "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+         }
+     });
+}

@@ -1,0 +1,245 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+import datetime
+import os, errno
+import logging
+import traceback, json
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import HttpResponse
+from redisclient import rc
+from releaseinfo import UNSOLVED_ALARM_EVENTS_KEY, AGENT_INFO_KEY_PREFIX
+import time
+from utils.db_conn import DB
+from config import portal, monitor
+
+#logger = logging.getLogger("logger_utils")
+
+@csrf_exempt
+def ajax_get_group_hosts(request):
+    """
+        get group host names
+    """
+    result = []
+    sql = '''select id, grp_name from grp'''
+    
+    portal_db_conn = DB(
+        portal.DB_HOST,
+        portal.DB_PORT,
+        portal.DB_USER,
+        portal.DB_PASS,
+        portal.DB_NAME)
+    rows = portal_db_conn.query_all(sql)
+    
+    product_dict = {}
+    product_set_dict = {}
+    for grp_info_dict in rows:
+        grp_name = grp_info_dict.get('grp_name')
+        grp_id = grp_info_dict.get('id')
+        product_name = grp_name.split('.')[0]
+        product_set = grp_name.split('.')[1]
+        if product_dict.get(product_name):
+            product_dict[product_name].append(product_set)
+        else:
+            product_dict[product_name] = [product_set]
+        product_set_dict[grp_name] = grp_id
+        
+    for product,product_set_list in product_dict.items():
+        children_list = []
+        for product_set in product_set_list:
+            grp_id = product_set_dict.get('%s.%s'%(product,product_set))
+            children_list.append({ 'text': product_set, "id": grp_id, })
+        result.append({"text": product, "id": product,
+                       "children": children_list,
+                       })
+    return HttpResponse(json.dumps(result), content_type="application/json")
+
+@csrf_exempt
+def ajax_get_ip_by_groups(request):
+    """
+        get ips by groups
+    """
+    node_id_list = request.POST.getlist('nodeIdLists[]',[])
+    node_id_str = ','.join(node_id_list)
+    sql = '''
+        select distinct(`host`.ip) from host, grp_host
+        where host.id = grp_host.host_id and grp_host.grp_id in (%s)
+         '''%(node_id_str)
+    
+    portal_db_conn = DB(
+        portal.DB_HOST,
+        portal.DB_PORT,
+        portal.DB_USER,
+        portal.DB_PASS,
+        portal.DB_NAME)
+    rows = portal_db_conn.query_all(sql)
+        
+    ip_list = []
+    for ip_dict in rows:
+        ip = ip_dict.get('ip')
+        ip_list.append(ip)
+    return HttpResponse(json.dumps(ip_list), content_type="application/json")
+
+@csrf_exempt
+def ajax_filter_ip(request):
+    """
+        get ips by filter
+    """
+    ip_list = []
+    ip_text = request.POST.get('ip_text','')
+    if ip_text:
+        sql = '''select ip from host where ip like \'%%%s%%\''''%ip_text
+        
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        rows = portal_db_conn.query_all(sql)
+            
+        for ip_dict in rows:
+            ip = ip_dict.get('ip')
+            ip_list.append(ip)
+    return HttpResponse(json.dumps(ip_list), content_type="application/json")
+
+@csrf_exempt
+def monitor_close(request):
+    """
+        close host monitor
+    """
+    sdict = {'result':0}
+    id_list = request.POST.getlist('values[]',[])
+    if id_list:
+        now = datetime.datetime.now()
+        timestamp_begin = time.mktime(now.timetuple())
+        timestamp_end = timestamp_begin+60*60*24*365
+        ip_str = ','.join(id_list)
+#        sql = '''
+#        update falcon_portal.host set host.maintain_begin = %s,host.maintain_end = %s
+#        where host.ip in (
+#        select alarm_agentinfo.endpoint
+#        from monitor.alarm_agentinfo alarm_agentinfo
+#        where alarm_agentinfo.id in (%s) )
+#        '''%(int(timestamp_begin), int(timestamp_end), ip_str)
+
+        sql = '''
+        update falcon_portal.host set maintain_begin = %s, maintain_end = %s
+        where id in (%s)
+        '''%(int(timestamp_begin), int(timestamp_end), ip_str)
+        
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        portal_db_conn.execute(sql)
+        portal_db_conn.commit()
+        sdict['result'] = 1
+        
+    return HttpResponse(json.dumps(sdict), content_type="application/json")
+
+@csrf_exempt
+def monitor_open(request):
+    """
+        open host monitor
+    """
+    sdict = {'result':0}
+    id_list = request.POST.getlist('values[]',[])
+    if id_list:
+        ip_str = ','.join(id_list)
+
+        sql = '''
+        update falcon_portal.host set maintain_begin = 0, maintain_end = 0
+        where id in (%s)
+        '''%(ip_str)
+        
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        portal_db_conn.execute(sql)
+        portal_db_conn.commit()
+        sdict['result'] = 1
+            
+    return HttpResponse(json.dumps(sdict), content_type="application/json")
+
+def get_unsolved_alarms():
+    """
+        get unsolved alarm events from redis.
+    """
+    alarm_str = rc.get(UNSOLVED_ALARM_EVENTS_KEY)
+    alarm_list = []
+    if alarm_str:
+        alarms = json.loads(alarm_str)
+        for level,level_items in alarms.iteritems():
+            for event_id,event_value in level_items.iteritems():
+                timestamp = event_value.get('timestamp')
+                event_value.update({'alarm_time':time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(timestamp) if timestamp and isinstance(timestamp,int) else "")})
+                alarm_list.append(event_value)
+    return alarm_list
+
+def get_product_of_host(host):
+    if not host:
+        return ""
+    key = AGENT_INFO_KEY_PREFIX + host
+    p_name = rc.hget(key, 'p_name')
+    p_set = rc.hget(key, 'p_set')
+    p_module = rc.hget(key, 'p_module')
+    if not p_name or not p_set or not p_module:
+        sql = '''select * from alarm_agentinfo WHERE endpoint="%(host)s" limit 1''' % ({"host": host})
+        monitor_db_conn = DB(
+            monitor.DB_HOST,
+            monitor.DB_PORT,
+            monitor.DB_USER,
+            monitor.DB_PASS,
+            monitor.DB_NAME)
+        result = monitor_db_conn.query_one(sql)
+        if result:
+            p_name = result.get("product_name")
+            p_set = result.get("p_set")
+            p_module = result.get("p_module")
+            rc.hset(key, "p_name", p_name)
+            rc.hset(key, "p_set", p_set)
+            rc.hset(key, "p_module", p_module)
+            rc.expire(key, 5 * 60)
+    info = {
+        "p_name":p_name,
+        "p_set":p_set,
+        "p_module":p_module
+    }
+    return info
+
+@csrf_exempt
+def ajax_get_metric_list(request):
+    """
+        get metric by filter
+    """
+    metric_list = []
+    query = request.POST.get('metric','')
+    if query:
+        sql = '''select DISTINCT metric from strategy where metric like \'%%%s%%\''''%query
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        rows = portal_db_conn.query_all(sql)
+        for metric_dict in rows:
+            metric = metric_dict.get('metric')
+            metric_list.append(metric)
+    return HttpResponse(json.dumps(metric_list), content_type="application/json")
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^ajax_get_group_hosts/$', ajax_get_group_hosts, name='ajax_get_group_hosts'),
+    url(r'^ajax_get_ip_by_groups/$', ajax_get_ip_by_groups, name='ajax_get_ip_by_groups'),
+    url(r'^ajax_filter_ip/$', ajax_filter_ip, name='ajax_filter_ip'),
+    url(r'^ajax_filter_metric/$', ajax_get_metric_list, name='ajax_get_metric_list'),
+    url(r'^monitor_close/$', monitor_close, name='monitor_close'),
+    url(r'^monitor_open/$', monitor_open, name='monitor_open'),
+)

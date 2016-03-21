@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛智能监控平台</title>
+<link type="text/css" rel="stylesheet" href="/static/css/bootstrap.min.css?v=201511301743">
+<link type="text/css" rel="stylesheet" href="/static/css/common.css?v=201512311743">
+<link type="text/css" rel="stylesheet" href="/static/css/index.css?v=201512301032">
+</head>
+<body>
+	<!--主界面开始-->
+    <div class="container-fluid">
+    	{% include "header.html" %}
+		<!-- 页面主体开始-->
+		<div class="row main-box">
+			<!--右侧部分开始-->
+			<div class="view-right-box pull-right col-xs-3 animated fadeInUp">
+				<div class="panel panel-default pl0" style="height:220px;">
+				 	<div class="panel-heading">
+				    	<h3 class="panel-title">
+				    		<span class="glyphicon glyphicon-check"></span>
+				    		显示面板
+				    	</h3>
+				  	</div>
+				  	<div class="panel-body">
+				    	<div class="creat-views" data-toggle="buttons">
+				    	  	<label class="btn btn-default active" data-id="view_01">
+				    	    	<input type="checkbox" autocomplete="off" checked> 最新告警消息
+				    	  	</label>
+				    	  	<label class="btn btn-default active" data-id="view_02">
+				    	    	<input type="checkbox" autocomplete="off"> CPU用率
+				    	  	</label>
+				    	  	<label class="btn btn-default active" data-id="view_03">
+				    	    	<input type="checkbox" autocomplete="off"> 内存用率
+				    	  	</label>
+				    	  	<label class="btn btn-default active" data-id="view_04">
+				    	  	  	<input type="checkbox" autocomplete="off"> 磁盘用率
+				    	  	</label>
+				    	</div>
+				  	</div>
+				</div>
+
+				<div class="panel panel-default pl0" style="height:220px;">
+				 	<div class="panel-heading">
+				    	<h3 class="panel-title">
+				    		<span class="glyphicon glyphicon-bullhorn"></span>
+				    		通知公告
+				    	</h3>
+				  	</div>
+				  	<div class="panel-body" style="line-height:30px;">
+				    	亲爱的小伙伴们，<br>
+				    	新版监控上线了，<br>
+				    	快来体验吧！<br>
+				    	<br>
+				    	如发现问题或bug请及时向我们反馈~
+				  	</div>
+				</div>
+
+				<div class="panel panel-default pl0 mb0">
+				 	<div class="panel-heading">
+				    	<h3 class="panel-title">
+				    		<span class="glyphicon glyphicon-earphone"></span>
+				    		联系我们
+				    	</h3>
+				  	</div>
+				  	<div class="panel-body">
+				    	<ul class="pd0">
+							<li>
+								<span class="glyphicon glyphicon-education"></span>
+								&nbsp;技术支持：运维开发部
+							</li>
+							<li>
+								<span class="glyphicon glyphicon-user"></span>
+								&nbsp;联系人：王毅</li>
+							<li>
+								<span class="glyphicon glyphicon-envelope"></span>
+								&nbsp;e-mail：wyi@snail.com</li>
+				    	</ul>
+				  	</div>
+				</div>
+			</div>
+			<!--右侧部分结束-->
+			<!--左侧部分开始-->
+			<div class="view-left-box pull-left col-xs-9 animated fadeInLeft">
+				<ul class="m-lists clearfix pl0 hide">
+					<li>
+						<div class="m-lists-top"></div>
+						<div class="m-lists-bottom bg-01">网站监控</div>
+					</li>
+					<li>
+						<div class="m-lists-top"></div>
+						<div class="m-lists-bottom bg-02">服务器监控</div>
+					</li>
+					<li>
+						<div class="m-lists-top"></div>
+						<div class="m-lists-bottom bg-03">服务监控</div>
+					</li>
+					<li>
+						<div class="m-lists-top"></div>
+						<div class="m-lists-bottom bg-04">业务流程监控</div>
+					</li>
+					<li>
+						<div class="m-lists-top"></div>
+						<div class="m-lists-bottom bg-05">页面性能监控</div>
+					</li>
+				</ul>
+
+				<div id="view_01" class="panel panel-danger">
+				 	<div class="panel-heading">
+				    	<h3 class="panel-title">
+				    		<span class="glyphicon glyphicon-stats"></span>
+				    		最新告警消息(Top10)
+				    	</h3>
+				  	</div>
+			    	<table height="374px" class="table-center table table-hover">
+			    		<thead>
+			    			<tr height="34px">
+								<th>IP</th>
+								<th>PRODUCT</th>
+								<th>SET</th>
+								<th>MODULE</th>
+								<th>策略</th>
+								<th>告警值</th>
+								<th>报警时间</th>
+							</tr>
+			    		</thead>
+			    		<tbody style="height:340px;">
+							{% if alarms %}
+							{% for alarm in alarms %}
+							<tr>
+								<td>{{alarm.endpoint}}</td>
+								<td>{{alarm.p_name}}</td>
+								<td>{{alarm.p_set}}</td>
+								<td>{{alarm.p_module}}</td>
+								<td>{{alarm.monitor_item}}</td>
+								<td>{{alarm.leftValue|floatformat:2}}</td>
+								<td>{{alarm.alarm_time}}</td>
+							</tr>
+							{% endfor %}
+							{% else %}
+							<tr>
+							    <td class="v-center" colspan="8">
+							        <img src="/static/img/result_empty.png">
+							        <p class="empty-font">恭喜您，暂无异常～</p>
+							    </td>
+							</tr>
+							{% endif %}
+			    		</tbody>
+			    	</table>
+				</div>
+				<div id="view_02" class="panel panel-info view-items item-right">
+				 	<div class="panel-heading">
+				    	<h3 class="panel-title">
+				    		<span class="glyphicon glyphicon-stats"></span>
+				    		CPU使用率(Top10)
+				    	</h3>
+				  	</div>
+			    	<table height="374px" class="table table-center table-hover">
+			    		<thead>
+			    			<tr height="34px">
+								<th>IP</th>
+								<th>CPU使用率</th>
+							</tr>
+			    		</thead>
+			    		<tbody>
+							<tr class="table-empty-02 hide">
+			    			    <td class="v-center" colspan="8">
+			    			        <img src="/static/img/result_empty.png">
+			    			        <p class="empty-font">暂无数据</p>
+			    			    </td>
+			    			</tr>
+			    			<tr class="j-loading-02">
+								<td class="v-center" colspan="8">
+								    <p class="empty-font">数据加载中，请稍后...</p>
+								</td>
+			    			</tr>
+			    		</tbody>
+			    	</table>
+				</div>
+				<div id="view_03" class="panel panel-success view-items item-right">
+				 	<div class="panel-heading">
+				    	<h3 class="panel-title">
+				    		<span class="glyphicon glyphicon-stats"></span>
+				    		内存使用率(Top10)
+				    	</h3>
+				  	</div>
+			    	<table height="374px" class="table table-center table-hover">
+			    		<thead>
+			    			<tr height="34px">
+								<th>IP</th>
+								<th>内存使用率</th>
+							</tr>
+			    		</thead>
+			    		<tbody>
+			    			<tr class="table-empty-03 hide">
+			    			    <td class="v-center" colspan="8">
+			    			        <img src="/static/img/result_empty.png">
+			    			        <p class="empty-font">暂无数据</p>
+			    			    </td>
+			    			</tr>
+			    			<tr class="j-loading-03">
+								<td class="v-center" colspan="8">
+								    <p class="empty-font">数据加载中，请稍后...</p>
+								</td>
+			    			</tr>
+			    		</tbody>
+			    	</table>
+				</div>
+				<div id="view_04" class="panel panel-warning view-items">
+				 	<div class="panel-heading">
+				    	<h3 class="panel-title">
+				    		<span class="glyphicon glyphicon-stats"></span>
+				    		磁盘使用率(Top10)
+				    	</h3>
+				  	</div>
+			    	<table height="374px" class="table table-center table-hover">
+			    		<thead>
+			    			<tr height="34px">
+								<th>IP</th>
+								<th>磁盘使用率</th>
+							</tr>
+			    		</thead>
+			    		<tbody>
+			    			<tr class="table-empty-04 hide">
+			    			    <td class="v-center" colspan="8">
+			    			        <img src="/static/img/result_empty.png">
+			    			        <p class="empty-font">暂无数据</p>
+			    			    </td>
+			    			</tr>
+			    			<tr class="j-loading-04">
+								<td class="v-center" colspan="8">
+								    <p class="empty-font">数据加载中，请稍后...</p>
+								</td>
+			    			</tr>
+			    		</tbody>
+			    	</table>
+				</div>
+			</div>
+			<!--左侧部分结束-->
+		</div>
+    </div>
+    {% include "import_js.html" %}
+    <script type="text/javascript" src="/static/src/jq/overview/monitor.js?v=201512301743"></script>
+</body>
+</html>

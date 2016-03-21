@@ -1,0 +1,303 @@
+/**
+ * 
+ * @authors Your Name (you@example.org)
+ * @date    2015-11-24 15:07:09
+ * @version $Id$
+ */
+
+// datatable
+var plugTable = $('#plug_table').dataTable({
+    "sDom": 'lfrtip',
+    "bLengthChange": false,
+    "iDisplayLength": 10,
+    "aoColumnDefs": [{
+        "bSortable": false,
+        "aTargets": [0,1, 2, 3,4]
+    }],
+
+    "aaSorting": [
+        [3, "desc"]
+    ],
+    "bProcessing": true,
+    "bServerSide": true,
+    "sPaginationType": "full_numbers",
+    "sAjaxSource": "/server_plugin_list/",
+    "bFilter": false,
+    "oLanguage": {
+        "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+    }
+});
+
+//删除配置
+function deletePluginSetting(id) {
+    var isDelete = confirm("是否确认删除？");
+
+    if (isDelete) {
+        $.ajax({
+                url: '/plugin_setting/delete/',
+                type: 'POST',
+                data: {
+                    id: id
+                },
+            })
+            .done(function() {
+                showAlert('jSuccess', '删除成功！', true);
+
+                plugTable.fnReloadAjax('/server_plugin_list/?p=0');
+            })
+            .fail(function() {
+                showAlert('jError', '删除失败！', false);
+            });
+    }
+}
+
+// 修改配置项
+function updatePluginSetting(obj, id) {
+    var $parents = $(obj).parents('tr'),
+        iptxt = $parents.find('td').eq(0).text(),
+        keytxt = $parents.find('td').eq(1).text(),
+        valuetxt = $parents.find('td').eq(2).text();
+
+    $('.modify-ip').val(iptxt);
+    $('.modify-value').val(valuetxt);
+    $('.modify-key').val(keytxt);
+
+    $('#save_plug_modify').off('click').on('click', function() {
+        var ip = $('.modify-ip').val().trim(),
+            value = $('.modify-value').val().trim(),
+            key = $('.modify-key').val().trim();
+
+        if (!ip || !value || !key) {
+            showAlert('jNotify', '有未填写的输入项，请检查！', true);
+        }
+
+        if (!isIp(ip)) {
+            showAlert('jNotify', '非法的ip格式！', true);
+
+            return false;
+        }
+
+        $.ajax({
+                url: '/plugin_setting/update/',
+                type: 'POST',
+                data: {
+                    id: id,
+                    ip: ip,
+                    value: value,
+                    key: key
+                }
+            })
+            .done(function() {
+                showAlert('jSuccess', '更新成功！', true);
+
+                plugTable.fnReloadAjax('/server_plugin_list/?p=0');
+
+                $('#plug_update').modal('hide');
+            })
+            .fail(function() {
+                showAlert('jError', '更新失败！', false);
+            });
+    });
+}
+
+$(function() {
+    // 批量筛选功能
+    $(document).on("click", "#plug_filter", function() {
+        var txt = $("#u_fliter").val(),
+            msg = $(".filter-msg"),
+            result = filterIp(txt, msg);
+
+        if (result === false) {
+            return false;
+        } else {
+            plugTable.fnReloadAjax('/server_plugin_list/?p=0&iptxt=' + result);
+
+            $('#node_arr').val(result);
+
+            $('#plug_table').find('.check-all').prop('checked', false);
+        }
+    });
+
+    // jstree绑定onchange事件
+    function changeJstree() {
+        var nodeId = $('#u_jstree').jstree().get_bottom_selected();
+
+        if (nodeId.length) {
+            $.ajax({
+                    url: "/ajax_get_ip_by_tree/",
+                    type: 'POST',
+                    data: {
+                        nodeIdLists: nodeId
+                    }
+                })
+                .done(function(data) {
+                    if (data.length) {
+                        plugTable.fnReloadAjax('/server_plugin_list/?p=0&iptxt=' + data);
+                        $('#node_arr').val(data);
+                    } else {
+                        plugTable.fnReloadAjax('/server_plugin_list/?p=0&null=1');
+                        $('#node_arr').val('null');
+                    }
+
+                    $('#host_table').find('.check-all').prop('checked', false);
+                });
+        } else {
+            plugTable.fnReloadAjax('/server_plugin_list/?p=0');
+            $('#node_arr').val('');
+        }
+    }
+
+    // load jstree
+    $('#u_jstree').on('changed.jstree', function() {
+
+        changeJstree();
+
+    }).jstree({
+        "plugins": ["checkbox"],
+        'core': {
+            "themes": {
+                "theme": "classic",
+                "dots": true,
+                "icons": true
+            },
+            'dataType': 'json',
+            'data': {
+                'url': '/ajax_get_group_hosts/'
+            }
+        }
+    });
+
+    //模糊查询jstree
+    $("#search_tree").off("click").on("click", function() {
+        var grp_str = $("#search_tree_text").val(),
+            selectedId = $('#u_jstree').jstree().get_bottom_selected();
+
+        $.jstree.destroy();
+
+        $('#u_jstree').on('changed.jstree', function() {
+            changeJstree();
+
+        }).jstree({
+            "plugins": ["checkbox"],
+            'core': {
+                "themes": {
+                    "theme": "classic",
+                    "dots": true,
+                    "icons": true
+                },
+                'dataType': 'json',
+                'data': {
+                    'url': '/ajax_get_group_hosts/?grp_str=' + grp_str + '&selected_id=' + selectedId
+                }
+            }
+        });
+    });
+
+    // 查询配置
+    $('#plug_search').on('click', function() {
+        var ip = $('#search_ip').val().trim(),
+            key = $('#search_key').val().trim();
+
+        plugTable.fnReloadAjax('/server_plugin_list/?p=0&iptxt=' + ip + '&key=' + key);
+    });
+
+    // 添加配置
+    $('#save_plug_settings').on('click', function() {
+        var ip = $('.add-ip'),
+            value = $('.add-value'),
+            key = $('.add-key'),
+            input = $('#add_plug_form input'),
+            valueArr = [],
+            keyArr = [],
+            i,
+            j,
+            len,
+            valueLen;
+
+        if (!isIp(ip.val().trim())) {
+            showAlert('jNotify', '非法的ip格式！', true);
+
+            return false;
+        }
+
+        for (i = 0, len = input.length; i < len; i++) {
+            if (!input.eq(i).val().trim()) {
+                showAlert('jNotify', '有未填写的输入项，请检查！', true);
+
+                return false;
+            }
+        }
+
+        for (j = 0, valueLen = value.length; j < valueLen; j++) {
+            var values = value.eq(j).val().trim(),
+                keys = key.eq(j).val().trim();
+
+            valueArr.push(values);
+            keyArr.push(keys);
+        }
+
+        $.ajax({
+                url: '/plugin_setting/add/',
+                type: 'POST',
+                data: {
+                    ip: ip.val(),
+                    values: valueArr.join(','),
+                    keys: keyArr.join(',')
+                }
+            })
+            .done(function() {
+                showAlert('jSuccess', '添加成功！', true);
+
+                plugTable.fnReloadAjax('/server_plugin_list/?p=0');
+
+                $('#plug_add').modal('hide');
+
+                input.val('');
+
+                $('.add-plug-group').remove();
+            })
+            .fail(function() {
+                showAlert('jError', '添加失败！', false);
+            });
+    });
+
+    // 添加配置行
+    $(document).on('click', '#add_plug_settings', function() {
+        var html = '<div class="form-group add-plug-group" style="margin-left: 72px;">\
+                <div class="col-sm-5">\
+                    <input type="text" class="add-value form-control text-center" placeholder="请输入VALUE">\
+                </div>\
+                <div class="col-sm-5">\
+                    <input type="text" class="add-key form-control text-center" placeholder="请输入KEY">\
+                </div>\
+                <div class="col-sm-1">\
+                    <span class="delete-h pointer glyphicon glyphicon-minus"></span>\
+                </div>\
+            </div>';
+
+        $('#add_plug_wrap').append(html);
+    });
+
+    // 删除配置行
+    $(document).on('click', '.delete-h', function() {
+        $(this).parents('.form-group').remove();
+    });
+
+    //文件上传
+    function uploadFile(upFile, textField) {
+        upFile.trigger('click');
+
+        textField.val(upFile.val());
+
+        upFile.change(function() {
+            textField.val(upFile.val());
+        });
+    }
+
+    $('#plug_upload').on('click', function() {
+        var upFile = $('#up_field'),
+            textField = $('#text_filed');
+
+        uploadFile(upFile, textField);
+    });
+});

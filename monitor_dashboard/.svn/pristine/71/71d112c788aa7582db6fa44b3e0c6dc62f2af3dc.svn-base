@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html ng-app="myChart">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛智能监控平台</title>
+<link type="text/css" rel="stylesheet" href="../../static/css/bootstrap.min.css">
+<link type="text/css" rel="stylesheet" href="../../static/css/common.css">
+<link type="text/css" rel="stylesheet" href="../../static/css/style.css">
+<link type="text/css" rel="stylesheet" href="../../static/src/tool/ng_datetimepicker/css/datetimepicker.css">
+</head>
+<body style="background:#fff;min-width:1350px;" ng-controller="chartPage as vm">
+	<form class="form-inline clearfix c-form">
+		<div class="form-group" style="position:relative;">
+			<label class="control-label">起始：</label>
+			<a class="dropdown-toggle form-control input-sm date-area" id="dropdown1" role="button" data-toggle="dropdown" href="javascript:;">
+                <div class="input-group">
+                	<span><i class="glyphicon glyphicon-calendar mr10"></i></span>
+                    <span class="pull-right" ng-bind="vm.globalParam.start | date: 'yyyy-MM-dd HH:mm'"></span>
+                </div>
+            </a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel1">
+                <datetimepicker ng-model="vm.globalParam.start" datetimepicker-config="{ dropdownSelector: '#dropdown1' }"/>
+            </ul>
+        </div>
+        <div class="form-group" style="position:relative;">
+			<label class="form-group">结束：</label>
+			<a class="dropdown-toggle form-control input-sm date-area" id="dropdown2" role="button" data-toggle="dropdown" href="javascript:;">
+                <div class="input-group">
+                    <span><i class="glyphicon glyphicon-calendar mr10"></i></span>
+                    <span class="pull-right" ng-bind="vm.globalParam.end | date: 'yyyy-MM-dd HH:mm'"></span>
+                </div>
+            </a>
+            <ul class="dropdown-menu menu2" role="menu" aria-labelledby="dLabel2">
+                <datetimepicker ng-model="vm.globalParam.end" datetimepicker-config="{ dropdownSelector: '#dropdown2' }"/>
+            </ul>
+        </div>
+        <div class="form-group">
+			<label class="form-group">采样方法：</label>
+			<select class="form-control" ng-model="vm.globalParam.cf">
+				<option value='AVERAGE'>AVERAGE</option>
+				<option value='MAX'>MAX</option>
+				<option value='MIN'>MIN</option>
+			</select>
+		</div>
+		<div class="form-group">
+			<label class="form-group">视角：</label>
+			<select class="form-control" ng-model="vm.globalParam.graph_type">
+				<option value='h'>Endpoint视角</option>
+				<option value='k'>Counter视角</option>
+				<option value='a'>组合视角</option>
+				<option value='q'>趋势视角</option>
+			</select>
+		</div>
+		<div class="form-group">
+			<div class="checkbox">
+		        <label>
+		          <input type="checkbox" name="sum" ng-model="vm.globalParam.sum" value="on"> 求和
+		        </label>
+		     </div>
+		</div>
+		<div class="form-group">
+		    <button class="btn btn-default">
+		    	<span class="glyphicon glyphicon-eye-open" ng-click="vm.show()"></span>
+		    	看图
+		    </button>
+		</div>
+		<div class="form-group">
+		    <button class="btn btn-default" ng-click="vm.reset()">
+				<span class="glyphicon glyphicon-repeat"></span>
+		    	重置条件
+		    </button>
+		</div>
+	</form>
+	<div class="c-box clearfix">
+		<div class="c-highchart panel panel-default" ng-repeat="chart in vm.charts">
+		 	<div class="panel-heading">
+		    	<h3 class="panel-title" ng-bind="chart.title.header"></h3>
+		  	</div>
+		  	<div class="panel-body">
+		    	<highchart style="height:250px;width:40%" title='chart.title' series="chart.series" options="chart.options">
+					
+				</highchart>
+
+                <table style="margin:20px 0 0 46px;color:#63524D;">
+                    <thead>
+                        <tr>
+                            <th width='150px'></th>
+                            <th width='80px'>last</th>
+                            <th width='80px'>min</th>
+                            <th width='80px'>avg</th>
+                            <th width='80px'>max</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="serie in chart">
+                            <td ng-bind="serie.name"></td>
+                            <td ng-bind="serie.last | number:2"></td>
+                            <td ng-bind="serie.min | number:2"></td>
+                            <td ng-bind="serie.avg | number:2"></td>
+                            <td ng-bind="serie.max | number:2"></td>
+                        </tr>
+                    </tbody>
+                </table>
+		  	</div>
+		</div>
+
+        <input id="path" type="hidden" value="{{g_id}}">
+	</div>
+	<script type="text/javascript" src="../../static/src/tool/jquery/2.1.4/jquery-2.1.4.min.js"></script>
+	<script type="text/javascript" src="../../static/src/tool/angular/angular.min.js"></script>
+	<script type="text/javascript" src="../../static/src/tool/highcharts/highcharts.js"></script>
+	<script type="text/javascript" src="../../static/src/tool/highcharts/highcharts-ng.js"></script>
+	<script type="text/javascript" src="../../static/src/tool/bootstrap/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../../static/src/tool/ng_datetimepicker/js/moment.min.js"></script>
+	<script type="text/javascript" src="../../static/src/tool/ng_datetimepicker/js/datetimepicker.js"></script>
+	<script type="text/javascript" src="../../static/src/ng/charts_ng.js"></script>
+</body>
+</html>

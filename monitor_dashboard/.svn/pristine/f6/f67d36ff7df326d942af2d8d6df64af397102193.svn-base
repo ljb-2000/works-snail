@@ -1,0 +1,121 @@
+<!--头部导航开始-->
+<div class="row">
+	<div class="header clearfix col-xs-12 pd0">
+		<div class="h-logo text-center">
+			<a href><img src='/static/img/logo.png' height="44" width="45"></a>
+		</div>
+		<ul class="h-menu clearfix pl0">
+			{% if user.has_perm_index_menu %}
+			<li>
+				<a href='/index/'>
+					<span class="glyphicon glyphicon-home"></span>
+					总览
+				</a>
+			</li>
+			{% endif %}
+			{% if user.has_perm_screen_show_menu %}
+			<li>
+				<a href='/screen_list/screen_show/'>
+					<span class="glyphicon glyphicon-sound-stereo"></span>
+					屏幕展示
+				</a>
+			</li>
+			{% endif %}
+			{% if user.has_perm_user_self_menu %}
+			<li>
+				<a href='/user_self/host/'>
+					<span class="glyphicon glyphicon-wrench"></span>
+					用户自助
+				</a>
+			</li>
+			{% endif %}
+			{% if user.has_perm_monitor_query_menu %}
+			<li>
+				<a href='/monitor_query/query/'>
+					<span class="glyphicon glyphicon-cloud"></span>
+					监控查询
+				</a>
+			</li>
+			{% endif %}
+			{% if user.has_perm_warning_query_menu %}
+			<li>
+				<a href='/warning_query/unrecovery/'>
+					<span class="glyphicon glyphicon-scale"></span>
+					报警查询
+				</a>
+			</li>
+			{% endif %}
+			{% if user.has_perm_server_plug %}
+			<li>
+                <a href='/server_plug/plug/'>
+                    <span class="glyphicon glyphicon-hdd"></span>
+                    服务器配置
+                </a>
+            </li>
+            {% endif %}
+			{% if user.has_perm_show_sysconfig %}
+			<li>
+                <a href='/show_sysconfig' target="_blank">
+                    <span class="glyphicon glyphicon-cog"></span>
+                    系统设置
+                </a>
+            </li>
+            {% endif %}
+		</ul>
+		<ul class="h-tools clearfix pull-right">
+			<li>
+			    <a href="#">
+			    	<span class="glyphicon glyphicon-user"></span>
+			      	{{ user.username }}
+			    </a>
+			</li>
+			<!-- <li>
+			 	<a href="#">
+			 		<span class="glyphicon glyphicon-envelope"></span>
+			 	</a>
+			</li>
+			<li>
+			 	<a href="#">
+			 		<span class="glyphicon glyphicon-question-sign"></span>
+			 	</a>
+			</li> -->
+			<li>
+				<a href="/logout/">
+					<span class="glyphicon glyphicon-share-alt"></span>
+					退出
+				</a>
+			</li>
+		</ul>
+	</div>
+</div>
+<!--头部导航结束-->
+<!--二级菜单开始-->
+<div class="row">
+	<div class="h-nav col-xs-12">
+		<div class="hide">
+			<a {% if not user.has_perm_index %}class="hide"{% endif %} href="/index/">监控总览</a>
+		</div>
+		<div class="hide">
+			<a {% if not user.has_perm_screen_show %}class="hide"{% endif %} href="/screen_list/screen_show/">屏幕展示</a>
+			<a {% if not user.has_perm_screen_setting %}class="hide"{% endif %} href="/screen_list/screen_setting/">屏幕配置</a>
+		</div>
+		<div class="hide">
+			<a {% if not user.has_perm_user_self_host %}class="hide"{% endif %} href="/user_self/host/">按主机屏蔽</a>
+			<a {% if not user.has_perm_user_self_plot %}class="hide"{% endif %} href="/user_self/plot/">按策略屏蔽</a>
+		</div>
+		<div class="hide">
+			<a {% if not user.has_perm_monitor_query %}class="hide"{% endif %} href="/monitor_query/query/">监控查询</a>
+			<a {% if not user.has_perm_newest_data %}class="hide"{% endif %} href="/monitor_query/newest_data/">最新数据</a>
+		</div>
+		<div class="hide">
+			<a {% if not user.has_perm_warning_query_unrecovery %}class="hide"{% endif %} href="/warning_query/unrecovery/">未恢复的报警</a>
+			<a {% if not user.has_perm_warning_query_recovery %}class="hide"{% endif %} href="/warning_query/recovery/">报警记录</a>
+			<a {% if not user.has_perm_warning_query_3rd %}class="hide"{% endif %} href="/warning_query/other_server/">第三方业务</a>
+		</div>
+		<div class="hide">
+			<a {% if not user.has_perm_server_plug %}class="hide"{% endif %} href="/server_plug/plug/">服务器配置</a>
+		</div>
+		<span id="line_active" class="line-active"></span>
+	</div>
+</div>
+<!--二级菜单结束-->

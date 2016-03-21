@@ -1,0 +1,18 @@
+[uwsgi]                                                                                                                                                              
+socket = 127.0.0.1:9001
+master = true
+pythonpath = /opt/www/monitor_dashboard
+module = monitor_dashboard.wsgi
+processes = 8
+daemonize = /data/log/monitor/uwsgi_monitor_dashboard.log
+buffer-size = 65535
+pidfile = /opt/www/monitor_dashboard/uwsgi_monitor_dashboard.pid
+cpu-affinity = 1
+memory-report = 1
+threads = 8
+listen = 128
+post-buffering = 100M
+stats = 127.0.0.1:1717
+socket-timeout = 120
+max-requests = 5000
+disable-logging = false

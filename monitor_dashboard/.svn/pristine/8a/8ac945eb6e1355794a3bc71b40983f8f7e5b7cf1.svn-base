@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/2
+# Usage:
+# --------------------------------
+
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from models import ServerPluginSetting
+import traceback
+import logging
+import simplejson as json
+
+logger = logging.getLogger("logger")
+
+@csrf_exempt
+@require_POST
+def plugin_add(request):
+    result = {"msg":""}
+    code = 500
+    try:
+        data =request.POST
+        params = {
+            "ip":data.get("ip",""),
+            "key": data.get("key",""),
+            "value": data.get("value","")
+        }
+        for key,value in params.iteritems():
+            if not value:
+                result['msg'] = '{0} is required'.format(key)
+        if not result['msg']:
+            ServerPluginSetting.objects.create(**params)
+            result['msg'] = 'add plugin value ok!'
+            code = 200
+    except Exception, e:
+        logger.error(e.message)
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = 'add plugin value fail'
+        print error
+
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))

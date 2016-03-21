@@ -1,0 +1,25 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json
+import datetime, time
+from utils.ctranslate import LazyEncoder
+from django.db.transaction import commit_on_success
+
+
+@login_required
+@csrf_exempt
+@render_to('server_plug/plug.html')
+def server_plug(request):
+    return locals()
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^server_plug/plug/$', server_plug, name='server_plug'),
+)

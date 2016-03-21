@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/1
+# Usage:
+# --------------------------------
+
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse,HttpResponseRedirect
+import logging
+import traceback
+import requests
+import json
+from releaseinfo import FALCON_LOGIN_URL,FALCON_HOME
+
+
+logger = logging.getLogger("logger")
+
+@csrf_exempt
+@login_required
+def show_sysconfig(request):
+    """
+        check and redirect user to falcon config page.
+    """
+    user = request.user
+    username = user.username
+    data = {
+        "callback": "",
+        "ldap": "",
+        "name": username,
+        "password": username,
+        "sig": ''
+    }
+
+    try:
+        result = requests.post(FALCON_LOGIN_URL,data=data,timeout=5)
+        info = result.json()
+
+        msg = info['msg']
+        if not msg:
+            response = HttpResponseRedirect(FALCON_HOME)
+            sig = result.cookies['sig']
+            response.set_cookie('sig', sig, expires=3600 * 24 * 30)
+            logger.debug("## show falcon home ok, user:{0},sig:{1}".format(user.username,sig))
+            return response
+        else:
+            logger.debug("## show falcon home fail, user:{0}".format(user.username))
+            return HttpResponse(json.dumps({
+                "code": 500,
+                "msg": msg
+            }), content_type="application/json")
+    except Exception,e:
+        error = traceback.format_exc()
+        logger.error(error)
+        print error
+        return HttpResponse(json.dumps({
+            "code": 500,
+            "msg": u"页面跳转失败,{0}".format(e)
+        }), content_type="application/json")
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^show_sysconfig/$', show_sysconfig),
+)

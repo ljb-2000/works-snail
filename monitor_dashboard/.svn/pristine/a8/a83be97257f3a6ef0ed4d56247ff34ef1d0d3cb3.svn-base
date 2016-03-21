@@ -1,0 +1,332 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json
+from django.core.paginator import Paginator
+import datetime, time
+from utils.ctranslate import LazyEncoder
+from django.db.transaction import commit_on_success
+from utils.db_conn import DB
+from config import portal
+
+@login_required
+@csrf_exempt
+@render_to('user_self/host.html')
+def user_self_host_index(request):
+    return locals()
+
+@login_required
+@csrf_exempt
+@render_to('user_self/plot.html')
+def user_self_plot_index(request):
+    return locals()
+
+@login_required
+@csrf_exempt
+def user_self_host_list(request):
+    user = request.user
+    null = request.GET.get('null',0)
+    iptxt = request.GET.get('iptxt','')
+    ipstr = request.GET.get('ipstr','')
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, 'ip', 'product_name', 'p_set', 'p_module', 'maintain_begin']
+    order_item = order_list[iSortCol_0]
+    
+    if null:
+        total = 0
+        result_query = ()
+    else:
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        
+        sql_total = '''
+                    select count(*) as total
+                    from falcon_portal.host host, monitor.alarm_agentinfo alarm_agentinfo
+                    where host.ip = alarm_agentinfo.endpoint
+                    '''
+
+        sql_query = '''
+            select host.id, host.ip, host.maintain_begin, alarm_agentinfo.product_name, alarm_agentinfo.p_set, alarm_agentinfo.p_module
+            from falcon_portal.host host, monitor.alarm_agentinfo alarm_agentinfo
+            where host.ip = alarm_agentinfo.endpoint
+            '''
+        
+        #ip匹配查询
+        if iptxt:
+            iplist = iptxt.split(',')
+            sql_total += " and host.ip in ('%s')"%"','".join(iplist)
+            sql_query += " and host.ip in ('%s')"%"','".join(iplist)
+        
+        #ip模糊查询
+        if ipstr:
+            sql_total += " and host.ip like \'%%%s%%\'"%ipstr
+            sql_query += " and host.ip like \'%%%s%%\'"%ipstr
+            
+        #排序
+        if order_item:
+            if sSortDir_0 == "desc":
+                sql_query += ' order by %s desc'%order_item
+            else:
+                sql_query += ' order by %s'%order_item
+        
+        result_total = portal_db_conn.query_all(sql_total)
+        total = result_total[0].get('total')
+        
+        sql_query += ' limit %s, %s'%(iDisplayStart, iDisplayLength)
+        result_query = portal_db_conn.query_all(sql_query)
+
+    #第一个参数表示需要分页的对象，可为list、tuple、QuerySet，只要它有count()或者__len__()函数
+    #第二个参数为每页显示记录数
+#    p = Paginator(rows, iDisplayLength)
+#    total = p.count #总数
+#    page_range = p.page_range #页数list
+#    page = p.page(page_range[iDisplayStart / iDisplayLength])
+#    object_list = page.object_list
+    
+    object_list = result_query[iDisplayStart:iDisplayStart+iDisplayLength]
+    
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+
+    for obj in object_list:
+        #封装数组，按照列数填入对应的值
+        check_html = u"<input type='checkbox' value='%s' class='check-it'/>" % obj.get('id')
+#        change_html = '<a style="color: blue;" href="javascript:void(0)" onclick="javascript:account_edit(\'%s\',\'%s\');">%s</a>' % (obj.id, obj.name, obj.name)
+        maintain_begin = obj.get('maintain_begin',0)
+        status = u'开启'
+        if maintain_begin > 0:
+            status = u'关闭'
+        data = [check_html, obj.get('ip'), obj.get('product_name'), obj.get('p_set'), obj.get('p_module'), status]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+def user_self_plot_list(request):
+    user = request.user
+    null = request.GET.get('null',0)
+    iptxt = request.GET.get('iptxt','')
+    ipstr = request.GET.get('ipstr','')
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, 'metric', 'run_begin']
+    order_item = order_list[iSortCol_0]
+    
+    if null:
+        total = 0
+        result_query = ()
+    else:
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        
+        sql_total = '''
+                    select count(*) as total from strategy
+                    '''
+
+        sql_query = '''
+            select id, metric, run_begin from strategy
+            '''
+        
+#        #ip匹配查询
+#        if iptxt:
+#            iplist = iptxt.split(',')
+#            sql_total += " and host.ip in ('%s')"%"','".join(iplist)
+#            sql_query += " and host.ip in ('%s')"%"','".join(iplist)
+#        
+        #metric模糊查询
+        if ipstr:
+            sql_total += " and metric like \'%%%s%%\'"%ipstr
+            sql_query += " and metric like \'%%%s%%\'"%ipstr
+            
+        #排序
+        if order_item:
+            if sSortDir_0 == "desc":
+                sql_query += ' order by %s desc'%order_item
+            else:
+                sql_query += ' order by %s'%order_item
+        
+        result_total = portal_db_conn.query_all(sql_total)
+        total = result_total[0].get('total')
+        
+        sql_query += ' limit %s, %s'%(iDisplayStart, iDisplayLength)
+        result_query = portal_db_conn.query_all(sql_query)
+
+    #第一个参数表示需要分页的对象，可为list、tuple、QuerySet，只要它有count()或者__len__()函数
+    #第二个参数为每页显示记录数
+#    p = Paginator(rows, iDisplayLength)
+#    total = p.count #总数
+#    page_range = p.page_range #页数list
+#    page = p.page(page_range[iDisplayStart / iDisplayLength])
+#    object_list = page.object_list
+    
+    object_list = result_query[iDisplayStart:iDisplayStart+iDisplayLength]
+    
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+
+    for obj in object_list:
+        #封装数组，按照列数填入对应的值
+        check_html = u"<input type='checkbox' value='%s' class='check-it'/>" % obj.get('id')
+#        change_html = '<a style="color: blue;" href="javascript:void(0)" onclick="javascript:account_edit(\'%s\',\'%s\');">%s</a>' % (obj.id, obj.name, obj.name)
+        run_begin = obj.get('run_begin','')
+        status = u'开启'
+        if run_begin:
+            status = u'关闭'
+        data = [check_html, obj.get('metric'), status]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@csrf_exempt
+def ajax_filter_ip(request):
+    """
+        get ips by filter
+    """
+    ip_list = []
+    ip_text = request.POST.get('ip_text','')
+    if ip_text:
+        sql = '''select ip from host where ip like \'%%%s%%\''''%ip_text
+        
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        rows = portal_db_conn.query_all(sql)
+            
+        for ip_dict in rows:
+            ip = ip_dict.get('ip')
+            ip_list.append(ip)
+    return HttpResponse(json.dumps(ip_list), content_type="application/json")
+
+@csrf_exempt
+def ajax_filter_metric(request):
+    """
+        get metrics by filter
+    """
+    metric_list = []
+    metric_text = request.POST.get('metric_text','')
+    if metric_text:
+        sql = '''select metric from strategy where metric like \'%%%s%%\''''%metric_text
+        
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        rows = portal_db_conn.query_all(sql)
+            
+        for ip_dict in rows:
+            metric = ip_dict.get('metric')
+            metric_list.append(metric)
+    return HttpResponse(json.dumps(metric_list), content_type="application/json")
+
+@csrf_exempt
+def monitor_close(request):
+    """
+        close host monitor
+    """
+    sdict = {'result':0}
+    id_list = request.POST.getlist('values[]',[])
+    if id_list:
+        now = datetime.datetime.now()
+        timestamp_begin = time.mktime(now.timetuple())
+        timestamp_end = timestamp_begin+60*60*24*365
+        ip_str = ','.join(id_list)
+#        sql = '''
+#        update falcon_portal.host set host.maintain_begin = %s,host.maintain_end = %s
+#        where host.ip in (
+#        select alarm_agentinfo.endpoint
+#        from monitor.alarm_agentinfo alarm_agentinfo
+#        where alarm_agentinfo.id in (%s) )
+#        '''%(int(timestamp_begin), int(timestamp_end), ip_str)
+
+        sql = '''
+        update falcon_portal.host set maintain_begin = %s, maintain_end = %s
+        where id in (%s)
+        '''%(int(timestamp_begin), int(timestamp_end), ip_str)
+        
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        portal_db_conn.execute(sql)
+        portal_db_conn.commit()
+        sdict['result'] = 1
+        
+    return HttpResponse(json.dumps(sdict), content_type="application/json")
+
+@csrf_exempt
+def monitor_open(request):
+    """
+        open host monitor
+    """
+    sdict = {'result':0}
+    id_list = request.POST.getlist('values[]',[])
+    if id_list:
+        ip_str = ','.join(id_list)
+
+        sql = '''
+        update falcon_portal.host set maintain_begin = 0, maintain_end = 0
+        where id in (%s)
+        '''%(ip_str)
+        
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        portal_db_conn.execute(sql)
+        portal_db_conn.commit()
+        sdict['result'] = 1
+            
+    return HttpResponse(json.dumps(sdict), content_type="application/json")
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^user_self/host/$', user_self_host_index),
+    url(r'^user_self/plot/$', user_self_plot_index),
+    url(r'^user_self_host_list/$', user_self_host_list),
+    url(r'^user_self_plot_list/$', user_self_plot_list),
+    
+    url(r'^ajax_filter_ip/$', ajax_filter_ip, name='ajax_filter_ip'),
+    url(r'^monitor_close/$', monitor_close, name='monitor_close'),
+    url(r'^monitor_open/$', monitor_open, name='monitor_open'),
+    
+    url(r'^ajax_filter_metric/$', ajax_filter_metric, name='ajax_filter_metric'),
+)

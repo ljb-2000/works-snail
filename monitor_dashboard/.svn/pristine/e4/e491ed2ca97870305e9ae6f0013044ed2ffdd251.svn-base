@@ -1,0 +1,226 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-02 16:58
+ * @msg     按主机屏蔽页js
+ */
+
+$(function() {
+
+    // datatable
+    var hostTable = $('#host_table').dataTable({
+        "sDom": 'rfltip',
+        "bLengthChange": true,
+        "aLengthMenu": [
+            [10, 100, 500, -1],
+            ["10", "100", "500", "所有"]
+        ],
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [0]
+        }],
+
+        "aaSorting": [
+            [5, "desc"]
+        ],
+        "bProcessing": true,
+        "bServerSide": true,
+        "sPaginationType": "full_numbers",
+        "sAjaxSource": "/user_self_host_list/",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+
+    // 批量筛选功能
+    $(document).off("click", "#host_filter").on("click", "#host_filter", function() {
+        var txt = $("#u_fliter").val(),
+            msg = $(".filter-msg"),
+            result = filterIp(txt, msg);
+
+        if (result === false) {
+            return false;
+        } else {
+            hostTable.fnReloadAjax('/user_self_host_list/?p=0&iptxt=' + result);
+
+            $('#node_arr').val(result);
+
+            $('#host_table').find('.check-all').prop('checked', false);
+        }
+    });
+
+    // jstree绑定onchange事件
+    function changeJstree () {
+        var nodeId = $('#u_jstree').jstree().get_bottom_selected();
+
+        if (nodeId.length) {
+            $.ajax({
+                    url: "/ajax_get_ip_by_tree/",
+                    type: 'POST',
+                    data: {
+                        nodeIdLists: nodeId
+                    }
+                })
+                .done(function(data) {
+                    if (data.length) {
+                        hostTable.fnReloadAjax('/user_self_host_list/?p=0&iptxt=' + data);
+                        $('#node_arr').val(data);
+                    } else {
+                        hostTable.fnReloadAjax('/user_self_host_list/?p=0&null=1');
+                        $('#node_arr').val('null');
+                    }
+
+                    $('#host_table').find('.check-all').prop('checked', false);
+                });
+        } else {
+            hostTable.fnReloadAjax('/user_self_host_list/?p=0');
+            $('#node_arr').val('');
+        }
+    }
+
+    // load jstree
+    $('#u_jstree').on('changed.jstree', function() {
+
+        changeJstree ();
+
+    }).jstree({
+        "plugins": ["checkbox"],
+        'core': {
+            "themes": {
+                "theme": "classic",
+                "dots": true,
+                "icons": true
+            },
+            'dataType': 'json',
+            'data': {
+                'url': '/ajax_get_group_hosts/'
+            }
+        }
+    });
+
+    //模糊查询jstree
+    $("#search_tree").off("click").on("click", function() {
+        var grp_str = $("#search_tree_text").val(),
+            selectedId = $('#u_jstree').jstree().get_bottom_selected();
+
+        $.jstree.destroy();
+        
+        $('#u_jstree').on('changed.jstree', function() {
+            changeJstree ();
+
+        }).jstree({
+            "plugins": ["checkbox"],
+            'core': {
+                "themes": {
+                    "theme": "classic",
+                    "dots": true,
+                    "icons": true
+                },
+                'dataType': 'json',
+                'data': {
+                    'url': '/ajax_get_group_hosts/?grp_str=' + grp_str + '&selected_id=' + selectedId
+                }
+            }
+        });
+    });
+
+    // 搜索主机模糊匹配
+    /*$('#search_host').autocomplete({
+        source: function(request, response) {
+            var ip = $('#search_host').val(),
+                iptxt = $('#node_arr').val();
+
+            $.ajax({
+                type: "POST",
+                url: "/ajax_filter_ip/",
+                dataType: "json",
+                data: {
+                    'ip_text': request.term
+                },
+                success: function(data) {
+                    response($.map(data, function(item) {
+                        return item;
+                    }));
+
+                    hostTable.fnReloadAjax('/user_self_host_list/?p=0&ipstr=' + ip + '&iptxt=' + iptxt);
+
+                    $('#host_table').find('.check-all').prop('checked', false);
+                }
+            });
+        },
+        select: function(event, ui) {
+            var value = ui.item.value,
+                iptxt = $('#node_arr').val();
+
+            hostTable.fnReloadAjax('/user_self_host_list/?p=0&ipstr=' + value + '&iptxt=' + iptxt);
+        }
+    });*/
+
+    $('#search_host, #search_set').on('input', function() {
+        var ip = $('search_host').val(),
+            iptxt = $('#node_arr').val(),
+            ipset = $('#search_set').val();
+
+        hostTable.fnReloadAjax('/user_self_host_list/?p=0&ipstr=' + ip + '&iptxt=' + iptxt + '&ipset=' + ipset);
+
+        $('#host_table').find('.check-all').prop('checked', false);
+
+    });
+
+    // 屏蔽开启主机
+    function switchItem(values, itemType) {
+        if (!values.length) {
+            showAlert('jNotify', '请先选择' + itemType.type + '项！', true);
+            return false;
+        }
+
+        $.ajax({
+                url: itemType.url,
+                type: 'POST',
+                data: {
+                    values: values
+                }
+            })
+            .done(function(data) {
+                if (data.result === 1) {
+                    showAlert('jSuccess', itemType.type + '成功！', true);
+
+                    hostTable.fnReloadAjax();
+
+                    $('#host_table').find('.check-all').prop('checked', false);
+                } else {
+                    showAlert('jError', itemType.type + '失败！');
+                }
+            })
+            .fail(function() {
+                showAlert('jError', itemType.type + '失败！');
+            });
+    }
+
+    (function switchBtn() {
+        var table = $('#host_table tbody'),
+            closeItem = {
+                type: "屏蔽",
+                url: "/monitor_close/",
+            },
+            openItem = {
+                type: "开启",
+                url: "/monitor_open/"
+            };
+
+        $('#close_btn').on('click', function() {
+            var values = getCheckedTr(table);
+
+            switchItem(values, closeItem);
+        });
+
+        $('#open_btn').on('click', function() {
+            var values = getCheckedTr(table);
+
+            switchItem(values, openItem);
+        });
+    })();
+
+});

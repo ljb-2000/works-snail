@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蜗牛智能监控平台</title>
+    {% include "import_css.html" %}
+</head>
+
+<body>
+    <!--主界面开始-->
+    <div class="container-fluid">
+        {% include "header.html" %}
+        <!-- 页面主体开始-->
+        <div class="row clearfix">
+            <!--左侧部分开始-->
+            <div class="pull-left u-left">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#tab1" aria-controls="tab1" role="tab" data-toggle="tab">IP筛选</a></li>
+                    <li role="presentation"><a href="#tab2" aria-controls="tab2" role="tab" data-toggle="tab">主机组筛选</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="tab1">
+                        <form>
+                            <div class="form-group">
+                                <label for="u_fliter">ip信息：<span class="red">*</span></label>
+                                <textarea class="form-control" id="u_fliter" placeholder="请输入ip，多个ip以‘回车’分隔"></textarea>
+                            </div>
+                            <div class="form-group mt30">
+                                <button id="plug_filter" class="btn btn-primary btn-block" onclick="return false;">
+                                    确定
+                                </button>
+                            </div>
+                            <div class="form-group text-center">
+                                <span class="filter-msg u-red"></span>
+                            </div>
+                        </form>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="tab2">
+                        <div class="input-group">
+                            <input id="search_tree_text" type="text" class="tree-search form-control" placeholder="模糊排序">
+                            <div id="search_tree" class="tree-search-btn input-group-addon"><span class="glyphicon glyphicon-search"></span></div>
+                        </div>
+                        <div id="u_jstree">
+                        </div>
+                    </div>
+                    <input id="node_arr" type="hidden">
+                </div>
+            </div>
+            <!--左侧部分结束-->
+            <!--右侧部分开始-->
+            <div class="u-right">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">插件配置</h3>
+                    </div>
+                    <div class="panel-body pb0">
+                        <form class="form-inline">
+                            <div class="form-group">
+                                <input id="search_ip" type="text" class="form-control" autocomplete="off" placeholder="请输入IP">
+                                <input id="search_key" type="text" class="form-control" autocomplete="off" placeholder="请输入KEY">
+                                <button id="plug_search" class="btn btn-default" onclick="return false;">
+                                    <span class="glyphicon glyphicon-search"></span> 查询
+                                </button>
+                                <button class="btn btn-default" onclick="return false;" data-toggle="modal" data-target="#plug_add">
+                                    <span class="glyphicon glyphicon-plus"></span> 添加
+                                </button>
+                                <button id="delete_checked" class="btn btn-default" onclick="return false;">
+                                    <span class="glyphicon glyphicon-remove"></span> 批量删除
+                                </button>
+                                <button class="btn btn-default" onclick="return false;" data-toggle="modal" data-target="#plug_upload_wrap">
+                                    <span class="glyphicon glyphicon-upload"></span> 导入
+                                </button>
+                            </div>
+                            <table id="plug_table" class="table table-hover table-striped mt30">
+                                <thead>
+                                    <tr>
+                                        <th width='5%'><input type="checkbox" class="check-all"></th>
+                                        <th>IP</th>
+                                        <th>KEY</th>
+                                        <th>VALUE</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!--右侧部分结束-->
+        </div>
+        <!--页面主体结束-->
+    </div>
+    <!--modal add-->
+    <div id="plug_add" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myPlugLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myPlugLabel">
+                        添加配置项
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <form id="add_plug_form" class="form-horizontal">
+                        <div class="form-group" style="margin-left: 180px;">
+                            <div class="col-sm-6">
+                                <input type="text" class="add-ip form-control text-center" placeholder="请输入IP">
+                            </div>
+                        </div>
+                        <div id="add_plug_wrap">
+                            <div class="form-group" style="margin-left: 72px;">
+                                <div class="col-sm-5">
+                                    <input type="text" class="add-key form-control text-center" placeholder="请输入KEY">
+                                </div>
+                                <div class="col-sm-5">
+                                    <input type="text" class="add-value form-control text-center" placeholder="请输入VALUE">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="text-align:center;">
+                    <button id="save_plug_settings" class="btn btn-primary">
+                        <span class="glyphicon glyphicon-ok"></span> 保存
+                    </button>
+                    <button id="add_plug_settings" class="btn btn-default">
+                        <span class="glyphicon glyphicon-plus"></span> 添加行
+                    </button>
+                    <button class="btn btn-default" data-dismiss="modal">
+                        <span class="glyphicon glyphicon-remove"></span> 取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--modal upload-->
+    <div id="plug_upload_wrap" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myPlugUpload">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myPlugUpload">
+                        选择导入文件
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <form id="file_form" class="form-inline" action="/plugin_setting/import/" method="post" enctype="multipart/form-data">{% csrf_token %}
+                        <div class="form-group" style="margin-left:100px;">
+                            <input id="text_filed" class="form-control" type="text" style="width: 315px;" disabled>
+                            <button id="plug_upload" class="btn btn-default" type="button">
+                                选择
+                            </button>
+                            <input id="up_field" type="file" name="up_field" style="position:absolute;opacity:0;filter:alpha(opacity:0);left:-999%" size="28">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="text-align:center;">
+                    <button id="comfirm_upload" class="btn btn-primary">
+                        <span class="glyphicon glyphicon-ok"></span> 确认
+                    </button>
+                    <button class="btn btn-default" data-dismiss="modal">
+                        <span class="glyphicon glyphicon-remove"></span> 取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--modal update-->
+    <div id="plug_update" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myPlugUpdate">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myPlugUpdate">
+                        修改配置项
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <form id="modify_plug_form" class="form-horizontal">
+                        <div class="form-group" style="margin-left: 180px;">
+                            <div class="col-sm-6">
+                                <input type="text" class="modify-ip form-control text-center" placeholder="请输入IP">
+                            </div>
+                        </div>
+                        <div id="modify_plug_wrap">
+                            <div class="form-group" style="margin-left: 72px;">
+                                <div class="col-sm-5">
+                                    <input type="text" class="modify-key form-control text-center" placeholder="请输入KEY">
+                                </div>
+                                <div class="col-sm-5">
+                                    <input type="text" class="modify-value form-control text-center" placeholder="请输入VALUE">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="text-align:center;">
+                    <button id="save_plug_modify" class="btn btn-primary">
+                        <span class="glyphicon glyphicon-ok"></span> 保存
+                    </button>
+                    <button class="btn btn-default" data-dismiss="modal">
+                        <span class="glyphicon glyphicon-remove"></span> 取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% include "import_js.html" %} {% include "import_tooljs.html" %}
+    <script type="text/javascript" src="/static/src/jq/common.js?v=201512301743"></script>
+    <script type="text/javascript" src="/static/src/jq/server_plug/plug.js?v=201511301743"></script>
+</body>
+
+</html>

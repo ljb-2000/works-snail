@@ -1,0 +1,42 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-02 15:13:22
+ * @msg     第三方业务页js
+ */
+
+// datetime
+$('.datetime-from,.datetime-to').datetimepicker({
+    weekStart: 1,
+    todayBtn: 1,
+    autoclose: 1,
+    todayHighlight: 1,
+    startView: 2,
+    forceParse: 0,
+    linkField: "mirror_field",
+    pickerPosition: "bottom-left"
+});
+
+$(function() {
+
+    // datatable
+    var otherServerTable = $('#other_server_table').dataTable({
+        "sDom": 'lfrtip',
+        "bLengthChange": false,
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [0,2]
+        }],
+
+        // "aaSorting": [[ 8, "desc" ]],
+        "bProcessing": true,
+        "bServerSide": true,
+        "sPaginationType": "full_numbers",
+        "sAjaxSource": "/warning_query/other_server/list",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+});

@@ -1,0 +1,5 @@
+# -*- coding:utf-8 -*-
+
+host = '10.103.4.3'
+user = 'newmonitor'
+pwd = 'Snail@123'

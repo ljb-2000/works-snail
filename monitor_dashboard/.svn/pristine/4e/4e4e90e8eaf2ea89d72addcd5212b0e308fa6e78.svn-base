@@ -1,0 +1,34 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-04 09:57:45
+ * @msg     屏幕展示页js
+ */
+
+$(function() {
+
+    // 选择屏幕动画效果
+    (function() {
+        $('.game-wrap li').hover(function() {
+            var e = $(this).find('.showbar');
+
+            e.next().stop().animate({"bottom": "0"}, 400);
+        }, function() {
+            var e = $(this).find('.showbar');
+
+            e.next().stop().animate({"bottom": "-74px"}, 400);
+        });
+    })();
+
+    // 进入屏幕效果
+    $('.game-wrap .layer').on('click', function() {
+        var e = $(this);
+
+        e.parents('.game-wrap').slideUp(400).next().show();
+    });
+
+    // 返回产品列表
+    $('#go_back_screen').on('click', function() {
+        $(this).parents('.screen-wrap').slideUp(400).prev().slideDown(400);
+    });
+});

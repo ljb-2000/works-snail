@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛智能监控平台</title>
+{% include "import_css.html" %}
+</head>
+<body>
+    <!--主界面开始-->
+    <div class="container-fluid">
+        {% include "header.html" %}
+        <!-- 页面主体开始-->
+        <div class="row clearfix">
+            <!--右侧部分开始-->
+            <div class="u-right" style="margin:18px 0 0;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">最新数据</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form class="form-inline" onsubmit="return false;">
+                            <div class="form-group">
+                               <button class="btn btn-primary" data-toggle="modal" data-target="#myModal">
+                                   <span class="glyphicon glyphicon-modal-window"></span>
+                                   显示筛选面板
+                               </button>
+                            </div>
+                            <div class="form-group ml35">
+                                <label for="">搜索：</label>
+                                <input id="search_host" type="text" class="form-control" autocomplete="off" placeholder="请输入IP">
+                                <input id="search_counter" type="text" class="form-control" autocomplete="off" placeholder="请输入COUNTER">
+                                <button id="search_newest" type="button" class="btn btn-default">
+                                    <span class="glyphicon glyphicon-search"></span>
+                                    查询
+                                </button>
+                            </div>
+                            <div class="alert alert-warning mt20">
+                                您当前已选择 
+                                <span id="host_text" class="host-text">0个</span>
+                                主机组
+                            </div>
+                            <table id="newest_data_table" class="table table-hover table-striped mt15">
+                                <thead>
+                                    <tr>
+                                        <th width='10%'>IP</th>
+                                        <th>COUNTER</th>
+                                        <th>采集时间</th>
+                                        <th>前一个值</th>
+                                        <th>当前值</th>
+                                        <th>变化</th>
+                                        <th>PRODUCT</th>
+                                        <th>SET</th>
+                                        <th>MODULE</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!--右侧部分结束-->
+        </div>
+        <!-- 页面主体结束-->
+    </div>
+
+    <!--modal search-->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        筛选面板
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#tab1" aria-controls="tab1" role="tab" data-toggle="tab">IP筛选</a></li>
+                        <li role="presentation"><a href="#tab2" aria-controls="tab2" role="tab" data-toggle="tab">主机组筛选</a></li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="tab1">
+                            <form onsubmit="return false">
+                                <div class="form-group  mt20">
+                                    <label for="u_fliter">ip信息：<span class="red">*</span></label>
+                                    <textarea class="form-control" id="u_fliter" placeholder="请输入ip，多个ip以‘回车’分隔"></textarea>
+                                </div>
+                                <div class="form-group mt30">
+                                    <button id="host_filter" class="ip-txt-btn btn btn-primary btn-block">
+                                        确定
+                                    </button>
+                                </div>
+                                <div class="form-group text-center">
+                                    <span class="filter-msg u-red"></span>
+                                </div>
+                            </form>
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="tab2">
+                            <div class="input-group">
+                                <input id="search_tree_text" type="text" class="tree-search form-control" placeholder="模糊排序">
+                                <div id="search_tree" class="tree-search-btn input-group-addon"><span class="glyphicon glyphicon-search"></span></div>
+                            </div>
+                            <div id="u_jstree" style="max-height:460px;">
+                                
+                            </div>
+                            <button class="tree-confirm-btn btn btn-primary btn-block mt20" data-dismiss="modal">
+                                确定
+                            </button>
+                        </div>
+                        <input id="node_arr" type="hidden">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% include "import_js.html" %}
+{% include "import_tooljs.html" %}
+<script type="text/javascript" src="/static/src/jq/common.js?v=201512301459"></script>
+<script type="text/javascript" src="/static/src/jq/monitor_query/newest_data.js?v=201602181018"></script>
+</body>
+</html>

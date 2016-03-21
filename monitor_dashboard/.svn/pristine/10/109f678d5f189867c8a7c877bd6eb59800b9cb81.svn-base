@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/7
+# Usage:
+# --------------------------------
+
+import traceback, json
+from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import HttpResponse
+from models import LowLoadInfo
+from utils.ctranslate import LazyEncoder
+from utils.decorator import login_required
+from utils.common import get_product_list_by_user,get_hosts_of_user,get_set_by_ip_list
+
+@csrf_exempt
+@login_required
+def implicit_ip_list(request):
+    """
+        filter host ip according to products of user.
+    """
+    ip_list=[]
+    iptxt = request.POST.get('iptxt','')
+    ip = request.POST.get("ip")
+    try:
+        user = request.user
+
+        if not iptxt:
+            products = get_product_list_by_user(user.first_name)
+            if not products:
+                ip_list=[]
+            else:
+                ip_list = get_hosts_of_user(user.first_name)
+        else:
+            ip_list = sorted(iptxt.split(","))
+        if ip:
+            ip_list = [i for i in ip_list if str(i).find(ip) > -1]
+    except:
+        print traceback.format_exc()
+    return HttpResponse(json.dumps(ip_list), content_type="application/json")
+
+
+@csrf_exempt
+@login_required
+def implicit_set_list(request):
+    """
+        filter host set according to products of user.
+    """
+    user = request.user
+    iptxt = request.POST.get('iptxt','').strip()
+    p_set = request.POST.get('p_set','').strip()
+    ip_list=[]
+    set_list=[]
+    try:
+        if not iptxt:
+            products = get_product_list_by_user(user.first_name)
+            if products:
+               ip_list = get_hosts_of_user(user.first_name)
+        else:
+            ip_list = iptxt.split(",")
+        set_list = sorted(get_set_by_ip_list(ip_list))
+        if p_set:
+            set_list = [i for i in set_list if unicode(i).find(p_set) > -1]
+    except Exception,e:
+        print traceback.format_exc()
+    return HttpResponse(json.dumps(set_list), content_type="application/json")
+
+@csrf_exempt
+@login_required
+def ajax_low_load_list(request):
+    """
+        显示低负载机器信息
+    """
+    month = request.GET.get('month',"")
+    product = request.GET.get('product',"")
+    p_set = request.GET.get('p_set',"")
+    p_module = request.GET.get('p_module',"")
+
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = ['ip', 'product_name', 'p_set', 'p_module','cpu_ave_usage','mem_ave_usage','disk_ave_usage']
+
+    order_item = order_list[iSortCol_0]
+
+    if month:
+        items = LowLoadInfo.objects.filter(month=month)
+
+        if product:
+            items = items.filter(product_name=product)
+        if p_set:
+            items = items.filter(p_set=p_set)
+        if p_module:
+            items = items.filter(p_module=p_module)
+
+        if order_item:
+            if sSortDir_0 == "desc":
+                order_item = '-%s' % order_item
+            items = items.order_by(order_item)
+        else:
+            items = items.order_by('product_name')
+
+        p = Paginator(items, iDisplayLength)
+        total = p.count #总数
+        page_range = p.page_range #页数list
+        page = p.page(page_range[iDisplayStart / iDisplayLength])
+        object_list = page.object_list
+    else:
+        object_list = []
+        total = 0
+
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["aaData"] = []
+    try:
+        for obj in object_list:
+            data = [obj.ip, obj.product_name,obj.p_set,obj.p_module,obj.cpu_ave_usage,obj.mem_ave_usage,obj.disk_ave_usage]
+            sdicts["aaData"].append(data)
+    except:
+        print traceback.format_exc()
+        sdicts["aaData"] = []
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))

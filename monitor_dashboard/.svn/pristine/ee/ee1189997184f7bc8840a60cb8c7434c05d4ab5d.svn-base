@@ -1,0 +1,1257 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-04 09:57:45
+ * @msg     屏幕展示页js
+ */
+
+$(function () {
+
+    // 选择屏幕动画效果
+    (function () {
+        $('.game-wrap li').hover(function () {
+            var e = $(this).find('.showbar');
+
+            e.next('.layer').stop().animate({
+                "bottom": "0"
+            }, 300);
+        }, function () {
+            var e = $(this).find('.showbar');
+
+            e.next('.layer').stop().animate({
+                "bottom": "-74px"
+            }, 300);
+        });
+    })();
+
+    // 进入屏幕效果
+    $('.game-wrap .screen-doc').on('click', function () {
+        var that = $(this),
+            productName = that.parent().prev('.showbar').find('b').text(),
+            txt = null;
+
+        $('.screen-product').html(productName);
+
+        $('#search-screen').val('');
+
+        refreshList(productName, txt, that);
+    });
+
+    // 查询屏幕ajax
+    $('#search-screen').on('input', function () {
+        var txt = $(this).val(),
+            productName = $('.screen-product').text();
+
+        refreshList(productName, txt);
+    });
+
+    // 刷新屏幕列表
+    function refreshList(productName, txt, that) {
+        $.ajax({
+                url: '/overview/ajax_get_screens_by_product/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_name: productName,
+                    txt: txt
+                }
+            })
+            .done(function (data) {
+                var screenList = '';
+
+                data.forEach(function(e) {
+                    screenList += '<li class="list-group-item"><input type="checkbox" value="' + e.id + '" data-name="' + e.name + '"><a href="#" data-tab="' + e.id + '">' + e.name + '</a></li>';
+                });
+
+                $('.screen-list-wrap').empty().append(screenList);
+
+                if (!txt && that) {
+                    that.parents('.game-wrap').slideUp(400).next().show();
+                }
+
+            })
+            .fail(function () {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+    // 返回产品列表
+    $('#go_back_screen').on('click', function () {
+        $(this).parents('.screen-wrap').slideUp(400).prev().slideDown(400);
+    });
+
+    // 增加屏幕标签页
+    function addTab(tabArr, valueArr, dataArr, chartArr) {
+        var obj = $('#my_tabs a[href="#' + tabArr + '"]'),
+            tabNum = $('#my_tabs').find('.atab').length;
+
+        if (obj.length) {
+            obj.tab('show');
+
+            $('.screen-wrap').slideUp(400).prev().slideDown(400);
+        } else if (tabNum === 5) {
+            showAlert('jNotify', '开启屏幕总数不能超过5个 :(', true);
+        } else {
+            $('#my_tabs').append('<li class="ali" role="presentation" style="position: relative;">\
+                    <i class="glyphicon glyphicon-remove mytab-close"></i>\
+                    <a class="atab" href="#' + tabArr + '" aria-controls="' + tabArr + '" role="tab" data-toggle="tab" style="padding-right: 24px;">\
+                        ' + valueArr + '\
+                    </a>\
+                </li>');
+
+            $('#my_contents').append('<div role="tabpanel" class="tab-pane" id="' + tabArr + '"></div>');
+
+            $('#my_tabs a:last').tab('show');
+
+            var $tab = $('#' + tabArr),
+                warp = null;
+
+            $tab.append(dataArr);
+
+            autoChartBar();
+
+            warp = $tab.find('.charts-wrap');
+
+
+            chartArr.forEach(function (data, index) {
+                var param = {
+                        header: data[0].header,
+                        chartId: data[0].g_id,
+                        graphId: data[0].graph_id,
+                        graphType: data[0].graph_type
+                    },
+                    id = tabArr + '_' + param.graphId + '_' + param.chartId + '_' + param.graphType;
+
+                createChart(warp, index, index); // 渲染chart html模板 
+
+                var chart = $('#' + tabArr).find('div[data-index="' + index + '"]');
+
+                chart.find('.panel-title').html(param.header).prop('title', param.header);
+                chart.find('.chart-box').prop('id', id);
+                chart.find('.view-larger').prop('href', '/chart/big/?id=' + param.chartId + '&graph_type=' + param.graphType);
+
+                setCharts(id, data); // 渲染chart 绘图模板
+
+                setList(id, data); // 渲染 chart底部list
+            });
+
+            $('.screen-wrap').slideUp(400).prev().slideDown(400);
+        }
+    }
+
+    // 点击屏幕列表ajax
+    $(document).off('click', '.screen-list-wrap a').on('click', '.screen-list-wrap a', function () {
+        var that = $(this),
+            tabArr = that.attr('data-tab'),
+            productName = $('.screen-product').html(),
+            valueArr = that.text() + '--' + productName;
+
+        showScreen(tabArr, valueArr);
+    });
+
+    // 单屏幕tab
+    function showScreen(tabArr, valueArr) {
+        $.ajax({
+                url: '/overview/ajax_show_screen/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'screen_id': tabArr
+                }
+            })
+            .done(function (data) {
+                var dataArr = data.html,
+                    chartArr = data.series_list;
+
+                addTab(tabArr, valueArr, dataArr, chartArr);
+
+                $('.game-wrap').slideDown(400);
+                $('.screen-loading').addClass('hide');
+            })
+            .fail(function () {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+    // 屏幕配置跳转ajax
+    (function () {
+        var path = location.search;
+
+        if (path) {
+            var param = path.substring(path.indexOf('screen_id=')),
+                paramArr = param.split('&'),
+                tabArr = paramArr[0].split('='),
+                valueArr = paramArr[1].split('=');
+
+            $('.game-wrap').slideUp(400);
+            $('.screen-loading').removeClass('hide');
+
+            showScreen(tabArr[1], decodeURI(valueArr[1]));
+        }
+    })();
+
+    // 点击tab刷新charts
+    $(document).on('click', '#my_tabs .atab', function () {
+        var e = $(this);
+
+        modifyParam(e);
+    });
+
+    // 渲染chart html模板
+    function createChart(warp, index, num) {
+        var html = '<div class="c-highchart panel panel-default" data-index=' + index + '>\
+            <div class="panel-heading clearfix">\
+                <h3 class="chart-title panel-title pull-left"></h3>\
+                <div class="pull-right">\
+                    <span class="edit-title glyphicon glyphicon-edit" title="编辑标题" data-toggle="modal" data-target="#edit_title"></span>&nbsp;&nbsp;\
+                    <a class="view-larger glyphicon glyphicon-zoom-in" target="_blank" title="查看大图"></a>&nbsp;&nbsp;\
+                    <span class="get-sum glyphicon glyphicon-stats" title="求和"></span>&nbsp;&nbsp;\
+                    <span class="delete-chart glyphicon glyphicon-remove" title="删除"></span>\
+                </div>\
+            </div>\
+            <div class="panel-body">\
+                <div class="chart-box">\
+                </div>\
+                <table class="table chart-table table-striped table-hover hide" style="color:#63524D;">\
+                    <thead>\
+                        <tr>\
+                            <th width="250px"></th>\
+                            <th width="80px">last</th>\
+                            <th width="80px">min</th>\
+                            <th width="80px">avg</th>\
+                            <th width="80px">max</th>\
+                        </tr>\
+                    </thead>\
+                    <tbody class="chart-list">\
+                    </tbody>\
+                </table>\
+            </div>\
+        </div>',
+            box = warp.find('.c-highchart');
+
+        if (!box.length) {
+            warp.append(html);
+        } else {
+            if (num === 0) {
+                box.eq(0).before(html);
+            } else {
+                box.eq(num - 1).after(html);
+            }
+        }
+    }
+
+    // 渲染chart 绘图模板
+    function setCharts(id, data, bgcolor) {
+        $('#' + id).highcharts({
+            chart: {
+                type: 'line',
+                zoomType: 'x',
+                backgroundColor: bgcolor || '#fff'
+            },
+            tooltip: {
+                xDateFormat: '%Y-%m-%d %H:%M:%S',
+                valueDecimals: 2
+            },
+            xAxis: {
+                type: 'datetime',
+                dateTimeLabelFormats: {
+                    hour: '%H:%M'
+                },
+                minRange: 1000, // 不能放大超过1s
+                minTickInterval: 1000 // 放大间隔最小为1s
+            },
+            yAxis: {
+                max: data[0].y_max,
+                min: data[0].y_min
+            },
+            series: data,
+            title: {
+                text: null
+            }
+        });
+    }
+
+    // 渲染 chart底部list
+    function setList(id, data) {
+        var chartList = $('#' + id).next().find('.chart-list'),
+            list = '';
+
+        data.forEach(function (e) {
+            list += '<tr>\
+                <td>' + e.name + '</td>\
+                <td>' + Number(e.last).toFixed(2) + '</td>\
+                <td>' + Number(e.min).toFixed(2) + '</td>\
+                <td>' + Number(e.avg).toFixed(2) + '</td>\
+                <td>' + Number(e.max).toFixed(2) + '</td>\
+            </tr>';
+        });
+
+        chartList.append(list);
+    }
+
+    // 关闭标签页
+    function deleteTab(that) {
+        var e = that.parent(),
+            prev = e.prev(),
+            tabArr = that.next().attr('aria-controls'),
+            panel = $('#my_contents').find('#' + tabArr);
+
+        e.remove();
+        panel.remove();
+        prev.find('a').tab('show');
+    }
+
+    $(document).on('click', '.mytab-close', function () {
+        deleteTab($(this));
+    });
+
+    // 右侧选中栏高度设定
+    function autoChartBar() {
+        var tabH = $(window).height();
+
+        $(".screen-tool-bar").height(tabH);
+
+        $(window).resize(function() {
+            var tabH = $(window).height();
+
+            $(".screen-tool-bar").height(tabH);
+        });
+    }
+
+    // 右侧栏展开隐藏
+    $(document).on("click", ".left-menu", function () {
+        $(".screen-tool-bar").stop().animate({
+            "right": "-345px"
+        }, 600);
+    });
+
+    $(document).on("click", ".screen-tool-menu", function () {
+        $(".screen-tool-bar").stop().animate({
+            "right": "0"
+        }, 600);
+    });
+
+    // 自动切换屏幕tab开关
+    (function () {
+        var t = setInterval(autoTab, 300000);
+
+        $('.time-switch').on('click', function () {
+            var isChecked = $(this).find('input').prop('checked');
+
+            if (!isChecked) {
+                clearInterval(t);
+            } else {
+                t = setInterval(autoTab, 300000);
+            }
+        });
+
+        function autoTab() {
+            var tabNow = $('#my_tabs .ali.active');
+
+            if (tabNow.length) {
+                var index = tabNow.index('.ali') + 1,
+                    len = $('#my_tabs .ali').length,
+                    scrollTop = $(window).scrollTop();
+
+                tabNow.attr('data-top', scrollTop);
+
+                if (index !== len) {
+                    tabNow.next('.ali').find('.atab').trigger('click');
+
+                    var top = $('#my_tabs .ali.active').attr('data-top');
+
+                    $(window).scrollTop(top);
+                }
+
+                if (index === len) {
+                    $('#my_tabs .atab').eq(0).trigger('click');
+
+                    var top = $('#my_tabs .ali.active').attr('data-top');
+
+                    $(window).scrollTop(top);
+                }
+            }
+        }
+    })();
+
+    // 关闭单个chart
+    $(document).on('click', '.delete-chart', function () {
+        var parent = $(this).parents('.c-highchart'),
+            parents = $(this).parents('.tab-pane'),
+            charts = parents.find('.c-highchart'),
+            warp = parents.find('.charts-wrap'),
+            tabArr = parents.prop('id'),
+            id = parent.find('.chart-box').prop('id'),
+            screenId = $(this).parents('.tab-pane').prop('id'),
+
+            mum = $('#' + screenId).find('.screen-counter-table tbody'),
+            obj = $('input[value = "' + id + '"]'),
+            num = obj.parents('tr').prevAll('.checknow').length,
+
+            index = charts.last().attr('data-index'),
+            obj2 = mum.find('tr').eq(index).next('.checknow'),
+            chartId = obj2.find(':checked').prop('value'),
+            nextIndex = obj2.index(),
+            nextnum = obj2.prevAll('.checknow').length - 1;
+
+
+        parent.fadeOut('400', function () {
+            $(this).remove();
+
+            obj.prop('checked', false).parents('tr').removeClass('checknow');
+
+            $('.chart-all-' + screenId).prop('checked', false);
+
+            if (num <= 4 && mum.find('.checknow').length >= 4 && charts.length <= 4) {
+                var pList = getParam(tabArr);
+
+                appendChart(chartId, tabArr, warp, nextIndex, nextnum, pList);
+            }
+        });
+    });
+
+    // 获取参数 
+    function getParam(tabArr) {
+        var obj = $('#' + tabArr),
+            list = {
+                start: obj.find('.time-span').val(),
+                cf: obj.find('.show-type').val(),
+                sum: obj.find('.sum-switch .active input').attr('data-value')
+            }
+
+        return list;
+    }
+
+    // 修改参数ajax
+    (function () {
+        $(document).on('change', '.time-span, .show-type', function () {
+            var e = $(this);
+
+            modifyParam(e);
+        });
+
+        $(document).on('click', '.sum-switch label', function () {
+            var e = $(this);
+
+            modifyParam(e, true);
+        });
+    })();
+
+    function modifyParam(e, sum) {
+        e.hasClass('atab') ? tabArr = e.attr('aria-controls') : tabArr = e.parents('.tab-pane').prop('id');
+
+        var $tab = $('#' + tabArr),
+            warp = $tab.find('.charts-wrap'),
+            chartLen = warp.find('.chart-box'), 
+            pList = getParam(tabArr),
+            idTable = $tab.find('.screen-counter-table tbody'),
+            idChecked = idTable.find(':checked'),
+            idLen = idChecked.length,
+            i;
+
+        if (sum) {
+            var isChecked = e.find('input').attr('data-value');
+
+            pList.sum = isChecked;
+        }
+
+        warp.empty();
+
+        for (i = 0; i < idLen; i++) {
+            var item = idChecked.eq(i),
+                chartId = item.prop('value'),
+                index = item.parents('tr').index(),
+                num = item.parents('tr').prevAll('.checknow').length;
+
+            appendChart(chartId, tabArr, warp, index, num, pList);
+
+            // 加载图片数量
+            if (i === chartLen.length - 1) {
+                break;
+            }
+        }
+    }
+
+    // 滚动加载
+    (function () {
+        var isScroll = true;
+
+        $(window).scroll(function () {
+            var range = 50, // 距下边界长度  
+                totalheight = 0,
+                srollPos = $(window).scrollTop(); // 滚动条距顶部距离(页面超出窗口的高度)  
+
+            if ($('#my_tabs li.active').index() !== 1) {
+                totalheight = parseFloat($(window).height()) + parseFloat(srollPos);
+
+                if (($(document).height() - range) <= totalheight) {
+
+                    var tabNow = $('#my_tabs li.active'),
+                        tabArr = tabNow.find('a').attr('aria-controls'),
+                        $tab = $('#' + tabArr),
+                        warp = $tab.find('.charts-wrap'),
+                        charts = $tab.find('.chart-box'),
+                        chartsLen = charts.length,
+                        idTable = $tab.find('.screen-counter-table tbody'),
+                        idChecked = idTable.find(':checked'),
+                        idLen = idChecked.length,
+                        idArr = [],
+                        i;
+
+                    if (idLen - chartsLen > 0 && isScroll) {
+                        for (i = 0; i < idLen - chartsLen; i++) {
+                            var cid = idChecked.eq(chartsLen + i).prop('value');
+
+                            idArr.push(cid);
+
+                            if (i === 3) {
+                                break;
+                            }
+                        };
+
+                        idArr.forEach(function (e) {
+                            var index = $('input[value="' + e + '"]').parents('tr').prevAll().length,
+                                num = $('input[value="' + e + '"]').parents('tr').prevAll('.checknow').length,
+                                pList = getParam(tabArr);
+
+                            appendChart(e, tabArr, warp, index, num, pList);
+                        });
+                    }
+                }
+            }
+        });
+    })();
+
+    // 插图ajax
+    function appendChart(chartId, tabArr, warp, index, num, pList) {
+        createChart(warp, index, num);
+
+        $.ajax({
+                url: '/overview/ajax_get_graph_data/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    g_str: chartId,
+                    start: pList.start,
+                    cf: pList.cf,
+                    sum: pList.sum
+                }
+            })
+            .done(function (data) {
+                var param = {
+                        header: data[0].header,
+                        chartId: data[0].g_id,
+                        graphId: data[0].graph_id,
+                        graphType: data[0].graph_type
+                    },
+                    id = tabArr + '_' + param.graphId + '_' + param.chartId + '_' + param.graphType;
+
+                var chart = $('#' + tabArr).find('div[data-index="' + index + '"]');
+
+                chart.find('.panel-title').html(param.header).prop('title', param.header);
+                chart.find('.chart-box').prop('id', id);
+                chart.find('.view-larger').prop('href', '/chart/big/?id=' + param.chartId + '&graph_type=' + param.graphType);
+
+                setCharts(id, data); // 渲染chart 绘图模板
+
+                setList(id, data); // 渲染 chart底部list
+
+                if ($('#' + tabArr).find('.show-legend').hasClass('active')) {
+                    chart.find('.chart-table').removeClass('hide');
+                } else {
+                    chart.find('.chart-table').addClass('hide');
+                }
+            })
+            .fail(function () {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+    // 侧边栏单选选中
+    (function() {
+        $(document).on('click', '.chart-it', function () {
+            var e = $(this),
+                chartId = e.prop('value'),
+                tabNow = $('#my_tabs li.active'),
+                tabArr = tabNow.find('a').attr('aria-controls'),
+                warp = $('#' + tabArr).find('.charts-wrap');
+
+            if (!e.prop('checked')) {
+                $('#' + chartId).parents('.c-highchart').find('.delete-chart').trigger('click');
+            } else {
+                var index = e.parents('tr').prevAll().length,
+                    num = e.parents('tr').prevAll('.checknow').length;
+
+                if (!warp.find('div[data-index="' + index + '"]').length) {
+                    var pList = getParam(tabArr);
+
+                    appendChart(chartId, tabArr, warp, index, num, pList);
+                }
+            }
+        });
+    })();
+
+    // 侧边栏全选反选
+    (function() {
+        $(document).on('click', '.chart-all', function () {
+            var e = $(this),
+                tabArr = e.parents('.screen-tool-bar').parent().prop('id'),
+                warp = $(this).parents('.screen-tool-bar').siblings('.charts-wrap'),
+                obj = e.parents('.screen-counter-table').find('tbody tr'),
+                i,
+                len;
+
+            if (!e.prop('checked')) {
+                warp.find('.c-highchart').remove();
+            } else {
+                warp.find('.c-highchart').remove();
+
+                for (i = 0, len = obj.length; i < len; i++) {
+                    var chartId = obj.eq(i).find(':checkbox').prop('value'),
+                        pList = getParam(tabArr),
+                        index = i,
+                        num = i;
+
+                    appendChart(chartId, tabArr, warp, index, num, pList);
+
+                    if (i === 3) {
+                        break;
+                    }
+                }
+            }
+        });
+    })();
+
+    // 显示隐藏legend
+    $(document).on('click', '.legend-switch label', function () {
+        var e = $(this),
+            parents = e.parents('.tab-pane');
+
+        if (e.hasClass('hide-legend')) {
+            parents.find('.chart-table').addClass('hide');
+        } else {
+            parents.find('.chart-table').removeClass('hide');
+        }
+    });
+
+    // 单图求和
+    $(document).on('click', '.get-sum', function () {
+        var e = $(this);
+
+        if (e.hasClass('on')) {
+            getChart(e, 'sum', 'off');
+
+            e.removeClass('on');
+        } else {
+            getChart(e, 'sum', 'on');
+
+            e.addClass('on');
+        }
+    });
+
+    // 单图操作ajax
+    function getChart(e, type, value) {
+        var tabArr = e.parents('.tab-pane').prop('id'),
+            chart = e.parents('.c-highchart'),
+            chartId = chart.find('.chart-box').prop('id'),
+            pList = getParam(tabArr);
+
+        pList[type] = value;
+
+        $.ajax({
+                url: '/overview/ajax_get_graph_data/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    g_str: chartId,
+                    start: pList.start,
+                    cf: pList.cf,
+                    sum: pList.sum
+                }
+            })
+            .done(function (data) {
+                setCharts(chartId, data); // 渲染chart 绘图模板
+
+                setList(chartId, data); // 渲染 chart底部list
+
+                if ($('#' + tabArr).find('.show-legend').hasClass('active')) {
+                    chart.find('.chart-table').removeClass('hide');
+                } else {
+                    chart.find('.chart-table').addClass('hide');
+                }
+            })
+            .fail(function () {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+
+    function newRequest(currentIndex, productName, checkedNum) {
+        if (currentIndex >= checkedNum.length) {
+            $('#go_screen').button('reset');
+
+            return;
+        }
+
+        var obj = checkedNum.eq(currentIndex),
+            valueArr = obj.attr('data-name') + '--' + productName,
+            tabArr = obj.prop('value');
+
+        $('#go_screen').button('loading');
+
+        $.ajax({
+                url: '/overview/ajax_show_screen/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    'screen_id': tabArr
+                }
+            })
+            .done(function (data) {
+                currentIndex++;
+
+                var dataArr = data.html,
+                    chartArr = data.series_list;
+
+                addTab(tabArr, valueArr, dataArr, chartArr);
+
+                newRequest(currentIndex, productName, checkedNum);
+            })
+            .fail(function () {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+    // 多选屏幕
+    $(document).on('click', '#go_screen', function () {
+        var wrap = $('.screen-list-wrap'),
+            checkedNum = $('.screen-list-wrap').find(':checked'),
+            tabNum = $('#my_tabs').find('.atab'),
+            i,
+            len;
+
+        if (checkedNum.length + tabNum.length > 5) {
+            showAlert('jNotify', '开启屏幕总数不能超过5个 :(', true);
+
+            return false;
+        } else {
+            var productName = $('.screen-product').html(),
+                currentIndex = 0; // 退出递归的条件变量
+
+            newRequest(currentIndex, productName, checkedNum);
+        }
+    });
+
+    // chart搜索
+    $(document).on('input', '.chart-search', function () {
+        var e = $(this),
+            ids = e.parent().find('.chart-ids').val(),
+            txt = e.val(),
+            tabArr = e.parents('.screen-tool-bar').parent().prop('id'),
+            url = '/overview/ajax_filter_graph/',
+            param = {
+                graph_txt: txt,
+                screen_id: tabArr,
+                ids: ids
+            };
+
+        autoQuery(e, url, param);
+
+        $(document).off('click', '.query-item').on('click', '.query-item', function () {
+            var id = $(this).attr('data-id'),
+                searchObj = $('input[value="' + id + '"]').parents('tr'),
+                table = $('#' + tabArr).find('.screen-counter-table'),
+                top = searchObj.prevAll().length * 39;
+ 
+            table.find('tr').removeClass('search-now');
+
+            searchObj.addClass('search-now');
+
+            table.scrollTop(top + 39);
+        });
+    });
+
+    // 全屏按钮
+    $(document).on('click', '.full-switch .btn', function () {
+        var docElm = document.documentElement;
+
+        //W3C  
+        if (docElm.requestFullscreen) {  
+            docElm.requestFullscreen();  
+        }
+
+        //FireFox  
+        else if (docElm.mozRequestFullScreen) {  
+            docElm.mozRequestFullScreen();  
+        }
+
+        //Chrome等  
+        else if (docElm.webkitRequestFullScreen) {  
+            docElm.webkitRequestFullScreen();  
+        }
+
+        //IE11
+        else if (elem.msRequestFullscreen) {
+          elem.msRequestFullscreen();
+        }
+    });
+
+    document.addEventListener("fullscreenchange", function () {  
+        runFullScreen();
+    }, false);  
+
+    document.addEventListener("mozfullscreenchange", function () {  
+        runFullScreen();
+    }, false);  
+
+    document.addEventListener("webkitfullscreenchange", function () {  
+        runFullScreen();
+    }, false);
+
+    document.addEventListener("msfullscreenchange", function () {
+        runFullScreen();
+    }, false);
+
+    // 全屏执行函数
+    function runFullScreen() {
+        $('#my_tabs, .h-nav, .header, .param-form, .screen-tool-menu').toggleClass('hide');
+        $('.u-chart').toggleClass('m0');
+        $('.charts-wrap').toggleClass('mh1000');
+    }
+
+    // 标题模糊查询
+    $(document).on('input', '.title-lastname', function () {
+        var e = $(this),
+            value = e.val(),
+            url = '/overview/ajax_get_plugin/';
+
+        if (value.indexOf('@') === 0) {
+            var txt = value.substring(1),
+                param = {
+                    plugin_txt: txt,
+                    id_str: $('#edit_chart_id').val()
+                };
+
+            autoQuery(e, url, param);
+        }
+    });
+
+    // 编辑标题
+    $(document).on('click', '.edit-title', function () {
+        var chartId = $(this).parents('.c-highchart').find('.chart-box').prop('id'),
+            firstName = $('.title-firstname'),
+            lastName = $('.title-lastname');
+
+        firstName.html('');
+        lastName.val('');
+
+        $('#edit_chart_id').val(chartId);
+
+        $.ajax({
+            url: '/overview/graph_name_edit/?id_str=' + chartId,
+            type: 'GET',
+            dataType: 'json'
+        })
+        .done(function (data) {
+            firstName.html(data.title);
+
+            lastName.val(data.name);
+        })
+        .fail(function () {
+            showAlert('jError', '出错了 :(', false);
+        });
+    });
+
+    // 保存标题
+    $(document).on('click', '#confirm_edit_title', function () {
+        var lastName = $('.title-lastname').val().trim(),
+            chartId = $('#edit_chart_id').val();
+
+        if (!lastName) {
+            showAlert('jNotify', '请输入标题名称 :(', true);
+
+            return false;
+        }
+
+        $.ajax({
+            url: '/overview/graph_name_edit/',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                id_str: chartId,
+                name: lastName
+            }
+        })
+        .done(function (data) {
+            if (data.ret === 1) {
+                var title = data.title + '_' + data.name;
+
+                $('#' + chartId).parents('.c-highchart').find('.chart-title').html(title);
+                $('input:checkbox[value="' + chartId + '"]').parent().next().text(title);
+
+                showAlert('jSuccess', data.msg, true);
+
+                $('#edit_title').modal('hide');
+            } else {
+                showAlert('jError', data.msg, false);
+            }
+        })
+        .fail(function () {
+            showAlert('jError', '出错了 :(', false);
+        });
+    });
+
+    // 提示信息
+    $('.title-lastname').tooltip({
+        trigger: 'focus'
+    });
+
+    // 圆形统计图 cpu 内存
+    $('#circle_status_cpu').circliful({
+        percent: 12
+    });
+
+    $('#circle_status_room').circliful({
+        percent: 85,
+        foregroundColor: '#d9534f'
+    });
+
+    // 开启popover
+    $('.timeline-content').popover();
+
+    // 状态统计图
+    var statusData = [{"graph_id": "", "y_min": null, "color": "#7cb5ec", "max": 13.991406, "pointInterval": 60000, "cf": "AVERAGE", "header": "df.statistics.used.percent", "marker": {"enabled": false}, "avg": 13.987709275618363, "data": [null, 13.983328999999999, 13.983345, 13.983347999999999, 13.983370000000001, 13.983420000000001, 13.983447, 13.983453000000001, 13.983461, 13.983476, 13.983549, 13.983561999999999, 13.983568999999999, 13.983584, 13.983601999999999, 13.983637999999999, 13.983637999999999, 13.983663, 13.983684, 13.983701999999999, 13.983722999999999, 13.98376, 13.983791999999999, 13.983822, 13.983872, 13.983892000000001, 13.983924, 13.983931, 13.983948, 13.98396, 13.983974, 13.983985000000001, 13.983997, 13.984012999999999, 13.984018000000001, 13.984040999999999, 13.98405, 13.984050999999999, 13.984074, 13.984089000000001, 13.984097999999999, 13.984121, 13.984145, 13.98415, 13.984158000000001, 13.984173999999999, 13.984204999999999, 13.984238, 13.984261999999999, 13.984275999999999, 13.984287, 13.984318999999999, 13.984341000000001, 13.984349999999999, 13.984367000000001, 13.984404, 13.984406999999999, 13.984425999999999, 13.984443000000001, 13.984455000000001, 13.984475, 13.984503999999999, 13.984543, 13.984557000000001, 13.984565999999999, 13.984619, 13.984622, 13.98466, 13.984667999999999, 13.984724999999999, 13.984724999999999, 13.984743999999999, 13.984768000000001, 13.984780000000001, 13.984791, 13.984804, 13.984844000000001, 13.984866999999999, 13.984885999999999, 13.984909, 13.98494, 13.984976, 13.984991000000001, 13.984997, 13.985002, 13.985009, 13.985054999999999, 13.985063, 13.985079000000001, 13.985087, 13.985101999999999, 13.985128, 13.985135, 13.985161, 13.985156999999999, 13.985175999999999, 13.985198, 13.985222, 13.985242, 13.985251, 13.985275, 13.98536, 13.98536, 13.985366000000001, 13.985393999999999, 13.985409000000001, 13.985443999999999, 13.985471, 13.985504000000001, 13.985531999999999, 13.985554, 13.985576, 13.985602, 13.985632000000001, 13.985656000000001, 13.985682000000001, 13.985699, 13.985715000000001, 13.985732, 13.985742999999999, 13.985754999999999, 13.985775, 13.985782, 13.985792999999999, 13.985802, 13.985811, 13.985822000000001, 13.985841000000001, 13.985852, 13.985875999999999, 13.985893000000001, 13.985894999999999, 13.985901, 13.985908, 13.985934, 13.985946, 13.985954, 13.985961, 13.985975, 13.986003999999999, 13.985999, 13.986001999999999, 13.986007000000001, 13.986024, 13.986039999999999, 13.986037, 13.986079999999999, 13.986091999999999, 13.986121000000001, 13.986115, 13.986143999999999, 13.986145, 13.986153, 13.986167999999999, 13.986181999999999, 13.986189, 13.986205999999999, 13.986216000000001, 13.986229, 13.986247000000001, 13.98625, 13.986265, 13.986285000000001, 13.9863, 13.986311000000001, 13.986306000000001, 13.986356000000001, 13.986406000000001, 13.986390999999999, 13.986414, 13.986412, 13.98644, 13.986458000000001, 13.986475, 13.986478, 13.986522000000001, 13.986508000000001, 13.986528, 13.986547, 13.986549, 13.986561, 13.986585, 13.986605000000001, 13.986611, 13.98662, 13.986629000000001, 13.98664, 13.986656999999999, 13.986661, 13.986672, 13.986686000000001, 13.986684, 13.986704, 13.986706999999999, 13.986713999999999, 13.986727999999999, 13.986737, 13.986749, 13.986753999999999, 13.986757000000001, 13.986775, 13.986777, 13.986784, 13.986795000000001, 13.986807000000001, 13.986812, 13.986836, 13.986840000000001, 13.986859000000001, 13.986872, 13.986895000000001, 13.986891999999999, 13.986903, 13.986903999999999, 13.986916000000001, 13.986924, 13.986938, 13.986948, 13.98695, 13.986962999999999, 13.986974, 13.986981999999999, 13.986993999999999, 13.986993999999999, 13.987005999999999, 13.987014, 13.987038999999999, 13.987057999999999, 13.987067, 13.987085, 13.987099000000001, 13.987120000000001, 13.987132000000001, 13.987145999999999, 13.987161, 13.9872, 13.987188, 13.987214, 13.987237, 13.987238, 13.987253000000001, 13.987272000000001, 13.987275, 13.987287999999999, 13.987306999999999, 13.987299999999999, 13.987316, 13.987325, 13.987341000000001, 13.98734, 13.987373, 13.987379000000001, 13.987382, 13.987384, 13.987404, 13.987408, 13.987427, 13.987436000000001, 13.987443000000001, 13.987456999999999, 13.987475, 13.987489, 13.987492, 13.98751, 13.987512000000001, 13.987519000000001, 13.987539, 13.987549, 13.987557000000001, 13.987565999999999, 13.987574, 13.987587, 13.987594, 13.987598, 13.987607000000001, 13.987624, 13.987627, 13.987644, 13.987641999999999, 13.987663, 13.987671000000001, 13.987677, 13.987691, 13.9877, 13.987707, 13.98771, 13.987750999999999, 13.987761000000001, 13.987765, 13.987785000000001, 13.987793999999999, 13.987823000000001, 13.987833, 13.987844000000001, 13.987852999999999, 13.987873, 13.987883999999999, 13.987893, 13.987911, 13.987921, 13.987933999999999, 13.98795, 13.987962, 13.987970000000001, 13.987976, 13.987981, 13.98799, 13.988003000000001, 13.988013, 13.988009999999999, 13.988038, 13.988049, 13.988054999999999, 13.988054999999999, 13.988066, 13.988076, 13.988087, 13.988096000000001, 13.988099, 13.988111, 13.988123, 13.988132999999999, 13.988142, 13.988146, 13.988156999999999, 13.98817, 13.988199, 13.988201999999999, 13.988220999999999, 13.988236000000001, 13.988251999999999, 13.988270999999999, 13.988275, 13.988289, 13.988300000000001, 13.988319000000001, 13.988336, 13.988346999999999, 13.988345000000001, 13.988374, 13.988386, 13.988394, 13.988403999999999, 13.988415, 13.988443999999999, 13.9885, 13.988523000000001, 13.988541, 13.988569999999999, 13.988579, 13.988586, 13.988617, 13.988621, 13.988652, 13.988644000000001, 13.988675000000001, 13.988676, 13.988697, 13.988714, 13.988731, 13.988744000000001, 13.988769, 13.988775, 13.988784000000001, 13.988801, 13.988810000000001, 13.988822000000001, 13.988825, 13.988828, 13.988837, 13.988861, 13.988861, 13.988880999999999, 13.988878, 13.988887, 13.988902, 13.988901, 13.988925, 13.988948000000001, 13.988958, 13.988970999999999, 13.988989, 13.989012000000001, 13.989027, 13.989042, 13.989051, 13.989068, 13.989086, 13.989094, 13.989106, 13.989108999999999, 13.989124, 13.989133000000001, 13.989144, 13.989159000000001, 13.989167999999999, 13.989182, 13.989217999999999, 13.989223000000001, 13.989241, 13.989245, 13.989255, 13.989267, 13.989321, 13.989326999999999, 13.989335000000001, 13.989369999999999, 13.989383999999999, 13.989402999999999, 13.989414, 13.989464, 13.989485, 13.989494000000001, 13.989504, 13.989511, 13.989568999999999, 13.989575, 13.989596000000001, 13.989613, 13.98963, 13.989644999999999, 13.989655000000001, 13.989652, 13.989661, 13.989692, 13.989712000000001, 13.989727, 13.989750000000001, 13.989750000000001, 13.989768, 13.989777999999999, 13.98978, 13.989806, 13.989806, 13.989841, 13.989839, 13.989841, 13.989865999999999, 13.989868, 13.989894, 13.989895000000001, 13.9899, 13.989903999999999, 13.989913, 13.989926000000001, 13.989934999999999, 13.989953, 13.989958, 13.989953999999999, 13.989973000000001, 13.989993999999999, 13.989995, 13.99, 13.990005, 13.990033, 13.990033, 13.990038, 13.990052, 13.990068000000001, 13.990076, 13.990087000000001, 13.990087000000001, 13.990099000000001, 13.990107999999999, 13.990114999999999, 13.990125000000001, 13.990156000000001, 13.990167, 13.990188, 13.990194000000001, 13.990197, 13.990223, 13.990235, 13.990258000000001, 13.990259999999999, 13.990284000000001, 13.990297999999999, 13.990323, 13.990337, 13.990349, 13.990351, 13.990371, 13.990367000000001, 13.990373999999999, 13.990384000000001, 13.990383, 13.990396, 13.990418, 13.990428, 13.990432999999999, 13.990463, 13.990456999999999, 13.990472, 13.990475, 13.990481000000001, 13.990494999999999, 13.990508999999999, 13.990508999999999, 13.990522, 13.990532999999999, 13.990541, 13.99056, 13.990568, 13.990569000000001, 13.990577, 13.990582, 13.990603, 13.990606, 13.990618, 13.990627, 13.990662, 13.990735000000001, 13.990767999999999, 13.990781999999999, 13.990790000000001, 13.990791, 13.990805999999999, 13.990807999999999, 13.990824, 13.990829, 13.990843, 13.99085, 13.990856000000001, 13.990869, 13.99089, 13.99089, 13.990919, 13.990928, 13.990945999999999, 13.990957, 13.990976, 13.990987000000001, 13.991004999999999, 13.991028, 13.991037, 13.991083, 13.991097999999999, 13.991096000000001, 13.991118999999999, 13.991144999999999, 13.991146000000001, 13.991159, 13.991165000000001, 13.991171, 13.991189, 13.991193000000001, 13.991209, 13.991209, 13.991227, 13.991236000000001, 13.991244, 13.991253, 13.991269000000001, 13.991275, 13.991289, 13.991301, 13.991303, 13.991312000000001, 13.991332, 13.991338000000001, 13.991363, 13.991362000000001, 13.991368, 13.991383000000001, 13.991389, 13.991394, 13.991406], "name": "总人数", "last": 13.991406, "g_id": "365314", "min": 13.983328999999999, "pointStart": 1457654400000, "y_max": null}];
+    var statusData2 =[{"graph_id": "", "y_min": null, "color": "#7cb5ec", "max": 14.0, "pointInterval": 60000, "cf": "AVERAGE", "header": "app.music.online", "marker": {"enabled": false}, "avg": 3.5749128919860627, "data": [null, 2.0, 2.0, 3.0, 4.0, 4.0, 3.0, 3.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 4.0, 4.0, 4.0, 5.0, 5.0, 5.0, 5.0, 6.0, 6.0, 6.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 7.0, 7.0, 7.0, 7.0, 8.0, 8.0, 8.0, 9.0, 8.0, 9.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 9.0, 9.0, 9.0, 10.0, 9.0, 9.0, 9.0, 8.0, 9.0, 10.0, 10.0, 10.0, 10.0, 10.0, 9.0, 9.0, 8.0, 10.0, 12.0, 12.0, 12.0, 12.0, 13.0, 14.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 12.0, 12.0, 12.0, 12.0, 11.0, 12.0, 12.0, 11.0, 13.0, 13.0, 13.0, 12.0, 12.0, 11.0, 10.0, 9.0, 9.0, 8.0, 9.0, 8.0, 8.0, 8.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 6.0, 7.0, 7.0, 7.0, 7.0, 6.0, 7.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 5.0, 5.0, 5.0, 5.0, 5.0, 4.0, 3.0, 3.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 4.0, 4.0, 4.0, 4.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 4.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0], "name": "总在线", "last": 3.0, "g_id": "365308", "min": 0.0, "pointStart": 1457654400000, "y_max": null}];
+    setCharts('chartline_1', statusData2, '#F5F5F5');
+    setCharts('chartline_2', statusData, '#F5F5F5');
+    $('#chartline_3').circliful({
+        percent: 24
+    });
+
+    // 业务健康状态总方法
+    var statusObj = {
+
+        // 获取状态标签页数据
+        getStatusData: function () {
+            var e = $(this),
+                productName = e.parent().prev('.showbar').find('.text b').text(),
+                tabArr = productName + '_' + e.parents('li').index(),
+                valueArr = '业务健康状态--' + productName;
+
+            statusObj.addStatusTab(tabArr, valueArr, productName);  
+            
+            /*var dataArr = {
+                category: 0, // 运维为0, 运营为1
+                area: [
+                    {host: '酒仙桥上海机房A', hd: '300ms - 4%', hn: '300ms - 4%', hz: '300ms - 4%', hb: '300ms - 4%', xb: '300ms - 4%', xn: '300ms - 4%', db: '300ms - 4%', gat: '300ms - 4%'}
+                ],
+                percent: {
+                    cpu: [12, 52],
+                    room: [65, 52]
+                },
+                status: [{
+                    step: 2,
+                    name: '应用',
+                    tip: '异常IP为：<span class="text-danger">127.0.0.1</span>'
+                }]
+            };
+
+            var dataArr2 = {
+                category: 1, // 运维为0, 运营为1
+                area: {
+                    {host: '酒仙桥上海机房A', hd: '300ms - 4%', hn: '300ms - 4%', hz: '300ms - 4%', hb: '300ms - 4%', xb: '300ms - 4%', xn: '300ms - 4%', db: '300ms - 4%', gat: '300ms - 4%'}
+                },
+                msg: [['酒仙桥机房故障', '15:53'], ['酒仙桥机房故障', '15:53'], ['酒仙桥机房故障', '15:53'], ['酒仙桥机房故障', '15:53'], ['酒仙桥机房故障', '15:53']],
+                online: [{"graph_id": "4627", "g_id": "365308", "min": 1.0, "last": 1.0, "max": 7.0, "y_max": null, "pointInterval": 60000, "cf": "AVERAGE", "name": "总在线", "header": "\u97f3\u4e50\u4fa0_\u5728\u7ebf\u4eba\u6570", "pointStart": 1457101620000, "marker": {"enabled": false}, "graph_type": "h", "avg": 3.4237288135593222, "data": [7.0, 6.0, 5.0, 5.0, 5.0, 5.0, 6.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 4.0, 4.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 4.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "color": "#7cb5ec", "y_min": null}],
+                people: [{"graph_id": "4627", "g_id": "365308", "min": 1.0, "last": 1.0, "max": 7.0, "y_max": null, "pointInterval": 60000, "cf": "AVERAGE", "name": "总人数", "header": "\u97f3\u4e50\u4fa0_\u5728\u7ebf\u4eba\u6570", "pointStart": 1457101620000, "marker": {"enabled": false}, "graph_type": "h", "avg": 3.4237288135593222, "data": [7.0, 6.0, 5.0, 5.0, 5.0, 5.0, 6.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 4.0, 4.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 4.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "color": "#7cb5ec", "y_min": null}],
+                percent: {
+                    total: [24, 52]
+                }
+            };
+
+            Math.random() >= 0 ? addStatusTab(tabArr, valueArr, dataArr) : addStatusTab(tabArr, valueArr, dataArr2);*/
+        },
+
+        // 添加状态标签页
+        addStatusTab: function (tabArr, valueArr, productName) {
+            var obj = $('#my_tabs a[href="#' + tabArr + '"]');
+
+            if (obj.length) {
+                obj.tab('show');
+            } else {
+                $('#my_tabs').append('<li class="sli" role="presentation" style="position: relative;">\
+                        <i class="glyphicon glyphicon-remove mytab-close"></i>\
+                        <a class="stab" href="#' + tabArr + '" aria-controls="' + tabArr + '" role="tab" data-toggle="tab" style="padding-right: 24px;">\
+                            ' + valueArr + '\
+                        </a>\
+                    </li>');
+
+                $('#my_contents').append('<div role="tabpanel" class="tab-pane status-pannel" id="' + tabArr + '"></div>');
+
+                $('#my_tabs a:last').tab('show');
+            }
+
+            this.loadStatusData(tabArr, productName);
+        },
+
+        // 加载状态标签页数据
+        loadStatusData: function (tabArr, productName) {
+            var that = this;
+
+            $.ajax({
+                url: '/overview/ajax_get_status_data/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_name: productName
+                }
+            })
+            .done(function(dataArr) {
+                var $wrap = $('#' + tabArr);
+
+                if (dataArr.category === 0) {
+                    that.setBaseHtml($wrap, tabArr); // 渲染基础模板
+                    that.showRoom($wrap, dataArr); // 渲染各区域
+                    that.showCircle(tabArr, dataArr); // 渲染圆形图
+                    that.showErrorStatus($wrap, dataArr); // 渲染异常状态
+                } else {
+                    that.setBaseHtml2($wrap, tabArr);
+                    that.showRoom($wrap, dataArr);
+                    that.showStatusMsg($wrap, dataArr) // 渲染实时信息
+                    that.setCharts(tabArr + '_chartline_1', dataArr.online, '#F5F5F5'); // 渲染总在线
+                    that.setCharts(tabArr + '_chartline_2', dataArr.people, '#F5F5F5'); // 渲染总人数
+                    that.showCircle2(tabArr, dataArr);
+                } 
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            });
+        },
+
+        // 状态基础模板 -- 运维人员显示
+        setBaseHtml: function (wrap, tabArr) {
+            var html = '<div class="product-status-box clearfix">\
+                    <div class="status-left pull-left col-sm-10">\
+                    </div>\
+                    <div class="status-right pull-left col-sm-2">\
+                        <div class="col-sm-12">\
+                            <div id="circle_cpu_' + tabArr +'" class="circle-status"></div>\
+                            <div class="text-center circle-name">CPU (<span></span>台)</div>\
+                        </div>\
+                        <div class="col-sm-12">\
+                            <div id="circle_room_' + tabArr + '" class="circle-status"></div>\
+                            <div class="text-center circle-name">内存 (<span></span>台)</div>\
+                        </div>\
+                    </div>\
+                </div>\
+                <div class="timeline clearfix">\
+                    <div class="timeline-item">\
+                        <div class="timeline-icon">注册</div>\
+                        <div class="timeline-content down" data-module="应用" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">应用<span class="downline line"></span></div>\
+                    </div>\
+                    <div class="timeline-item">\
+                        <div class="timeline-icon">更新/下载</div>\
+                        <div class="timeline-content up" data-module="CDN" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">CDN<span class="topline line"></span></div>\
+                        <div class="timeline-content down" data-module="应用" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">应用<span class="downline line"></span></div>\
+                    </div>\
+                    <div class="timeline-item">\
+                        <div class="timeline-icon">登陆</div>\
+                        <div class="timeline-content down" data-module="应用" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">应用<span class="downline line"></span></div>\
+                    </div>\
+                    <div class="timeline-item">\
+                        <div class="timeline-icon">主逻辑</div>\
+                        <div class="timeline-content up" data-module="在线" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">在线<span class="topline line"></span></div>\
+                        <div class="timeline-content down" data-module="应用" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">应用<span class="downline line"></span></div>\
+                    </div>\
+                    <div class="timeline-item">\
+                        <div class="timeline-icon">消费</div>\
+                        <div class="timeline-content up" data-module="充值" data-container="#' + tabArr + '" data-html="true" data-toggle="popover" data-placement="top" data-content="暂无异常">充值<span class="topline line"></span></div>\
+                    </div>\
+                </div>';
+
+            wrap.empty().append(html);
+        },
+
+        // 状态基础模板 -- 运营人员显示
+        setBaseHtml2: function (wrap, tabArr) {
+            var html = '<div class="product-status-box clearfix">\
+                    <div class="status-left pull-left col-sm-6">\
+                    </div>\
+                    <div class="status-right pull-left col-sm-6">\
+                        <div class="panel panel-default">\
+                            <div class="panel-heading">\
+                                <h3 class="panel-title"><span class="glyphicon glyphicon-list-alt text-success"></span> 实时信息</h3>\
+                            </div>\
+                            <table class="table table-status table-center table-hover">\
+                                <thead>\
+                                    <tr>\
+                                        <th>内容</th>\
+                                        <th>时间</th>\
+                                    </tr>\
+                                </thead>\
+                                <tbody>\
+                                </tbody>\
+                            </table>\
+                        </div>\
+                    </div>\
+                </div>\
+                <div class="chartline clearfix">\
+                    <div id="' + tabArr + '_chartline_1" class="col-sm-5"></div>\
+                    <div id="' + tabArr + '_chartline_2" class="col-sm-5"></div>\
+                    <div class="col-sm-2 chartline-pd">\
+                        <div id="' + tabArr +'_chartline_3"></div>\
+                        <div class="text-center circle-name">充值队列 (<span></span>台)</div>\
+                    </div>\
+                </div>';
+
+            wrap.empty().append(html);
+        },
+
+        // 各区域状态模板
+        setAreaHtml: function (area) {
+            var html = '<div class="area-status col-xs-12 pd0">\
+                <table class="table table-status table-center table-hover">\
+                    <thead>\
+                        <tr height="34px">\
+                            <th class="text-default">机房</th>\
+                            <th class="text-danger">华东地区</th>\
+                            <th class="text-default">华南地区</th>\
+                            <th class="text-warning">华中地区</th>\
+                            <th class="text-default">华北地区</th>\
+                            <th class="text-success">西北地区</th>\
+                            <th class="text-default">西北地区</th>\
+                            <th class="text-primary">东北地区</th>\
+                            <th class="text-default">台港澳地区</th>\
+                        </tr>\
+                    </thead>\
+                    <tbody>\
+                    </tbody>\
+                </table>\
+            </div>';
+
+            area.append(html);
+        },
+
+        //渲染各区域
+        showRoom: function (wrap, dataArr) {
+            var $area = wrap.find('.status-left'),
+                html = '';
+
+            this.setAreaHtml($area);
+
+            if (dataArr.area.length) {
+                dataArr.area.forEach(function(e) {
+                    html += '<tr><td class="text-default">' + e.host + '</td><td class="text-danger">' + e.华东 + '</td><td class="text-default">' + e.华南 + '</td><td class="text-warning">' + e.华中 + '</td><td class="text-default">' + e.华北 + '</td><td class="text-success">' + e.西北 + '</td><td class="text-default">' + e.西南 + '</td><td class="text-primary">' + e.东北 + '</td><td class="text-default">' + e.台港澳 + '</td></tr>';
+                });
+            } else {
+                html = '<tr><td colspan="9" class="status-none text-center">暂无数据</td>';
+            }
+
+            var obj = $area.find('.area-status table tbody');
+
+            obj.append(html);
+        },
+
+        // 渲染圆形统计图
+        showCircle: function (tabArr, dataArr) {
+            var ret = dataArr.percent,
+                cpu = ret.cpu[0],
+                room = ret.room[0],
+                $cpu = $('#circle_cpu_' + tabArr),
+                $room = $('#circle_room_' + tabArr),
+                bgcpu,
+                bgroom;
+
+            cpu >= 60 ? bgcpu = '#d9534f' : bgcpu = '#3498DB';
+            room >= 60 ? bgroom = '#d9534f' : bgroom = '#3498DB';
+
+            $cpu.circliful({
+                percent: cpu,
+                foregroundColor: bgcpu
+            });
+
+            $room.circliful({
+                percent: room,
+                foregroundColor: bgroom
+            });
+
+            $cpu.next().find('span').text(ret.cpu[1]);
+            $room.next().find('span').text(ret.room[1]);
+        },
+        showCircle2: function (tabArr, dataArr) {
+            var ret = dataArr.percent,
+                total = ret.total[0],
+                $total = $('#' + tabArr + '_chartline_3'),
+                bgtotal;
+
+            total >= 60 ? bgtotal = '#d9534f' : bgtotal = '#3498DB';
+
+            $total.circliful({
+                percent: total,
+                foregroundColor: bgtotal
+            });
+
+            $total.next().find('span').text(ret.total[1]);
+        },
+
+        // 渲染状态异常
+        showErrorStatus: function (wrap, dataArr) {
+            var data = dataArr.status;
+
+            if (data.length) {
+                data.forEach(function(e) {
+                    var obj = wrap.find('.timeline-item').eq(e.step - 1),
+                        md = obj.find('.timeline-content[data-module="' + e.name + '"]');
+
+                    obj.find('.timeline-icon').addClass('border-danger');
+                    
+                    md.addClass('ani-danger').attr('data-content', e.tip);
+                    md.find('.line').addClass('line-danger');
+                });
+            }
+
+            wrap.find('.timeline-content').popover();
+        },
+
+        // 渲染实时信息
+        showStatusMsg: function (wrap, dataArr) {
+            var html = '';
+
+            if (dataArr.msg.length) {
+                dataArr.msg.forEach(function(e, i) {
+                    html += '<tr>\
+                        <td class="text-danger">' + e[0] + '</td>\
+                        <td>' + e[1] + '</td>\
+                    </tr>';
+                });
+            } else {
+                html = '<tr><td colspan="3">暂无信息</td></tr>'
+            }
+
+            wrap.find('.status-right table tbody').append(html);
+        }
+    }
+
+    // 打开状态tab
+    $('.game-wrap .health-doc').on('click', statusObj.getStatusData);
+
+    // 点击状态标签页刷新数据
+    $(document).on('click', '.stab', function () {
+        var e = $(this),
+            tabArr = e.attr('aria-controls'),
+            productName = tabArr.split('_')[0];
+
+        statusObj.loadStatusData(tabArr, productName);
+    });
+
+    // 自动刷新当前状态页数据
+    (function() {
+        var t = setInterval(function () {
+            var tabNow = $('#my_tabs .sli.active');
+
+            if (tabNow.length) {
+                tabNow.find('.stab').trigger('click');
+            }
+        }, 60000);
+    })();
+});

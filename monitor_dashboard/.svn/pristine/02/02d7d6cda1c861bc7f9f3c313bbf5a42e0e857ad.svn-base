@@ -1,0 +1,132 @@
+/**
+ * 
+ * @authors Your Name (you@example.org)
+ * @date    2016-02-23 13:28:56
+ * @version $Id$
+ */
+
+ // datetime
+ $('#select_time').datetimepicker({
+     weekStart: 1,
+     todayBtn: 1,
+     autoclose: 1,
+     todayHighlight: 1,
+     startView: 3,
+     minView: 3,
+     forceParse: 0,
+     linkField: "mirror_field",
+     pickerPosition: "bottom-left"
+ });
+
+ $(function () {
+
+     // 导航高亮
+     (function lightNavbar() {
+         var path = window.location.pathname,
+             firstPath = path.substring(0, path.indexOf('/', 1));
+
+         $('.h-menu a[href^="' + firstPath + '"]').addClass("active");
+         $('.h-nav a[href="' + path + '"]').addClass("active");
+
+         var index = $('.h-menu .active').parent().index();
+
+         $('.h-nav>div').eq(index).removeClass('hide').siblings('div').addClass('hide');
+
+         var left = $('.h-nav .active').position().left,
+             width = $('.h-nav .active').width();
+
+         $('#line_active').css({
+             width: width,
+             left: left
+         });
+     })();
+
+     // 高度自适应
+     (function () {
+         var wrap = $(window).height() - 180;
+
+         $('.u-right .panel-body').css({
+             minHeight: wrap
+         });
+     })();
+
+     // 绘图
+     function getChart() {
+         $('#chart_box').highcharts({                              
+             chart: {                                                           
+                 type: 'column'                                                   
+             },                                                                 
+             title: {                                                           
+                 text: ''                    
+             },                                                                 
+             xAxis: {                                                           
+                 categories: [
+                    'cpu',
+                    'mem',
+                    'idel',
+                    'xxx',
+                    'cpu',
+                    'mem',
+                    'idel',
+                    'xxx',
+                    'cpu',
+                    'mem',
+                    'idel',
+                    'xxx',
+                    'cpu',
+                    'mem',
+                    'idel',
+                    'xxx',
+                    'cpu',
+                    'mem',
+                    'idel',
+                    'xxx',
+                    'cpu',
+                    'mem',
+                    'idel',
+                    'xxx',
+                    'cpu',
+                    'mem',
+                    'idel',
+                    'xxx',
+                    'cpu',
+                    'mem',
+                    'idel',
+                    'xxx',
+                    'cpu',
+                    'mem',
+                    'idel',
+                    'xxx'
+                 ]                                                             
+             },                                                                 
+             yAxis: {                                                           
+                 min: 0,
+                 allowDecimals: false,                                                     
+                 title: {                                                       
+                     text: '',                             
+                 },                                                             
+                 labels: {                                                      
+                     overflow: 'justify'                                        
+                 }                                                              
+             },                                                                 
+             tooltip: {     
+                 pointFormat: '数量：<b>{point.y}</b>',
+                 valueSuffix: ' 个'                                       
+             },                                                                 
+             plotOptions: {
+                 column: {
+                     pointPadding: 0.2,
+                     borderWidth: 0
+                 }
+             },                                                               
+             legend: {
+                 enabled: false
+             },                                                            
+             series: [{                                                         
+                 data: [49.9, 71.5, 106.4, 129.2, 49.9, 71.5, 106.4, 129.2, 49.9, 71.5, 106.4, 129.2, 49.9, 71.5, 106.4, 129.2, 49.9, 71.5, 106.4, 129.2, 49.9, 71.5, 106.4, 129.2, 49.9, 71.5, 106.4, 129.2, 49.9, 71.5, 106.4, 129.2, 49.9, 71.5, 106.4, 129.2]                               
+             }]                                                                 
+         });
+     }
+
+     getChart();
+ });

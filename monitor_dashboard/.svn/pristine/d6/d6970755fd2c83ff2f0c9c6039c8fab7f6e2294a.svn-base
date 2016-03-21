@@ -1,0 +1,931 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+import datetime, time
+import hashlib
+from utils.db_conn import DB
+from config import dashboard, monitor
+from utils.rrdgraph import merge_list, graph_query
+from service import _plugin
+
+def add_tmpgraph(endpoints, counters):
+    es = endpoints and dashboard.ENDPOINT_DELIMITER.join(sorted(endpoints)) or ""
+    cs = counters and dashboard.COUNTER_DELIMITER.join(sorted(counters)) or ""
+    ck = hashlib.md5("%s:%s" %(es.encode("utf8"), cs.encode("utf8"))).hexdigest()
+
+    dashboard_db_conn = DB(
+        dashboard.DASHBOARD_DB_HOST,
+        dashboard.DASHBOARD_DB_PORT,
+        dashboard.DASHBOARD_DB_USER,
+        dashboard.DASHBOARD_DB_PASSWD,
+        dashboard.DASHBOARD_DB_NAME)
+    
+    sql_query = '''select id, endpoints, counters from tmp_graph 
+                where endpoints=\'%s\' and counters=\'%s\' and ck=\'%s\'
+                '''%(es, cs, ck)
+    rows = dashboard_db_conn.query_all(sql_query)
+    if rows:
+        g_id = rows[0].get('id')
+        sql = '''update tmp_graph set time_=\'%s\' where id = %s '''%(datetime.datetime.now(), g_id)
+        cursor = dashboard_db_conn.execute(sql)
+        dashboard_db_conn.commit()
+        id_ = g_id
+    else:
+        p_set = ''
+        if len(endpoints) == 1:
+            monitor_db_conn = DB(
+                monitor.DB_HOST,
+                monitor.DB_PORT,
+                monitor.DB_USER,
+                monitor.DB_PASS,
+                monitor.DB_NAME)
+            
+            sql_query = '''
+            select p_set, p_module
+            from alarm_agentinfo
+            where endpoint = \'%s\'
+            '''%endpoints[0]
+            
+            results = monitor_db_conn.query_all(sql_query)
+            if results:
+                p_set = results[0].get('p_set')
+            
+        sql = '''insert into tmp_graph (endpoints, counters, ck, name, time_) values(\'%s\', \'%s\', \'%s\', \'%s\', \'%s\') '''%(es, cs, ck, p_set, datetime.datetime.now())
+        cursor = dashboard_db_conn.execute(sql)
+        dashboard_db_conn.commit()
+        id_ = cursor.lastrowid
+            
+    return id_
+                
+#    sql = '''insert ignore into tmp_graph (endpoints, counters, ck) values(\'%s\', \'%s\', \'%s\') ON DUPLICATE KEY UPDATE time_=\'%s\', name=\'@serverName\' '''%(es, cs, ck, datetime.datetime.now())
+#    cursor = dashboard_db_conn.execute(sql)
+#    dashboard_db_conn.commit()
+#    id_ = cursor.lastrowid
+#    return id_
+
+def get_tmp_graph(g_id):
+    dashboard_db_conn = DB(
+        dashboard.DASHBOARD_DB_HOST,
+        dashboard.DASHBOARD_DB_PORT,
+        dashboard.DASHBOARD_DB_USER,
+        dashboard.DASHBOARD_DB_PASSWD,
+        dashboard.DASHBOARD_DB_NAME)
+    
+    sql = '''select id, endpoints, counters, name, time_ from tmp_graph where id=%s'''%g_id
+    cursor = dashboard_db_conn.execute(sql)
+    row = cursor.fetchone()
+    cursor and cursor.close()
+    if row:
+        id = row.get('id')
+        endpoints = row.get('endpoints')
+        counters = row.get('counters')
+        name = row.get('name')
+        time_ = row.get('time_')
+        endpoint_list = endpoints and endpoints.split(dashboard.ENDPOINT_DELIMITER) or []
+        counter_list = counters and counters.split(dashboard.ENDPOINT_DELIMITER) or []
+        tmp_graph = {'id':id, 'endpoints':endpoint_list, 'counters':counter_list, 'name':name, 'time_':time_}
+    else:
+        tmp_graph =  None
+    return tmp_graph
+
+def get_max_min_avg_last(value_list):
+    data_sum = 0
+    data_max = '-'
+    data_min = '-'
+    data_last = '-'
+    data_avg = '-'
+    num = 0
+    for v in value_list:
+        if v == None:
+            continue
+        num += 1
+        data_last = v
+        data_sum += v
+        if data_max == '-' or v > data_max:
+            data_max = v
+        if data_min == '-' or v < data_min:
+            data_min = v
+    if num:
+        data_avg = float(data_sum)/num
+    return data_max, data_min, data_avg, data_last
+
+def get_chart_data_h(counters, endpoints, cf, start, end, sum, sumonly, graph_id=''):
+    chart_ids = []
+    for x in counters:
+        id_ = add_tmpgraph(endpoints, [x])
+        if not id_:
+            continue
+        chart_ids.append('%s'%id_)
+    
+    series_list = []
+    for g_id in chart_ids:
+        tmp_graph =  get_tmp_graph(g_id)
+        if not tmp_graph:
+            raise(404, "no graph which id is %s" %g_id)
+    
+        counters = tmp_graph.get('counters')
+        if not counters:
+            raise(400, "no counters of %s" %g_id)
+        counters = sorted(set(counters))
+    
+        endpoints = tmp_graph.get('endpoints')
+        if not endpoints:
+            raise(400, "no endpoints of %s" %g_id)
+        endpoints = sorted(set(endpoints))
+        
+        endpoint_counters = []
+        c = counters[0]
+        for e in endpoints:
+            endpoint_counters.append({
+                "endpoint": e,
+                "counter": c,
+            })
+        
+        query_result = graph_query(endpoint_counters, cf, start, end)
+        
+        series = [] 
+        pointStart, pointInterval, marker = get_serie(query_result[0], start, cf)
+        for i in range(0, len(query_result)):
+            x = query_result[i]
+            values = x.get("Values")
+            if not values:
+                continue
+            data_list = [v_dict.get('value') for v_dict in values]
+            data_max, data_min, data_avg, data_last = get_max_min_avg_last(data_list)
+            
+            serie = {
+                    "graph_id": graph_id,
+                    "g_id": g_id,
+                    "marker": marker,
+                    "y_max": None,
+                    "y_min": None,
+                    "max": data_max,
+                    "min": data_min,
+                    "avg": data_avg,
+                    "last": data_last,
+                    "data": data_list,
+                    "cf": cf,
+                    "name": query_result[i].get("endpoint"),
+                    "header": query_result[i].get("counter"),
+                    "pointStart":pointStart,
+                    "pointInterval":pointInterval,
+            }
+            series.append(serie)
+    
+        if sum == "on" or sumonly == "on":
+            sum_list = []
+            max_size = 0
+            for serie in series:
+                serie_vs = [x for x in serie["data"]]
+                if len(serie_vs) > max_size:
+                    max_size = len(serie_vs)
+                sum_list = merge_list(sum_list, serie_vs)
+            sum_serie_data = []
+            for i in range(0, max_size):
+                sum_serie_data.append(sum_list[i])
+            
+            data_max, data_min, data_avg, data_last = get_max_min_avg_last(sum_list)
+            
+            sum_serie = {
+                    "graph_id": graph_id,
+                    "g_id": g_id,
+                    "marker": marker,
+                    "y_max": None,
+                    "y_min": None,
+                    "max": data_max,
+                    "min": data_min,
+                    "avg": data_avg,
+                    "last": data_last,
+                    "data": sum_serie_data,
+                    "cf": cf,
+                    "name": 'sum',
+                    "pointStart":pointStart,
+                    "pointInterval":pointInterval,
+            }
+            
+            series.append(sum_serie)
+            
+        if sumonly == "on":
+            series = [sum_serie]
+    
+        for index,serie in enumerate(series):
+            serie['color'] = dashboard.COLOR_LIST[index%20]
+        
+        if series:
+            series_list.append(series)
+    return series_list
+
+def get_chart_data_k(counters, endpoints, cf, start, end, sum, sumonly, graph_id=''):
+    chart_ids = []
+    for x in endpoints:
+        id_ = add_tmpgraph([x], counters)
+        if not id_:
+            continue
+        chart_ids.append('%s'%id_)
+    
+    series_list = []
+    for g_id in chart_ids:
+        tmp_graph =  get_tmp_graph(g_id)
+        if not tmp_graph:
+            raise(404, "no graph which id is %s" %g_id)
+    
+        counters = tmp_graph.get('counters')
+        if not counters:
+            raise(400, "no counters of %s" %g_id)
+        counters = sorted(set(counters))
+    
+        endpoints = tmp_graph.get('endpoints')
+        if not endpoints:
+            raise(400, "no endpoints of %s" %g_id)
+        endpoints = sorted(set(endpoints))
+        
+        endpoint_counters = []
+        e = endpoints[0]
+        for c in counters:
+            endpoint_counters.append({
+                "endpoint": e,
+                "counter": c,
+            })
+        
+        query_result = graph_query(endpoint_counters, cf, start, end)
+    
+        series = []
+        pointStart, pointInterval, marker = get_serie(query_result[0], start, cf)
+        for i in range(0, len(query_result)):
+            x = query_result[i]
+            values = x.get("Values")
+            data_list = [v_dict.get('value') for v_dict in values]
+            data_max, data_min, data_avg, data_last = get_max_min_avg_last(data_list)
+            
+            serie = {
+                    "graph_id": graph_id,
+                    "g_id": g_id,
+                    "marker": marker,
+                    "y_max": None,
+                    "y_min": None,
+                    "max": data_max,
+                    "min": data_min,
+                    "avg": data_avg,
+                    "last": data_last,
+                    "data": data_list,
+                    "cf": cf,
+                    "name": query_result[i].get("counter"),
+                    "header": query_result[i].get("endpoint"),
+                    "pointStart":pointStart,
+                    "pointInterval":pointInterval,
+            }
+            series.append(serie)
+    
+        if sum == "on" or sumonly == "on":
+            sum_list = []
+            max_size = 0
+            for serie in series:
+                serie_vs = [x for x in serie["data"]]
+                if len(serie_vs) > max_size:
+                    max_size = len(serie_vs)
+                sum_list = merge_list(sum_list, serie_vs)
+            sum_serie_data = []
+            for i in range(0, max_size):
+                sum_serie_data.append(sum_list[i])
+            
+            data_max, data_min, data_avg, data_last = get_max_min_avg_last(sum_list)
+            
+            sum_serie = {
+                    "graph_id": graph_id,
+                    "g_id": g_id,
+                    "marker": marker,
+                    "y_max": None,
+                    "y_min": None,
+                    "max": data_max,
+                    "min": data_min,
+                    "avg": data_avg,
+                    "last": data_last,
+                    "data": sum_serie_data,
+                    "cf": cf,
+                    "name": 'sum',
+                    "pointStart":pointStart,
+                    "pointInterval":pointInterval,
+            }
+            
+            series.append(sum_serie)
+            
+        if sumonly == "on":
+            series = [sum_serie]
+    
+        for index,serie in enumerate(series):
+            serie['color'] = dashboard.COLOR_LIST[index%20]
+       
+        series_list.append(series)
+    return series_list
+
+def get_chart_data_a(counters, endpoints, cf, start, end, sum, sumonly, graph_id=''):
+    id_ = add_tmpgraph(endpoints, counters)
+    if id_:
+        chart_ids = [id_]
+    
+    series_list = []
+    for g_id in chart_ids:
+        tmp_graph =  get_tmp_graph(g_id)
+        if not tmp_graph:
+            raise(404, "no graph which id is %s" %g_id)
+    
+        counters = tmp_graph.get('counters')
+        if not counters:
+            raise(400, "no counters of %s" %g_id)
+        counters = sorted(set(counters))
+    
+        endpoints = tmp_graph.get('endpoints')
+        if not endpoints:
+            raise(400, "no endpoints of %s" %g_id)
+        endpoints = sorted(set(endpoints))
+        
+        endpoint_counters = []
+        for e in endpoints:
+            for c in counters:
+                endpoint_counters.append({
+                    "endpoint": e,
+                    "counter": c,
+                })
+        
+        query_result = graph_query(endpoint_counters, cf, start, end)
+    
+        series = []
+        pointStart, pointInterval, marker = get_serie(query_result[0], start, cf)
+        for i in range(0, len(query_result)):
+            x = query_result[i]
+            values = x.get("Values")
+            data_list = [v_dict.get('value') for v_dict in values]
+            data_max, data_min, data_avg, data_last = get_max_min_avg_last(data_list)
+            
+            serie = {
+                    "graph_id": graph_id,
+                    "g_id": g_id,
+                    "marker": marker,
+                    "y_max": None,
+                    "y_min": None,
+                    "max": data_max,
+                    "min": data_min,
+                    "avg": data_avg,
+                    "last": data_last,
+                    "data": data_list,
+                    "cf": cf,
+                    "name": '%s %s'%(query_result[i].get("endpoint"),query_result[i].get("counter")),
+                    "header": '',
+                    "pointStart":pointStart,
+                    "pointInterval":pointInterval,
+            }
+            series.append(serie)
+    
+        if sum == "on" or sumonly == "on":
+            sum_list = []
+            max_size = 0
+            for serie in series:
+                serie_vs = [x for x in serie["data"]]
+                if len(serie_vs) > max_size:
+                    max_size = len(serie_vs)
+                sum_list = merge_list(sum_list, serie_vs)
+            sum_serie_data = []
+            for i in range(0, max_size):
+                sum_serie_data.append(sum_list[i])
+            
+            data_max, data_min, data_avg, data_last = get_max_min_avg_last(sum_list)
+            
+            sum_serie = {
+                    "graph_id": graph_id,
+                    "g_id": g_id,
+                    "marker": marker,
+                    "y_max": None,
+                    "y_min": None,
+                    "max": data_max,
+                    "min": data_min,
+                    "avg": data_avg,
+                    "last": data_last,
+                    "data": sum_serie_data,
+                    "cf": cf,
+                    "name": 'sum',
+                    "pointStart":pointStart,
+                    "pointInterval":pointInterval,
+            }
+            
+            series.append(sum_serie)
+            
+        if sumonly == "on":
+            series = [sum_serie]
+    
+        for index,serie in enumerate(series):
+            serie['color'] = dashboard.COLOR_LIST[index%20]
+       
+        series_list.append(series)
+    return series_list
+
+def get_chart_data_q(counters, endpoints, cf, start, end, sum, sumonly, graph_id=''):
+    id_ = add_tmpgraph(endpoints, counters)
+    if id_:
+        chart_ids = [id_]
+    
+    series_list = []
+    for g_id in chart_ids:
+        tmp_graph =  get_tmp_graph(g_id)
+        if not tmp_graph:
+            raise(404, "no graph which id is %s" %g_id)
+    
+        counters = tmp_graph.get('counters')
+        if not counters:
+            raise(400, "no counters of %s" %g_id)
+        counters = sorted(set(counters))
+    
+        endpoints = tmp_graph.get('endpoints')
+        if not endpoints:
+            raise(400, "no endpoints of %s" %g_id)
+        endpoints = sorted(set(endpoints))
+        
+        endpoint_counters = []
+        for e in endpoints:
+            for c in counters:
+                endpoint_counters.append({
+                    "endpoint": e,
+                    "counter": c,
+                })
+        
+        query_result = graph_query(endpoint_counters, cf, start, end)
+    
+        series = []
+        pointStart, pointInterval, marker = get_serie(query_result[0], start, cf)
+        for i in range(0, len(query_result)):
+            x = query_result[i]
+            values = x.get("Values")
+            data_list = [v_dict.get('value') for v_dict in values]
+            data_max, data_min, data_avg, data_last = get_max_min_avg_last(data_list)
+            
+            data_list_modify = []
+            if data_max != '-' and data_min != '-':
+                delta = data_max-data_min
+                if delta == 0:
+                    for v in data_list:
+                        if v == None:
+                            data_list_modify.append(None)
+                        else:
+                            data_list_modify.append(50)
+                else:
+                    for v in data_list:
+                        if v == None:
+                            data_list_modify.append(None)
+                        else:
+                            data_list_modify.append(float(v-data_min)*100/delta)
+            else:
+                data_list_modify = data_list
+            serie = {
+                    "graph_id": graph_id,
+                    "g_id": g_id,
+                    "marker": marker,
+                    "color": dashboard.COLOR_LIST[i%20],
+                    "y_max": 100,
+                    "y_min": 0,
+                    "max": data_max,
+                    "min": data_min,
+                    "avg": data_avg,
+                    "last": data_last,
+                    "data": data_list_modify,
+                    "cf": cf,
+                    "name": '%s %s'%(query_result[i].get("endpoint"),query_result[i].get("counter")),
+                    "header": '',
+                    "pointStart":pointStart,
+                    "pointInterval":pointInterval,
+            }
+            series.append(serie)
+    
+        series_list.append(series)
+    return series_list
+
+def get_info_by_graph(graph_id):
+    dashboard_db_conn = DB(
+        dashboard.DASHBOARD_DB_HOST,
+        dashboard.DASHBOARD_DB_PORT,
+        dashboard.DASHBOARD_DB_USER,
+        dashboard.DASHBOARD_DB_PASSWD,
+        dashboard.DASHBOARD_DB_NAME)
+
+    sql = '''select s.name, s.product_name, g.title, g.method, g.sumonly
+            from dashboard.dashboard_graph g, dashboard.dashboard_screen s
+            where g.screen_id = s.id and g.id = %s'''%graph_id
+
+    row = dashboard_db_conn.query_one(sql)
+    title = row.get('title','')
+    title = u'%s'%(title)
+    sum = row.get('method','off')
+    sumonly = row.get('sumonly','off')
+    return title, sum, sumonly
+
+def get_name_by_graph(g_id):
+    dashboard_db_conn = DB(
+        dashboard.DASHBOARD_DB_HOST,
+        dashboard.DASHBOARD_DB_PORT,
+        dashboard.DASHBOARD_DB_USER,
+        dashboard.DASHBOARD_DB_PASSWD,
+        dashboard.DASHBOARD_DB_NAME)
+
+    sql = '''select name
+            from tmp_graph
+            where id = %s'''%g_id
+
+    row = dashboard_db_conn.query_one(sql)
+    name = row.get('name')
+    if name:
+        name = u'%s'%(name)
+    else:
+        name = g_id
+    return name
+
+def get_name_trans(g_id):
+    tmp_graph =  get_tmp_graph(g_id)
+    name = tmp_graph.get('name','')
+    endpoints = tmp_graph.get('endpoints')
+    endpoints = sorted(set(endpoints))
+    
+    if name:
+        name = name
+        if '@' in name:
+            plugin_txt = name.split('@')[1]
+            plugins = _plugin.get_plugins_by_params(ip=endpoints[0], key=plugin_txt)
+            if plugins:
+                name = plugins[0].value
+    else:
+        name = '%s'%g_id
+    return name
+
+def _get_chart_data_h(cf, start, end, sum, sumonly, g_id, graph_id, header):
+    tmp_graph =  get_tmp_graph(g_id)
+    if not tmp_graph:
+        raise(404, "no graph which id is %s" %g_id)
+    
+    counters = tmp_graph.get('counters')
+    if not counters:
+        raise(400, "no counters of %s" %g_id)
+    counters = sorted(set(counters))
+
+    endpoints = tmp_graph.get('endpoints')
+    if not endpoints:
+        raise(400, "no endpoints of %s" %g_id)
+    endpoints = sorted(set(endpoints))
+    
+    endpoint_counters = []
+    c = counters[0]
+    for e in endpoints:
+        endpoint_counters.append({
+            "endpoint": e,
+            "counter": c,
+        })
+    
+    query_result = graph_query(endpoint_counters, cf, start, end)
+
+    series = []
+    pointStart, pointInterval, marker = get_serie(query_result[0], start, cf)
+    for i in range(0, len(query_result)):
+        x = query_result[i]
+        values = x.get("Values")
+        data_list = [v_dict.get('value') for v_dict in values]
+        data_max, data_min, data_avg, data_last = get_max_min_avg_last(data_list)
+        
+        serie = {
+                "graph_type": dashboard.GRAPH_TYPE_HOST,
+                "graph_id": graph_id,
+                "g_id": g_id,
+                "marker": marker,
+                "y_max": None,
+                "y_min": None,
+                "max": data_max,
+                "min": data_min,
+                "avg": data_avg,
+                "last": data_last,
+                "data": data_list,
+                "cf": cf,
+                "name": query_result[i].get("endpoint"),
+                "header": header,
+                "pointStart":pointStart,
+                "pointInterval":pointInterval,
+        }
+        series.append(serie)
+
+    if sum == "on" or sumonly == "on":
+        sum_list = []
+        max_size = 0
+        for serie in series:
+            serie_vs = [x for x in serie["data"]]
+            if len(serie_vs) > max_size:
+                max_size = len(serie_vs)
+            sum_list = merge_list(sum_list, serie_vs)
+        sum_serie_data = []
+        for i in range(0, max_size):
+            sum_serie_data.append(sum_list[i])
+        
+        data_max, data_min, data_avg, data_last = get_max_min_avg_last(sum_list)
+        
+        sum_serie = {
+                "graph_type": dashboard.GRAPH_TYPE_HOST,
+                "graph_id": graph_id,
+                "g_id": g_id,
+                "marker": marker,
+                "y_max": None,
+                "y_min": None,
+                "max": data_max,
+                "min": data_min,
+                "avg": data_avg,
+                "last": data_last,
+                "data": sum_serie_data,
+                "cf": cf,
+                "name": 'sum',
+                "header": header,
+                "pointStart":pointStart,
+                "pointInterval":pointInterval,
+        }
+        
+        series.append(sum_serie)
+        
+    if sumonly == "on":
+        series = [sum_serie]
+
+    for index,serie in enumerate(series):
+        serie['color'] = dashboard.COLOR_LIST[index%20]
+   
+    return series
+
+def _get_chart_data_k(cf, start, end, sum, sumonly, g_id, graph_id, header):
+    tmp_graph =  get_tmp_graph(g_id)
+    if not tmp_graph:
+        raise(404, "no graph which id is %s" %g_id)
+
+    counters = tmp_graph.get('counters')
+    if not counters:
+        raise(400, "no counters of %s" %g_id)
+    counters = sorted(set(counters))
+
+    endpoints = tmp_graph.get('endpoints')
+    if not endpoints:
+        raise(400, "no endpoints of %s" %g_id)
+    endpoints = sorted(set(endpoints))
+    
+    endpoint_counters = []
+    e = endpoints[0]
+    for c in counters:
+        endpoint_counters.append({
+            "endpoint": e,
+            "counter": c,
+        })
+    
+    query_result = graph_query(endpoint_counters, cf, start, end)
+
+    series = []
+    pointStart, pointInterval, marker = get_serie(query_result[0], start, cf)
+    for i in range(0, len(query_result)):
+        x = query_result[i]
+        values = x.get("Values")
+        data_list = [v_dict.get('value') for v_dict in values]
+        data_max, data_min, data_avg, data_last = get_max_min_avg_last(data_list)
+        
+        serie = {
+                "graph_type": dashboard.GRAPH_TYPE_KEY,
+                "graph_id": graph_id,
+                "g_id": g_id,
+                "marker": marker,
+                "y_max": None,
+                "y_min": None,
+                "max": data_max,
+                "min": data_min,
+                "avg": data_avg,
+                "last": data_last,
+                "data": data_list,
+                "cf": cf,
+                "name": query_result[i].get("counter"),
+                "header": header,
+                "pointStart":pointStart,
+                "pointInterval":pointInterval,
+        }
+        series.append(serie)
+
+    if sum == "on" or sumonly == "on":
+        sum_list = []
+        max_size = 0
+        for serie in series:
+            serie_vs = [x for x in serie["data"]]
+            if len(serie_vs) > max_size:
+                max_size = len(serie_vs)
+            sum_list = merge_list(sum_list, serie_vs)
+        sum_serie_data = []
+        for i in range(0, max_size):
+            sum_serie_data.append(sum_list[i])
+        
+        data_max, data_min, data_avg, data_last = get_max_min_avg_last(sum_list)
+        
+        sum_serie = {
+                "graph_type": dashboard.GRAPH_TYPE_KEY,
+                "graph_id": graph_id,
+                "g_id": g_id,
+                "marker": marker,
+                "y_max": None,
+                "y_min": None,
+                "max": data_max,
+                "min": data_min,
+                "avg": data_avg,
+                "last": data_last,
+                "data": sum_serie_data,
+                "cf": cf,
+                "name": 'sum',
+                "header": header,
+                "pointStart":pointStart,
+                "pointInterval":pointInterval,
+        }
+        
+        series.append(sum_serie)
+        
+    if sumonly == "on":
+        series = [sum_serie]
+
+    for index,serie in enumerate(series):
+        serie['color'] = dashboard.COLOR_LIST[index%20]
+   
+    return series
+
+def _get_chart_data_a(cf, start, end, sum, sumonly, g_id, graph_id, header):
+    tmp_graph =  get_tmp_graph(g_id)
+    if not tmp_graph:
+        raise(404, "no graph which id is %s" %g_id)
+
+    counters = tmp_graph.get('counters')
+    if not counters:
+        raise(400, "no counters of %s" %g_id)
+    counters = sorted(set(counters))
+
+    endpoints = tmp_graph.get('endpoints')
+    if not endpoints:
+        raise(400, "no endpoints of %s" %g_id)
+    endpoints = sorted(set(endpoints))
+    
+    endpoint_counters = []
+    for e in endpoints:
+        for c in counters:
+            endpoint_counters.append({
+                "endpoint": e,
+                "counter": c,
+            })
+    
+    query_result = graph_query(endpoint_counters, cf, start, end)
+    
+    series = []
+    pointStart, pointInterval, marker = get_serie(query_result[0], start, cf)
+    for i in range(0, len(query_result)):
+        x = query_result[i]
+        values = x.get("Values")
+        data_list = [v_dict.get('value') for v_dict in values]
+        data_max, data_min, data_avg, data_last = get_max_min_avg_last(data_list)
+        
+        serie = {
+                "graph_type": dashboard.GRAPH_TYPE_MIX,
+                "graph_id": graph_id,
+                "g_id": g_id,
+                "marker": marker,
+                "y_max": None,
+                "y_min": None,
+                "max": data_max,
+                "min": data_min,
+                "avg": data_avg,
+                "last": data_last,
+                "data": data_list,
+                "cf": cf,
+                "name": '%s %s'%(query_result[i].get("endpoint"),query_result[i].get("counter")),
+                "header": header,
+                "pointStart":pointStart,
+                "pointInterval":pointInterval,
+        }
+        series.append(serie)
+
+    if sum == "on" or sumonly == "on":
+        sum_list = []
+        max_size = 0
+        for serie in series:
+            serie_vs = [x for x in serie["data"]]
+            if len(serie_vs) > max_size:
+                max_size = len(serie_vs)
+            sum_list = merge_list(sum_list, serie_vs)
+        sum_serie_data = []
+        for i in range(0, max_size):
+            sum_serie_data.append(sum_list[i])
+        
+        data_max, data_min, data_avg, data_last = get_max_min_avg_last(sum_list)
+        
+        sum_serie = {
+                "graph_type": dashboard.GRAPH_TYPE_MIX,
+                "graph_id": graph_id,
+                "g_id": g_id,
+                "marker": marker,
+                "y_max": None,
+                "y_min": None,
+                "max": data_max,
+                "min": data_min,
+                "avg": data_avg,
+                "last": data_last,
+                "data": sum_serie_data,
+                "cf": cf,
+                "name": 'sum',
+                "header": header,
+                "pointStart":pointStart,
+                "pointInterval":pointInterval,
+        }
+        
+        series.append(sum_serie)
+        
+    if sumonly == "on":
+        series = [sum_serie]
+
+    for index,serie in enumerate(series):
+        serie['color'] = dashboard.COLOR_LIST[index%20]
+   
+    return series
+
+def _get_chart_data_q(cf, start, end, sum, sumonly, g_id, graph_id, header):
+    tmp_graph =  get_tmp_graph(g_id)
+    if not tmp_graph:
+        raise(404, "no graph which id is %s" %g_id)
+
+    counters = tmp_graph.get('counters')
+    if not counters:
+        raise(400, "no counters of %s" %g_id)
+    counters = sorted(set(counters))
+
+    endpoints = tmp_graph.get('endpoints')
+    if not endpoints:
+        raise(400, "no endpoints of %s" %g_id)
+    endpoints = sorted(set(endpoints))
+    
+    endpoint_counters = []
+    for e in endpoints:
+        for c in counters:
+            endpoint_counters.append({
+                "endpoint": e,
+                "counter": c,
+            })
+    
+    query_result = graph_query(endpoint_counters, cf, start, end)
+    
+    series = []
+    pointStart, pointInterval, marker = get_serie(query_result[0], start, cf)
+    for i in range(0, len(query_result)):
+        x = query_result[i]
+        values = x.get("Values")
+        data_list = [v_dict.get('value') for v_dict in values]
+        data_max, data_min, data_avg, data_last = get_max_min_avg_last(data_list)
+        
+        data_list_modify = []
+        if data_max != '-' and data_min != '-':
+            delta = data_max-data_min
+            if delta == 0:
+                for v in data_list:
+                    if v == None:
+                        data_list_modify.append(None)
+                    else:
+                        data_list_modify.append(50)
+            else:
+                for v in data_list:
+                    if v == None:
+                        data_list_modify.append(None)
+                    else:
+                        data_list_modify.append(float(v-data_min)*100/delta)
+        else:
+            data_list_modify = data_list
+        serie = {
+                "graph_type": dashboard.GRAPH_TYPE_TREND,
+                "graph_id": graph_id,
+                "g_id": g_id,
+                "marker": marker,
+                "color": dashboard.COLOR_LIST[i%20],
+                "y_max": 100,
+                "y_min": 0,
+                "max": data_max,
+                "min": data_min,
+                "avg": data_avg,
+                "last": data_last,
+                "data": data_list_modify,
+                "cf": cf,
+                "name": '%s %s'%(query_result[i].get("endpoint"),query_result[i].get("counter")),
+                "header": header,
+                "pointStart":pointStart,
+                "pointInterval":pointInterval,
+        }
+        series.append(serie)
+    
+    return series
+
+def get_serie(x, start, cf):
+    values = x.get("Values")
+    try:
+        point_1 = values[0]
+        point_2 = values[1]
+        pointStart = point_1.get('timestamp')*1000 + 1000*60*60*8
+        pointInterval = point_2.get('timestamp')*1000 - point_1.get('timestamp')*1000
+    except:
+        pointStart = start*1000 + 1000*60*60*8
+        pointInterval = 60*1000
+    
+    marker = {"enabled": False}
+    if pointInterval == 60*1000 and cf in ['MAX','MIN']:
+        marker = {"enabled": True}
+    return pointStart, pointInterval, marker

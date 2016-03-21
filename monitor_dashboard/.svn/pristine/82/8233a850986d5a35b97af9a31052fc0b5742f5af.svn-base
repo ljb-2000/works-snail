@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛智能监控平台</title>
+{% include "import_css.html" %}
+</head>
+<body>
+    <!--主界面开始-->
+    <div class="container-fluid">
+        {% include "header.html" %}
+        <!-- 页面主体开始-->
+        <div class="row">
+            <!--屏幕配置面板开始-->
+            <div class="u-right" style="margin:18px 0 0;box-shadow:none;">
+                <div>
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">屏幕配置</a></li>
+                        <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">创建屏幕-step1</a></li>
+                        <li role="presentation"><a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">创建屏幕-step2</a></li>
+                        <li role="presentation"><a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">创建屏幕-step3</a></li>
+                    </ul>
+
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="home">
+                            <form class="form-inline mt30">
+                                <div class="form-group">
+                                   <button class="btn btn-primary ml35" data-toggle="modal" data-target="#new_screen" onclick="return false;">
+                                       <span class="glyphicon glyphicon-modal-window"></span>
+                                       创建屏幕
+                                   </button>
+                                </div>
+                                <div class="form-group ml35">
+                                    <label class="control-label" for="">搜索屏幕：</label>
+                                    <input id="screen_item" type="text" class="form-control" placeholder="请输入屏幕名称">
+                                </div>
+                                <div class="form-group">
+                                   <button class="btn btn-defalut" data-toggle="modal" data-target="#add_whitelist" onclick="return false;">
+                                       <span class="glyphicon glyphicon-modal-window"></span>
+                                       添加白名单
+                                   </button>
+                                </div>
+                                <div class="form-group">
+                                   <button class="btn" data-toggle="modal" data-target="#add_blacklist" onclick="return false;">
+                                       <span class="glyphicon glyphicon-modal-window"></span>
+                                       添加黑名单
+                                   </button>
+                                </div>
+                                <table id="screen_setting_table" class="table table-hover table-striped mt30">
+                                    <thead>
+                                        <tr>
+                                            <th width='5%'><input type="checkbox" class="check-all"></th>
+                                            <th width='15%'>屏幕名称</th>
+                                            <th width='15%'>所属业务</th>
+                                            <th width='20%'>白名单</th>
+                                            <th width='20%'>黑名单</th>
+                                            <th width='20%'>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><input type="checkbox" class="check-it"></td>
+                                            <td><a href="javascript:void(0);">test</a></td>
+                                            <td>关云长</td>
+                                            <td>luozh</td>
+                                            <td></td>
+                                            <td>
+                                                <span class="pointer">编辑</span>&nbsp;&nbsp;
+                                                <span class="pointer">克隆</span>&nbsp;&nbsp;
+                                                <span class="pointer">+graph</span>&nbsp;&nbsp;
+                                                <span class="pointer">删除</span>&nbsp;&nbsp;
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </form>
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="profile">
+                            <form class="screen-step form-horizontal mt30">
+                                <div class="form-group">
+                                    <label class="col-sm-offset-1 col-sm-2 control-label text-muted">屏幕名称：<span class="red">*</span></label>
+                                    <div class="col-sm-6">
+                                        <input class="form-control" placeholder="请输入屏幕名称">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-offset-1 col-sm-2 control-label text-muted">Graph标题：<span class="red">*</span></label>
+                                    <div class="col-sm-6">
+                                        <input class="form-control" placeholder="请输入Graph标题">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="messages">...</div>
+                        <div role="tabpanel" class="tab-pane" id="settings">...</div>
+                    </div>
+                </div>
+            </div>
+            <!--屏幕配置面板结束-->
+        </div>
+        <!-- 页面主体结束-->
+    </div>
+    
+    <!-- 创建屏幕 modal -->
+    <div class="modal fade" id="new_screen" tabindex="-1" role="dialog" aria-labelledby="myScreenSetting">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myScreenSetting">
+                        创建屏幕
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">屏幕名称：<span class="red">*</span></label>
+                            <div class="col-sm-6">
+                                <input class="form-control" placeholder="请输入屏幕名称">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">Graph标题：<span class="red">*</span></label>
+                            <div class="col-sm-6">
+                                <input class="form-control" placeholder="请输入Graph标题">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">Endpoints列表：<span class="red">*</span></label>
+                            <div class="col-sm-6">
+                                <textarea class="form-control" placeholder="请输入Endpoints,多个Endpoints以‘回车’分隔" style="height: 85px;">
+192.168.17.128
+192.168.17.136
+                                </textarea>
+                            </div>
+                            <div class="col-sm-2">
+                                <button class="btn btn-default" data-toggle="modal" data-target="#select_endpoints" onclick="return false;">
+                                    <span class="glyphicon glyphicon-filter"></span>
+                                    选择Endpoints
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">Counters列表：<span class="red">*</span></label>
+                            <div class="col-sm-6">
+                                <textarea class="form-control" placeholder="请输入Counters,多个Counters以‘回车’分隔" style="height: 85px;"></textarea>
+                            </div>
+                            <div class="col-sm-2">
+                                <button class="btn btn-default" data-toggle="modal" data-target="#select_counters" onclick="return false;">
+                                    <span class="glyphicon glyphicon-filter"></span>
+                                    选择Counters
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">默认时间跨度：<span class="red">*</span></label>
+                            <div class="col-sm-6">
+                                <select class="form-control">
+                                    <option value="0" selected>1小时</option>
+                                    <option value="1">6小时</option>
+                                    <option value="2">12小时</option>
+                                    <option value="3">1天</option>
+                                    <option value="4">7天</option>
+                                    <option value="5">1月</option>
+                                    <option value="6">1年</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">视角：<span class="red">*</span></label>
+                            <div class="col-sm-6">
+                                <div class="btn-group" data-toggle="buttons">
+                                    <label class="btn btn-default active">
+                                        <input type="radio" name="views" id="views_one" autocomplete="off" checked> endpoint视角
+                                    </label>
+                                    <label class="btn btn-default">
+                                        <input type="radio" name="views" id="views_two" autocomplete="off"> counter视角
+                                    </label>
+                                    <label class="btn btn-default">
+                                        <input type="radio" name="views" id="views_three" autocomplete="off"> 组合视角
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">是否加和：<span class="red">*</span></label>
+                            <div class="col-sm-6">
+                                <div class="btn-group" data-toggle="buttons">
+                                    <label class="btn btn-default active">
+                                        <input type="radio" name="sum" id="sum_off"  autocomplete="off"> 否
+                                      </label>
+                                    <label class="btn btn-default">
+                                        <input type="radio" name="sum" id="sum_on"  autocomplete="off"> 是
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="text-align:center;">
+                    <button class="btn btn-primary">
+                        <span class="glyphicon glyphicon-ok-sign"></span>
+                        创建
+                    </button>
+                    <button class="btn btn-default" data-dismiss="modal">
+                        <span class="glyphicon glyphicon-remove-sign"></span>
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 选择Endpoints modal -->
+    <div class="modal fade" id="select_endpoints" tabindex="-1" role="dialog" aria-labelledby="myEndpoints">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myEndpoints">
+                        选择Endpoints
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <input id="search_tree_text" type="text" class="tree-search form-control" placeholder="模糊排序">
+                        <div id="search_tree" class="tree-search-btn input-group-addon"><span class="glyphicon glyphicon-search"></span></div>
+                    </div>
+                    <div id="u_jstree">
+                        
+                    </div>
+                </div>
+                <div class="modal-footer" style="text-align:center;">
+                    <button class="btn btn-primary">
+                        <span class="glyphicon glyphicon-ok"></span>
+                        确认
+                    </button>
+                    <button class="btn btn-default" data-dismiss="modal">
+                        <span class="glyphicon glyphicon-remove"></span>
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 选择Counters modal -->
+    <div class="modal fade" id="select_counters" tabindex="-1" role="dialog" aria-labelledby="myCounters">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myCounters">
+                        选择Counters
+                    </h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th width='5%'><input type="checkbox" class="check-all"></th>
+                                <th width='15%'>Counters</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer" style="text-align:center;">
+                    <button class="btn btn-primary">
+                        <span class="glyphicon glyphicon-ok"></span>
+                        确认
+                    </button>
+                    <button class="btn btn-default" data-dismiss="modal">
+                        <span class="glyphicon glyphicon-remove"></span>
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% include "import_js.html" %}
+{% include "import_tooljs.html" %}
+<script type="text/javascript" src="/static/src/jq/common.js?v=201512021459"></script>
+<script type="text/javascript" src="/static/src/jq/monitor_query/screen_setting.js?v=201512021459"></script>
+</body>
+</html>

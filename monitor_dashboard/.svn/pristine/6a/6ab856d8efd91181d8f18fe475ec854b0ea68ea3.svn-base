@@ -1,0 +1,156 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-10-20 13:31:50
+ * @msg     多图页ng
+ */
+
+var myChart = angular.module('myChart',["highcharts-ng",'ui.bootstrap.datetimepicker']);
+
+// instead of {{}}
+myChart.config(['$interpolateProvider', function($interpolateProvider) {
+    $interpolateProvider.startSymbol('{[');
+    $interpolateProvider.endSymbol(']}');
+}]);
+
+// page controller
+myChart.controller('chartPage', ['$http', '$interval', '$scope', function($http, $interval, $scope) {
+    var vm = this;
+
+    // global parameter
+    vm.defaultGlobalParam = {
+        start: '',
+        end: '',
+        cf: 'AVERAGE', // MIN, MAX
+        graph_type: 'h', // h Endpoint视角; k Counter视角
+        sum: 'off' // off
+    };
+
+    vm.globalParam = angular.copy(vm.defaultGlobalParam);
+
+    // reset
+    vm.reset = function(){
+        vm.globalParam = angular.copy(vm.defaultGlobalParam);
+    };
+
+    active();
+
+    // draw
+    vm.show = function(){
+        active();
+    };
+
+    function active(param) {
+        $http({
+            method: "POST",
+            url: urlH + '&start=' + param.start + '&cf=' + param.cf + '&sum=' + param.sum + '&sumonly=' + param.sumonly,
+            data: {},
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            transformRequest: transform
+        }).success(function(ret) {
+            var data = ret.series_list,
+                chartsList = [];
+
+            for (var i = 0, len = data[].length; i < len; i++) {
+                var series = data[i],
+                    header = series[0].header,
+                    chart = {
+                        options: {
+                            chart: {
+                                type: 'line',
+                                zoomType: 'x'
+                            },
+                            tooltip: {
+                                xDateFormat: '%Y-%m-%d %H:%M:%S',
+                                valueDecimals: 2
+                            },
+                            xAxis: {
+                                type: 'datetime',
+                                dateTimeLabelFormats: {
+                                    hour: '%H:%M'
+                                },
+                                minRange: 1000, // 不能放大超过1s
+                                minTickInterval: 1000 // 放大间隔最小为1s
+                            },
+                        },
+                        series: data[i],
+                        title: {
+                            text: null,
+                            header: header
+                        }
+                    };
+
+                    chartsList.push(chart);
+                }
+
+                vm.charts = chartsList;
+
+        }).error(function() {
+            
+        });
+    }
+
+    /*function active(){
+        vm.charts = [
+        {
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        },
+        {
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        },
+        {
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        },
+        {
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        }];
+    }*/
+
+    return vm;
+}]);

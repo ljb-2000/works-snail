@@ -1,0 +1,103 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-10-20 13:31:50
+ * @msg     多图页ng
+ */
+
+var myChart = angular.module('myChart',["highcharts-ng",'ui.bootstrap.datetimepicker']);
+
+// instead of {{}}
+myChart.config(['$interpolateProvider', function($interpolateProvider) {
+    $interpolateProvider.startSymbol('{[');
+    $interpolateProvider.endSymbol(']}');
+}]);
+
+// page controller
+myChart.controller('chartPage', [function(){
+    var vm = this;
+
+    // global parameter
+    vm.defaultGlobalParam = {
+        start: '',
+        end: '',
+        cf: '1', // MIN, MAX
+        graph_type: '1', // h Endpoint视角; k Counter视角
+        sum: true // off
+    };
+
+    vm.globalParam = angular.copy(vm.defaultGlobalParam);
+
+    // reset
+    vm.reset = function(){
+        vm.globalParam = angular.copy(vm.defaultGlobalParam);
+    }
+
+    active();
+
+    // draw
+    vm.show = function(){
+        active();
+    }
+
+    function active(){
+        vm.charts = [{
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        },
+        {
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        },
+        {
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        },
+        {
+            options: {
+                chart: {
+                    type: 'line',
+                    zoomType: 'x'
+                }
+            },
+            series: [{
+                data: [10, 15, 12, 8, 7]
+            }],
+            title: {
+                text: 'Hello'
+            }
+        }];
+    }
+
+    return vm;
+}]);

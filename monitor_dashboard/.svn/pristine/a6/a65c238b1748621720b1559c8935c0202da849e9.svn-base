@@ -1,0 +1,21 @@
+[uwsgi]                                                                                                                                                              
+socket = 127.0.0.1:9004
+master = true
+pythonpath = /opt/www/dashboard
+module = dashboard.wsgi
+processes = 8
+;daemonize = /var/log/uwsgi_dashboard.log
+buffer-size = 65535
+pidfile = /tmp/uwsgi_dashboard.pid
+cpu-affinity = 1
+memory-report = 1
+threads = 8
+listen = 128
+post-buffering = 100M
+stats = 127.0.0.1:1720
+socket-timeout = 120
+max-requests = 5000
+disable-logging = false
+;touch-reload=/opt/www/dashboard/dashboard.ini
+;py-autoreload=3
+;env=DJANGO_SETTINGS_MODULE=dashboard.settings

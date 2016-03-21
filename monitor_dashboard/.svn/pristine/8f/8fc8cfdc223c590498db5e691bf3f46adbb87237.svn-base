@@ -1,0 +1,171 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-02 15:29:23
+ * @msg     按策略屏蔽页js
+ */
+
+$(function() {
+
+    // datatable
+    var plotTable = $('#plot_table').dataTable({
+        "sDom": 'lfrtip',
+        "bLengthChange": false,
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [0]
+        }],
+
+        "aaSorting": [
+            [3, "desc"]
+        ],
+        "bProcessing": true,
+        "bServerSide": true,
+        "sPaginationType": "full_numbers",
+
+        "sAjaxSource": "/user_self_plot_list/",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+
+    // 批量筛选功能
+    $(document).off("click", "#plot_filter").on("click", "#plot_filter", function() {
+        var txt = $("#u_fliter").val(),
+            msg = $(".filter-msg"),
+            result = filterIp(txt, msg);
+
+        if (result === false) {
+            return false;
+        } else {
+            plotTable.fnReloadAjax('/user_self_plot_list/?p=0&iptxt=' + result);
+
+            $('#plot_table').find('.check-all').prop('checked', false);
+        }
+    });
+
+    // jstree
+    var nodeId = [];
+
+    $('#u_jstree').on('changed.jstree', function() {
+        nodeId = $('#u_jstree').jstree().get_bottom_selected();
+    }).jstree({
+        "plugins": ["checkbox"],
+        'core': {
+            "themes": {
+                "theme": "classic",
+                "dots": true,
+                "icons": true
+            },
+            'dataType': 'json',
+            'data': {
+                'url': '/ajax_get_group_hosts/'
+            }
+        }
+    });
+
+    // confirm jstree
+    $('#confirm_tree').on('click', function() {
+        if (nodeId.length) {
+            $.ajax({
+                    url: "/ajax_get_grp_by_tree/",
+                    type: 'POST',
+                    data: {
+                        nodeIdLists: nodeId
+                    }
+                })
+                .done(function(data) {
+                    plotTable.fnReloadAjax('/user_self_plot_list/?p=0&grptxt=' + data);
+
+                    $('#plot_table').find('.check-all').prop('checked', false);
+                });
+        }
+        else {
+            $('.jstree-msg').html('请选择主机组');
+        }
+    });
+
+    // 搜索策略模糊匹配
+    $('#search_plot').autocomplete({
+        source: function(request, response) {
+            $.ajax({
+                type: "POST",
+                url: "/ajax_filter_metric/",
+                dataType: "json",
+                data: {
+                    metric_text: request.term
+                },
+                success: function(data) {
+                    response($.map(data, function(item) {
+                        return item;
+                    }));
+                }
+            });
+        }
+    });
+
+    // 查询策略
+    $('#search_plot_btn').on('click', function() {
+        var metric = $('#search_plot').val();
+
+        plotTable.fnReloadAjax('/user_self_plot_list/?p=0&metricstr=' + metric);
+
+        $('#plot_table').find('.check-all').prop('checked', false);
+    });
+
+    // 屏蔽开启策略
+    function switchItem(values, itemType) {
+        if (!values.length) {
+            showAlert('jNotify', '请先选择' + itemType.type + '项！');
+            return false;
+        }
+
+        $.ajax({
+                url: itemType.url,
+                type: 'POST',
+                data: {
+                    values: values
+                }
+            })
+            .done(function(data) {
+                if (data.result === 1) {
+                    showAlert('jSuccess', itemType.type + '成功！');
+
+                    plotTable.fnReloadAjax();
+
+                    $('#plot_table').find('.check-all').prop('checked', false);
+                } else {
+                    showAlert('jError', itemType.type + '失败！');
+                }
+            })
+            .fail(function() {
+                showAlert('jError', itemType.type + '失败！');
+            });
+    }
+
+    (function switchBtn() {
+        var table = $('#plot_table tbody'),
+            closeItem = {
+                type: "屏蔽",
+                url: "/metric_close/",
+            },
+            openItem = {
+                type: "开启",
+                url: "/metric_open/"
+            };
+
+        $('#close_btn').on('click', function() {
+            var values = getCheckedTr(table);
+
+            switchItem(values, closeItem);
+        });
+
+        $('#open_btn').on('click', function() {
+            var values = getCheckedTr(table);
+
+            switchItem(values, openItem);
+        });
+    })();
+});

@@ -1,0 +1,406 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.db.transaction import commit_on_success
+from django.http import HttpResponse
+import json
+import datetime, time
+import logging
+import traceback
+from utils.ctranslate import LazyEncoder
+from utils.db_conn import DB
+from config import portal
+from utils.common import get_user_perm, get_product_list_by_user
+from releaseinfo import SPECIAL_USERS
+from utils.common import send_log
+
+logger = logging.getLogger("logger")
+
+@login_required
+@csrf_exempt
+@render_to('user_self/host.html')
+def user_self_host_index(request):
+    user = request.user
+    #permission
+    user = get_user_perm(user)
+    return locals()
+
+@login_required
+@csrf_exempt
+def user_self_host_list(request):
+    cnname = request.user.first_name
+    if request.user.username in SPECIAL_USERS:
+        cnname = u'张延礼'
+    products = get_product_list_by_user(cnname)
+    
+    is_null = request.GET.get('null',0)
+    iptxt = request.GET.get('iptxt','')
+    ipstr = request.GET.get('ipstr','')
+    ipset = request.GET.get('ipset','')
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, 'host.ip', 'alarm_agentinfo.product_name', 'alarm_agentinfo.p_set', 'alarm_agentinfo.p_module', 'host.maintain_begin']
+    order_item = order_list[iSortCol_0]
+    
+    if is_null:
+        total = 0
+        result_query = ()
+    else:
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        
+        sql_total = '''
+                    select count(*) as total
+                    from falcon_portal.host host, monitor.alarm_agentinfo alarm_agentinfo
+                    where host.ip = alarm_agentinfo.endpoint and alarm_agentinfo.product_name in (\'%s\')
+                    '''%"','".join(products)
+    
+        sql_query = '''
+            select host.id, host.ip, host.maintain_begin, alarm_agentinfo.product_name, alarm_agentinfo.p_set, alarm_agentinfo.p_module
+            from falcon_portal.host host, monitor.alarm_agentinfo alarm_agentinfo
+            where host.ip = alarm_agentinfo.endpoint and alarm_agentinfo.product_name in (\'%s\')
+            '''%"','".join(products)
+        
+        #ip匹配查询
+        if iptxt:
+            ip_list = iptxt.split(',')
+            sql_total += " and host.ip in ('%s')"%"','".join(ip_list)
+            sql_query += " and host.ip in ('%s')"%"','".join(ip_list)
+        
+        #ip模糊查询
+        if ipstr:
+            sql_total += " and host.ip like \'%%%s%%\'"%ipstr
+            sql_query += " and host.ip like \'%%%s%%\'"%ipstr
+            
+        #set模糊查询
+        if ipset:
+            sql_total += " and alarm_agentinfo.p_set like \'%%%s%%\'"%ipset
+            sql_query += " and alarm_agentinfo.p_set like \'%%%s%%\'"%ipset
+            
+        #排序
+        if order_item:
+            if sSortDir_0 == "desc":
+                sql_query += ' order by %s desc'%order_item
+            else:
+                sql_query += ' order by %s'%order_item
+
+        result_total = portal_db_conn.query_all(sql_total)
+        total = result_total[0].get('total')
+        
+        if iDisplayLength > 0:
+            sql_query += ' limit %s, %s'%(iDisplayStart, int(iDisplayLength))
+        result_query = portal_db_conn.query_all(sql_query)
+
+    #第一个参数表示需要分页的对象，可为list、tuple、QuerySet，只要它有count()或者__len__()函数
+    #第二个参数为每页显示记录数
+#    p = Paginator(rows, iDisplayLength)
+#    total = p.count #总数
+#    page_range = p.page_range #页数list
+#    page = p.page(page_range[iDisplayStart / iDisplayLength])
+#    object_list = page.object_list
+    
+    object_list = result_query
+    
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+
+    for obj in object_list:
+        #封装数组，按照列数填入对应的值
+        check_html = u"<input type='checkbox' value='%s' class='check-it'/>" % obj.get('id')
+#        change_html = '<a style="color: blue;" href="javascript:void(0)" onclick="javascript:account_edit(\'%s\',\'%s\');">%s</a>' % (obj.id, obj.name, obj.name)
+        ip = u"<span>%s</span>"%obj.get('ip')
+        product_name = u"<span>%s</span>"%obj.get('product_name')
+        p_set = u"<span>%s</span>"%obj.get('p_set')
+        p_module = u"<span>%s</span>"%obj.get('p_module')
+        status = u"<span>开启</span>"
+        maintain_begin = obj.get('maintain_begin',0)
+        if maintain_begin > 0:
+            ip = u"<span style='color:#a94442;'>%s</span>"%obj.get('ip')
+            product_name = u"<span style='color:#a94442;'>%s</span>"%obj.get('product_name')
+            p_set = u"<span style='color:#a94442;'>%s</span>"%obj.get('p_set')
+            p_module = u"<span style='color:#a94442;'>%s</span>"%obj.get('p_module')
+            status = u"<span style='color:#a94442;'>关闭</span>"
+        data = [check_html, ip, product_name, p_set, p_module, status]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+@render_to('user_self/plot.html')
+def user_self_plot_index(request):
+    user = request.user
+    #permission
+    user = get_user_perm(user)
+    return locals()
+
+@login_required
+@csrf_exempt
+def user_self_plot_list(request):
+    user = request.user
+    grptxt = request.GET.get('grptxt','')
+    metricstr = request.GET.get('metricstr','')
+    
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, 'metric', 'tpl_name', 'run_begin']
+    order_item = order_list[iSortCol_0]
+    
+    portal_db_conn = DB(
+        portal.DB_HOST,
+        portal.DB_PORT,
+        portal.DB_USER,
+        portal.DB_PASS,
+        portal.DB_NAME)
+    
+    sql_total = '''
+                select count(strategy.id) as total from strategy, grp_tpl, tpl
+                where tpl.id = strategy.tpl_id
+                '''
+
+    sql_query = '''
+                select strategy.id, strategy.metric, strategy.run_begin, tpl.tpl_name from strategy, grp_tpl, tpl
+                where tpl.id = strategy.tpl_id
+                '''
+    
+    #grp匹配查询
+    if grptxt:
+        sql_total += "and strategy.tpl_id = grp_tpl.tpl_id and grp_tpl.grp_id in (%s)"%grptxt
+        sql_query += "and strategy.tpl_id = grp_tpl.tpl_id and grp_tpl.grp_id in (%s)"%grptxt
+    
+    #metric模糊查询
+    if metricstr:
+        sql_total += " and metric like \'%%%s%%\'"%metricstr
+        sql_query += " and metric like \'%%%s%%\'"%metricstr
+    
+    #排序
+    if order_item:
+        if sSortDir_0 == "desc":
+            sql_query += ' order by %s desc'%order_item
+        else:
+            sql_query += ' order by %s'%order_item
+
+    result_total = portal_db_conn.query_all(sql_total)
+    total = result_total[0].get('total')
+    
+    if iDisplayLength > 0:
+        sql_query += ' limit %s, %s'%(iDisplayStart, iDisplayLength)
+    result_query = portal_db_conn.query_all(sql_query)
+
+    #第一个参数表示需要分页的对象，可为list、tuple、QuerySet，只要它有count()或者__len__()函数
+    #第二个参数为每页显示记录数
+#    p = Paginator(rows, iDisplayLength)
+#    total = p.count #总数
+#    page_range = p.page_range #页数list
+#    page = p.page(page_range[iDisplayStart / iDisplayLength])
+#    object_list = page.object_list
+    
+    object_list = result_query
+    
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+
+    for obj in object_list:
+        #封装数组，按照列数填入对应的值
+        check_html = u"<input type='checkbox' value='%s' class='check-it'/>" % obj.get('id')
+#        change_html = '<a style="color: blue;" href="javascript:void(0)" onclick="javascript:account_edit(\'%s\',\'%s\');">%s</a>' % (obj.id, obj.name, obj.name)
+        metric = u"<span>%s</span>"%obj.get('metric')
+        tpl_name = u"<span>%s</span>"%obj.get('tpl_name')
+        run_begin = obj.get('run_begin','')
+        status = u"<span data-type='1'>开启</span>"
+        if run_begin:
+            metric = u"<span style='color:#a94442;'>%s</span>"%obj.get('metric')
+            tpl_name = u"<span style='color:#a94442;'>%s</span>"%obj.get('tpl_name')
+            status = u"<span style='color:#a94442;'>关闭</span>"
+        data = [check_html, metric, tpl_name,status]
+        sdicts["aaData"].append(data)
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@csrf_exempt
+def monitor_close(request):
+    """
+        close host monitor
+    """
+    user = request.user
+    sdict = {'result':0}
+    id_list = request.POST.getlist('values[]',[])
+    if id_list:
+        try:
+            now = datetime.datetime.now()
+            timestamp_begin = time.mktime(now.timetuple())
+            timestamp_end = timestamp_begin+60*60*24*365
+            id_str = ','.join(id_list)
+    #        sql = '''
+    #        update falcon_portal.host set host.maintain_begin = %s,host.maintain_end = %s
+    #        where host.ip in (
+    #        select alarm_agentinfo.endpoint
+    #        from monitor.alarm_agentinfo alarm_agentinfo
+    #        where alarm_agentinfo.id in (%s) )
+    #        '''%(int(timestamp_begin), int(timestamp_end), id_str)
+    
+            sql = '''
+            update falcon_portal.host set maintain_begin = %s, maintain_end = %s
+            where id in (%s)
+            '''%(int(timestamp_begin), int(timestamp_end), id_str)
+            
+            portal_db_conn = DB(
+                portal.DB_HOST,
+                portal.DB_PORT,
+                portal.DB_USER,
+                portal.DB_PASS,
+                portal.DB_NAME)
+            
+            cursor = portal_db_conn.execute(sql)
+            portal_db_conn.commit()
+            cursor.close()
+            
+            logger.debug("## host [%s] monitor close success, user:%s"%(id_str, user.username))
+            send_log(user.username,"update",u"屏蔽host[%s]成功"%id_str,"userself")
+            
+            sdict['result'] = 1
+        except:
+            logger.debug("## host [%s] monitor close fail, user:%s"%(id_str, user.username))
+            error = traceback.format_exc()
+            logger.error(error)
+            print error
+            send_log(user.username,"update",u"屏蔽host[%s]失败"%id_str,"userself")
+    return HttpResponse(json.dumps(sdict), content_type="application/json")
+
+@csrf_exempt
+def monitor_open(request):
+    """
+        open host monitor
+    """
+    user = request.user
+    sdict = {'result':0}
+    id_list = request.POST.getlist('values[]',[])
+    if id_list:
+        try:
+            id_str = ','.join(id_list)
+    
+            sql = '''
+            update falcon_portal.host set maintain_begin = 0, maintain_end = 0
+            where id in (%s)
+            '''%(id_str)
+            
+            portal_db_conn = DB(
+                portal.DB_HOST,
+                portal.DB_PORT,
+                portal.DB_USER,
+                portal.DB_PASS,
+                portal.DB_NAME)
+            
+            cursor = portal_db_conn.execute(sql)
+            portal_db_conn.commit()
+            cursor.close()
+        
+            logger.debug("## host [%s] monitor open success, user:%s"%(id_str, user.username))
+            send_log(user.username,"update",u"开启host[%s]成功"%id_str,"userself")
+            
+            sdict['result'] = 1
+        except:
+            logger.debug("## host [%s] monitor open fail, user:%s"%(id_str, user.username))
+            error = traceback.format_exc()
+            logger.error(error)
+            print error
+            send_log(user.username,"update",u"开启host[%s]失败"%id_str,"userself")
+            
+    return HttpResponse(json.dumps(sdict), content_type="application/json")
+
+@csrf_exempt
+def metric_close(request):
+    """
+        close metric monitor
+    """
+    sdict = {'result':0}
+    id_list = request.POST.getlist('values[]',[])
+    if id_list:
+        id_str = ','.join(id_list)
+
+        sql = '''
+        update strategy set run_begin = '00:00', run_end = '00:01'
+        where id in (%s)
+        '''%(id_str)
+        
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        
+        cursor = portal_db_conn.execute(sql)
+        portal_db_conn.commit()
+        cursor.close()
+        
+        sdict['result'] = 1
+        
+    return HttpResponse(json.dumps(sdict), content_type="application/json")
+
+@csrf_exempt
+def metric_open(request):
+    """
+        open metric monitor
+    """
+    sdict = {'result':0}
+    id_list = request.POST.getlist('values[]',[])
+    if id_list:
+        id_str = ','.join(id_list)
+
+        sql = '''
+        update strategy set run_begin = '', run_end = ''
+        where id in (%s)
+        '''%(id_str)
+        
+        portal_db_conn = DB(
+            portal.DB_HOST,
+            portal.DB_PORT,
+            portal.DB_USER,
+            portal.DB_PASS,
+            portal.DB_NAME)
+        
+        cursor = portal_db_conn.execute(sql)
+        portal_db_conn.commit()
+        cursor.close()
+        
+        sdict['result'] = 1
+            
+    return HttpResponse(json.dumps(sdict), content_type="application/json")
+
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^user_self/host/$', user_self_host_index, name='user_self_host_index'),
+    url(r'^user_self/plot/$', user_self_plot_index, name='user_self_plot_index'),
+    url(r'^user_self_host_list/$', user_self_host_list, name='user_self_host_list'),
+    url(r'^user_self_plot_list/$', user_self_plot_list, name='user_self_plot_list'),
+    
+    url(r'^monitor_close/$', monitor_close, name='monitor_close'),
+    url(r'^monitor_open/$', monitor_open, name='monitor_open'),
+    
+    url(r'^metric_close/$', metric_close, name='metric_close'),
+    url(r'^metric_open/$', metric_open, name='metric_open'),
+)

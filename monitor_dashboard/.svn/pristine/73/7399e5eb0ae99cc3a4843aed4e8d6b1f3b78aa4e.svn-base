@@ -1,0 +1,127 @@
+/**
+ * 
+ * @authors Your Name (you@example.org)
+ * @date    2015-11-02 15:08:46
+ * @version $Id$
+ */
+
+// datetime
+$('.datetime-from,.datetime-to').datetimepicker({
+    weekStart: 1,
+    todayBtn: 1,
+    autoclose: 1,
+    todayHighlight: 1,
+    startView: 2,
+    forceParse: 0,
+    linkField: "mirror_field",
+    pickerPosition: "bottom-left"
+});
+
+$(function() {
+
+    // datatable
+    var recoveryTable = $('#recovery_table').dataTable({
+        "sDom": 'lfrtip',
+        "bLengthChange": false,
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [0, 1, 2, 3, 4, 5, 6, 7]
+        }],
+
+        // "aaSorting": [[ 8, "desc" ]],
+        "bProcessing": true,
+        "bServerSide": true,
+        "sPaginationType": "full_numbers",
+        "sAjaxSource": "/warning_query/recovery/list",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+
+    // 批量筛选功能
+    $(document).off("click", "#recovery_filter").on("click", "#recovery_filter", function() {
+        var txt = $("#u_fliter").val(),
+            msg = $(".filter-msg"),
+            result = filterIp(txt, msg);
+
+        if (result === false) {
+            return false;
+        } else {
+            recoveryTable.fnReloadAjax('/warning_query/recovery/list?p=0&iptxt=' + result);
+
+            $('#recovery_table').find('.check-all').prop('checked', false);
+
+            $('#myModal').modal('hide');
+        }
+    });
+
+    // jstree
+    var nodeId = null;
+
+    $('#u_jstree').on('changed.jstree', function() {
+        nodeId = $('#u_jstree').jstree().get_bottom_selected();
+    }).jstree({
+        "plugins": ["checkbox"],
+        'core': {
+            "themes": {
+                "theme": "classic",
+                "dots": true,
+                "icons": true
+            },
+            'dataType': 'json',
+            'data': {
+                'url': '/ajax_get_group_hosts/'
+            }
+        }
+    });
+
+    // confirm jstree
+    $('#confirm_tree').on('click', function() {
+        if (nodeId.length) {
+            $.ajax({
+                    url: "/ajax_get_ip_by_groups/",
+                    type: 'POST',
+                    data: {
+                        nodeIdLists: nodeId
+                    }
+                })
+                .done(function(data) {
+                    data.length ? recoveryTable.fnReloadAjax('/warning_query/recovery/list?p=0&iptxt=' + data) : recoveryTable.fnReloadAjax('/warning_query/recovery/list?p=0&null=1');
+                    
+                    $('#recovery_table').find('.check-all').prop('checked', false);
+                });
+        }
+    });
+
+    // 搜索监控项模糊匹配
+    $('#watched_item').autocomplete({
+        source: function(request, response) {
+            $.ajax({
+                type: "POST",
+                url: "/ajax_filter_metric/",
+                dataType: "json",
+                data: {
+                    'metric': request.term
+                },
+                success: function(data) {
+                    response($.map(data, function(item) {
+                        return item;
+                    }));
+                }
+            });
+        }
+    });
+
+    //监控查询
+    $('#search_recovery_btn').on('click', function() {
+        var metric = $('#watched_item').val(),
+            satrtTime = $('#start_time').val(),
+            endTime = $('#end_time').val();
+
+        recoveryTable.fnReloadAjax('/warning_query/recovery/list?p=0&metric=' + metric + '&time_from=' + satrtTime + '&time_to=' + endTime);
+        
+        $('#recovery_table').find('.check-all').prop('checked', false);
+    });
+});

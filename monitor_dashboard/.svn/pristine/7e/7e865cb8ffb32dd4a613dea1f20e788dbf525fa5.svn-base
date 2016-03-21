@@ -1,0 +1,285 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-02 15:32:45
+ * @msg     基础监控页js
+ */
+
+// datetime
+$('.datetime-from,.datetime-to').datetimepicker({
+    weekStart: 1,
+    todayBtn: 1,
+    autoclose: 1,
+    todayHighlight: 1,
+    startView: 2,
+    forceParse: 0,
+    linkField: "mirror_field",
+    pickerPosition: "bottom-left"
+});
+
+$(function() {
+
+    // 批量筛选功能
+    $(document).off("click", "#common_plot_filter").on("click", "#common_plot_filter", viewCharts);
+
+    // 点击tab
+    $(document).on('click', '#chart_tab li a', getTabAjax);
+
+    // 查看基础监控
+    function viewCharts() {
+        var txt = $("#u_fliter").val(),
+            msg = $(".filter-msg"),
+            result = filterIp(txt, msg);
+
+        if (result === false || getSeconds() === false) {
+            return false;
+        } else if (txt.trim() === '') {
+            msg.text('请输入IP信息');
+
+            return false;
+        } else {
+            var html = '',
+                content = '';
+
+            $('#node_arr').val(result);
+
+            $('#myModal').modal('hide');
+
+            $('#chart_tab, #chart_panel').empty();
+
+            result.forEach(function(e, key) {
+                var id = e.split('.').join('_');
+
+                html += '<li role="presentation">\
+                        <a href="#' + id + '_tab" aria-controls="' + id + '" role="tab" data-toggle="tab">' + e + '</a>\
+                    </li>';
+
+                content += '<div role="tabpanel" class="tab-pane" id="' + id + '_tab">\
+                        <div class="panel-group" id="' + id + '" role="tablist" aria-multiselectable="true"></div>\
+                    </div>';
+            });
+
+            $('#chart_tab').append(html);
+            $('#chart_panel').append(content);
+
+            $('#chart_tab a:first').tab('show');
+
+            darwAjax(result[0], getSeconds().startTime, getSeconds().endTime);
+        }
+    }
+
+    // 绘图ajax
+    function darwAjax(endpoint, start, end) {
+        $.ajax({
+                url: '/monitor_query/ajax_get_common_plot/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    endpoint: endpoint,
+                    start: start,
+                    end: end
+                }
+            })
+            .done(function(data) {
+                var id = endpoint.split('.').join('_'),
+                    key;
+
+                if ($('#' + id).length) {
+                    $('#' + id).empty();
+                }
+
+                if (data) {
+                    for (key in data) {
+                        var val = data[key];
+
+                        if (val.length) {
+                            setPlots(id, key);
+
+                            var $wrap = $('#' + id + '_' + key).find('.charts-wrap'),
+                                len = val.length,
+                                i;
+
+                            for (i = 0; i < len; i++) {
+                                var obj = val[i];
+
+                                createChart($wrap, obj.g_id, obj.header, obj.name, obj.last, obj.avg, obj.min, obj.max);
+
+                                setCharts(obj.g_id, val[i]);
+                            }
+                        }
+                    }
+                }
+            })
+            .fail(function() {
+                showAlert('jError', '绘图失败了 :(', true);
+            });
+    }
+
+    // 点击tab绘图
+    function getTabAjax() {
+        var endpoint = $(this).text();
+
+        if (getSeconds() === false) {
+            return false;
+        } else {
+            darwAjax(endpoint, getSeconds().startTime, getSeconds().endTime); 
+        }
+    }
+
+    // 获取毫秒数
+    function getSeconds() {
+        var sTime = $('#start_time'),
+            eTime = $('#end_time'),
+            msg = $('.filter-msg');
+
+        if (sTime.val().trim() === '' && eTime.val().trim() !== '') {
+            msg.text('请选择开始时间');
+
+            return false;
+        } else if (sTime.val().trim() !== '' && eTime.val().trim() === '') {
+            msg.text('请选择结束时间');
+
+            return false;
+        } else if (sTime.val().trim() === '' && eTime.val().trim() === '') {
+            var date = new Date();
+
+            return {
+                startTime: parseInt((date.getTime() - 60 * 60 * 1000) / 1000),
+                endTime: parseInt(date.getTime() / 1000)
+            }
+        } else {
+            var sArr = sTime.val().split(' '),
+                sDate = sArr[0].split('-'),
+                sTime = sArr[1].split(':'),
+                eArr = eTime.val().split(' '),
+                eDate = eArr[0].split('-'),
+                eTime = eArr[1].split(':');
+
+            return {
+                startTime: parseInt(new Date(sDate[0], sDate[1], sDate[2], sTime[0], sTime[1]).getTime() / 1000),
+                endTime: parseInt(new Date(eDate[0], eDate[1], eDate[2], eTime[0], eTime[1]).getTime() / 1000)
+            }
+        }
+    }
+
+    //获取最近一小时时间
+    function setTime() {
+        var date = new Date();
+
+        return {
+            startTime: parseInt((date.getTime() - 60 * 60 * 1000) / 1000),
+            endTime: parseInt(date.getTime() / 1000)
+        }
+    }
+
+    // 渲染基础监控分类
+    function setPlots(id, plotname) {
+        var html = '<div class="panel panel-default">\
+                <div class="panel-heading" role="tab">\
+                    <h4 class="panel-title text-center">\
+                        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#' + id + '_' + plotname + '" aria-expanded="true" aria-controls="collapseOne">' + plotname + '</a>\
+                    </h4>\
+                </div>\
+                <div id="' + id + '_' + plotname + '" class="panel-collapse collapse" role="tabpanel">\
+                    <div class="panel-body">\
+                        <div class="charts-wrap clearfix">\
+                        </div>\
+                    </div>\
+                </div>\
+            </div>';
+
+        $('#' + id).append(html);
+    }
+
+    // 渲染chart html模板
+    function createChart(wrap, chartId, title, name, last, avg, min, max) {
+        isNaN(last) ? '' : last = last.toFixed(2);
+        isNaN(avg) ? '' : avg = avg.toFixed(2);
+        isNaN(min) ? '' : min = min.toFixed(2);
+        isNaN(max) ? '' : max = max.toFixed(2);
+
+        var html = '<div class="c-highchart panel panel-default">\
+                    <div class="panel-heading clearfix">\
+                        <h3 class="chart-title panel-title pull-left">' + title + '</h3>\
+                    </div>\
+                    <div class="panel-body">\
+                        <div id="'+ chartId +'" class="chart-box">\
+                        </div>\
+                        <table class="table chart-table table-striped table-hover" style="color:#63524D;">\
+                            <thead>\
+                                <tr>\
+                                    <th width="250px"></th>\
+                                    <th width="80px">last</th>\
+                                    <th width="80px">min</th>\
+                                    <th width="80px">avg</th>\
+                                    <th width="80px">max</th>\
+                                </tr>\
+                            </thead>\
+                            <tbody class="chart-list">\
+                                <tr>\
+                                    <td>' + name +'</td>\
+                                    <td>'+ last +'</td>\
+                                    <td>'+ min +'</td>\
+                                    <td>'+ avg +'</td>\
+                                    <td>'+ max +'</td>\
+                                </tr>\
+                            </tbody>\
+                        </table>\
+                    </div>\
+                </div>';
+
+        wrap.append(html);
+    }
+
+    // 渲染chart 绘图模板
+    function setCharts(id, data) {
+        $('#' + id).highcharts({
+            chart: {
+                type: 'line',
+                zoomType: 'x'
+            },
+            tooltip: {
+                xDateFormat: '%Y-%m-%d %H:%M:%S',
+                valueDecimals: 2
+            },
+            xAxis: {
+                type: 'datetime',
+                dateTimeLabelFormats: {
+                    hour: '%H:%M'
+                },
+                minRange: 1000, // 不能放大超过1s
+                minTickInterval: 1000 // 放大间隔最小为1s
+            },
+            yAxis: {
+                max: data.y_max,
+                min: data.y_min
+            },
+            series: [data],
+            title: {
+                text: null
+            }
+        });
+    }
+
+    var data = [{
+        "graph_id": "4626",
+        "g_id": "365292",
+        "min": 1.653103,
+        "last": 1.7005079999999999,
+        "max": 2.21149,
+        "y_max": null,
+        "pointInterval": 60000,
+        "cf": "AVERAGE",
+        "name": "117.121.24.178",
+        "header": "\u97f3\u4e50\u4fa0-\u6625\u8282\u6d4b\u8bd5_365292",
+        "pointStart": 1453918020000,
+        "marker": {
+            "enabled": false
+        },
+        "graph_type": "h",
+        "avg": 1.8809640169491526,
+        "data": [2.0050759999999999, 1.877696, 1.9523330000000001, 1.6738519999999999, 1.90452, 2.083863, 1.9318759999999999, 1.7530490000000001, 1.8743669999999999, 1.825558, 1.80203, 1.653103, 1.8029459999999999, 1.8320609999999999, 1.8024880000000001, 1.9548110000000001, 1.826484, 1.852792, 1.8292679999999999, 1.904037, 1.876268, 1.8015730000000001, 2.21149, 1.854204, 2.2047639999999999, 1.7250129999999999, 2.107669, 1.925513, 1.854204, 2.028912, 1.9994940000000001, 1.9269780000000001, 1.9577929999999999, 1.878649, 1.8029459999999999, 1.8518520000000001, 1.800203, 1.8029459999999999, 1.8288040000000001, 1.8992150000000001, 1.904037, 1.873418, 1.8274109999999999, 1.8560890000000001, 1.9279550000000001, 1.9832190000000001, 1.8748419999999999, 1.774848, 1.8537330000000001, 1.978691, 2.0045670000000002, 1.7276419999999999, 1.8518520000000001, 1.8743669999999999, 1.8485689999999999, 1.853262, 1.8283389999999999, 1.952828, 1.7005079999999999],
+        "color": "#7cb5ec",
+        "y_min": null
+    }];
+});

@@ -1,0 +1,47 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-02 16:58
+ * @msg     最新数据页js
+ */
+
+$(function () {
+
+    // 批量筛选功能
+    $(document).off("click", "#host_filter").on("click", "#host_filter", function () {
+        var txt = $("#u_fliter").val(),
+            msg = $(".filter-msg"),
+            result = filterIp(txt, msg);
+
+        if (result === false) {
+            return false;
+        } else {
+            hostTable.fnReloadAjax('/user_self_host_list/?p=0&iptxt=' + result);
+
+            $('#node_arr').val(result);
+
+            $('#host_table').find('.check-all').prop('checked', false);
+        }
+    });
+
+    // load jstree
+    $('#u_jstree').on('changed.jstree', function () {
+
+        changeJstree ();
+
+    }).jstree({
+        "plugins": ["checkbox"],
+        'core': {
+            "themes": {
+                "theme": "classic",
+                "dots": true,
+                "icons": true
+            },
+            'dataType': 'json',
+            'data': {
+                'url': '/ajax_get_group_hosts/'
+            }
+        }
+    });
+});
+

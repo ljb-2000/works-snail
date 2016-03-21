@@ -1,0 +1,96 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/7
+# Usage:
+# --------------------------------
+
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
+
+# 1 北京免机
+# 2 兔兔币
+# 3 账户性能
+# 4 老毛的业务 Appstroe网络连接情况
+# 5 中心库队列业务(端游戏充值、手游充值消息推送等中心库业务)
+# 6 帐号库队列业务(注册、帐号资料修改（密码、绑定手机号等）等帐号库业务)
+# 7 10040短信发送业务故障监控
+
+PRODUCT_TYPE_MK = 1
+PRODUCT_TYPE_TTB = 2
+PRODUCT_TYPE_ACCOUNT_PERFORM = 3
+PRODUCT_TYPE_APPSTORE = 4
+PRODUCT_TYPE_CENTER_QUEUE = 5
+PRODUCT_TYPE_ACCOUNT_QUEUE = 6
+PRODUCT_TYPE_10040 = 7
+
+PRODUCT_TYPES = (
+    (PRODUCT_TYPE_MK, _(u'免机')),
+    (PRODUCT_TYPE_TTB, _(u'兔兔币')),
+    (PRODUCT_TYPE_ACCOUNT_PERFORM, _(u'账户性能')),
+    (PRODUCT_TYPE_APPSTORE, _(u'AppStore网络连接情况')),
+    (PRODUCT_TYPE_CENTER_QUEUE, _(u'中心库队列')),
+    (PRODUCT_TYPE_ACCOUNT_QUEUE, _(u'帐号库队列')),
+    (PRODUCT_TYPE_10040, _(u'10040故障告警')),
+)
+
+PRODUCT_TYPE_DICT = dict()
+PRODUCT_TYPE_MAP = dict()
+
+[PRODUCT_TYPE_DICT.update({item[0]:item[1]}) for item in PRODUCT_TYPES]
+[PRODUCT_TYPE_MAP.update({item[1]:item[0]}) for item in PRODUCT_TYPES]
+
+class ThirdAlarm(models.Model):
+    '''
+        store third-party alarms.
+    '''
+
+    product = models.IntegerField(verbose_name=_(u'业务类型'), db_index=True,choices=PRODUCT_TYPES)
+    content = models.TextField(verbose_name=_(u'报警内容'))
+    create_time = models.BigIntegerField(_(u'报警时间'), db_index=True)
+    created = models.DateTimeField(verbose_name=_(u"创建时间"), auto_now=True)
+    info = models.TextField(verbose_name=_(u'其他'), blank=True)
+
+class LowLoadInfo(models.Model):
+    '''
+        低负载机器信息. CPU<20% & 内存<30% & 磁盘<40%
+    '''
+
+    class Meta:
+        verbose_name = _('LowLoadInfo')
+        verbose_name_plural = _('LowLoadInfo')
+    month = models.CharField(max_length=10, verbose_name=_(u'年月'),db_index=True)
+    ip = models.CharField(max_length=128, verbose_name=_(u'IP'),db_index=True)
+    product_name = models.CharField(max_length=255, verbose_name=_(u'产品名'),db_index=True,default="",blank=True)
+    p_set = models.CharField(max_length=255, verbose_name=_(u'所属集合'),default="",blank=True)
+    p_module = models.CharField(max_length=255, verbose_name=_(u'所属模块'),default="",blank=True)
+    cpu_ave_usage = models.FloatField(_(u'CPU平均使用率'))
+    mem_ave_usage = models.FloatField(_(u'MEM平均使用率'))
+    disk_ave_usage = models.FloatField(_(u'DISK平均使用率'))
+
+class CategoryInfo(models.Model):
+    '''
+        类别信息.
+    '''
+
+    class Meta:
+        verbose_name = _('CategoryInfo')
+        verbose_name_plural = _('CategoryInfo')
+
+    name = models.CharField(max_length=255, verbose_name=_(u'Name'),unique=True)
+
+class MetricInfo(models.Model):
+    '''
+        Metric信息.
+    '''
+
+    class Meta:
+        verbose_name = _('MetricInfo')
+        verbose_name_plural = _('MetricInfo')
+
+    metric = models.CharField(max_length=255, verbose_name=_(u'Metric'),unique=True)
+    category = models.ForeignKey(CategoryInfo, verbose_name=_(u'Category'))
+
+

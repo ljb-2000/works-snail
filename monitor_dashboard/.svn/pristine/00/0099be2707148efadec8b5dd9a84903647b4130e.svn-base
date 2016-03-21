@@ -1,0 +1,144 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-04 09:57:45
+ * @msg     屏幕配置页js
+ */
+
+ // datatable
+ var screenSettingTable = $('#screen_setting_table').dataTable({
+     "sDom": 'lfrtip',
+     "bLengthChange": false,
+     "iDisplayLength": 10,
+     "aoColumnDefs": [{
+         "bSortable": false,
+         "aTargets": [0]
+     }],
+
+     // "aaSorting": [[ 8, "desc" ]],
+     //"bProcessing": true,
+     //"bServerSide": true,
+     "sPaginationType": "full_numbers",
+
+     //"sAjaxSource": "/monitor_query_endpoint_list/",
+     "bFilter": false,
+     "oLanguage": {
+         "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+     }
+ });
+
+ $(function() {
+    // 创建屏幕
+    $('#creat_screen').on('click', function() {
+        $('#screen_setting_form').slideUp(400).next().slideDown(400);
+    });
+
+    // 上一步 下一步
+    $(document).on('click', '.next-step', function() {
+        $(this).parents('.step-wrap').slideUp(400).next().slideDown(400);
+    });
+
+    $(document).on('click', '.prev-step', function() {
+        $(this).parents('.step-wrap').slideUp(400).prev().slideDown(400);
+    });
+
+    // 全选、全不选
+    (function() {
+        var checkedAll = ".screen-all",
+            checkedIt = ".screen-it";
+
+        checkAll(checkedAll, checkedIt);
+    })();
+
+    // 编辑屏幕
+    $(document).on('click', '.edit-screen', function() {
+        $('#screen_setting_form').slideUp(400).next().slideDown(400);
+
+        $('#acreen_setting_type option').eq(1).prop('selected', true);
+
+        $('.save-step').removeClass('hide');
+    });
+
+    // +graph 
+    $(document).on('click', '.add-graph', function() {
+        $('#screen_setting_form').slideUp(400).next().slideDown(400);
+
+        $('#acreen_setting_type option').eq(2).prop('selected', true);
+
+    });
+
+    // 创建屏幕
+    $(document).on('click', '#step-complete', function() {
+        var param = getParam();
+
+        if (param.settingType === 1) {
+            $.ajax({
+                url: '/monitor_query/screen_add/',
+                    type: 'POST',
+                    data: {
+                        screen_name: param.screenName,
+                        title: param.title,
+                        product_name: param.productName,
+                        hosts: param.getHost(),
+                        counters: param.getPlot(),
+                        timespan: param.timespan,
+                        graph_type: param.graphType,
+                        is_sum: param.isSum
+                    }
+            })
+            .done(function() {
+                showAlert('jSuccess', '创建屏幕成功 :)', true);
+
+                $('#new_screen_form').slideUp(400).prev().slideDown(400);
+
+                screenSettingTable.fnReloadAjax();
+            })
+            .fail(function() {
+                showAlert('jError', '创建屏幕失败 :(', false);
+            });
+        }
+    });
+
+    // 获取用户输入信息
+    function getParam() {
+        var param = {
+            settingType: $('#acreen_setting_type').val(),
+            screenName: $('#screen_name').val(),
+            title: $('#screen_title').val(),
+            productName: $('#product_name').val(),
+            getHost: function() {
+                var hostArr = [],
+                    hostId = $('#lf_host_table tbody tr'),
+                    i,
+                    len;
+
+                for (i = 0, len = hostId.length; i < len; i++) {
+                    var dataId = hostId.eq(i).attr('data-id');
+
+                    hostArr.push(dataId);
+                };
+
+                return hostArr;
+            },
+            getPlot: function() {
+                var plotArr = [],
+                    plotId = $('#lf_plot_table tbody tr'),
+                    i,
+                    len;
+
+                for (i = 0, len = plotId.length; i < len; i++) {
+                    var dataId = plotId.eq(i).attr('data-id');
+
+                    plotArr.push(dataId);
+                };
+
+                return plotArr;
+            },
+            timespan: $('#time_span').val(),
+            graphType: $('#screen_view :checked').attr('data-type'),
+            isSum: $('#is_sum :checked').attr('data-type')
+        }
+
+        return param;
+    }
+ });

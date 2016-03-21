@@ -1,0 +1,105 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-02 16:58
+ * @msg     最新数据页js
+ */
+
+$(function () {
+
+    // datatable
+    var newestDataTable = $('#newest_data_table').dataTable({
+        "sDom": 'rfltip',
+        "bLengthChange": false,
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [2,3,4,5]
+        }],
+
+        // "aaSorting": [
+            // [1, "desc"]
+        // ],
+        "bProcessing": true,
+        "bServerSide": true,
+        "sPaginationType": "full_numbers",
+        "sAjaxSource": "/monitor_query/host_metric_list/",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+
+    // 批量筛选功能
+    $(document).off("click", "#host_filter").on("click", "#host_filter", function () {
+        var txt = $("#u_fliter").val(),
+            msg = $(".filter-msg"),
+            result = filterIp(txt, msg);
+
+        if (result === false) {
+            return false;
+        } else {
+            hostTable.fnReloadAjax('/user_self_host_list/?p=0&iptxt=' + result);
+
+            $('#node_arr').val(result);
+
+            $('#host_table').find('.check-all').prop('checked', false);
+        }
+    });
+
+    // load jstree
+    $('#u_jstree').on('changed.jstree', function () {
+
+        changeJstree ();
+
+    }).jstree({
+        "plugins": ["checkbox"],
+        'core': {
+            "themes": {
+                "theme": "classic",
+                "dots": true,
+                "icons": true
+            },
+            'dataType': 'json',
+            'data': {
+                'url': '/ajax_get_group_hosts/'
+            }
+        }
+    });
+});
+
+// 显示大图ajax
+function ajaxShowChart(endpoint, counter) {
+    var checked_hosts = [],
+        checked_items = [],
+        w = window.open();
+	
+	checked_hosts.push(endpoint);
+    checked_items.push(counter);
+
+    $.ajax({
+        url: "/chart/",
+        dataType: "json",
+        method: "POST",
+        data: {
+            "endpoints": checked_hosts,
+            "counters": checked_items,
+            "graph_type": "h",
+            "_r": Math.random()
+        },
+        success: function(ret) {
+            if (ret.ok) {
+                setTimeout(function () {
+                    w.location = '/chart/big/?id=' + ret.id;
+                }, 0);
+            } else {
+                showAlert('jError', '请求出错了~');
+            }
+        },
+        error: function () {
+            showAlert('jError', '请求出错了~');
+        }
+    });
+
+    return false;
+}

@@ -1,0 +1,133 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import os, sys
+from utils.common import send_log
+
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.views.decorators.csrf import csrf_exempt
+import logging
+
+from django.contrib import auth
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+
+from django.contrib.auth import logout as jlogout
+from releaseinfo import LOGIN_URL, SPECIAL_USERS
+from utils.util import get_unsolved_alarms, get_product_of_host
+from utils.common import get_last_data, get_hosts_of_user
+
+logger = logging.getLogger('logger')
+
+MENUS = {
+    u"业务接入": "config",
+}
+
+@render_to("login.html")
+@csrf_exempt
+def login(request):
+    '''
+    @note: 接收用户名和密码并完成登录跳转功能，登录成功进入首页，登录失败不跳转
+    '''
+    redirect_to = request.REQUEST.get("next", reverse('index'))
+    if request.method == "POST":
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = auth.authenticate(username=username, password=password)
+        if user is not None and user.is_active:
+            auth.login(request, user)
+            logger.debug("[user login] %s login ok."%(username))
+            send_log(user.username,"login",u"登录成功","user")
+            return HttpResponseRedirect(redirect_to)
+
+        if user and not user.is_active:
+            error_msg = u'账号未激活'
+        else:
+            error_msg = u'账号或密码错误，请重新输入'
+
+    else:
+        if request.user.is_authenticated():
+            return HttpResponseRedirect(redirect_to)
+    
+    TEMPLATE = "login.html"
+    return locals()
+
+@login_required
+def logout(request):
+    send_log(request.user.username,"logout","注销成功","user")
+    jlogout(request)
+    response = HttpResponseRedirect(LOGIN_URL)
+    response.delete_cookie('sig')
+    response.delete_cookie('falcon-portal')
+    return response
+
+@login_required
+@render_to("index.html")
+def index(request):
+#    guid = request.GET.get('VerifyId')
+#    if not guid:
+#        return HttpResponseRedirect(LOGIN_URL)
+#    data = {'action':'checkguid1','Guid':guid}
+#    req = urllib2.Request(ACCOUNT_AUTH_URL)
+#
+#    params = urllib.urlencode(data)
+#    response = urllib2.urlopen(req, params)
+#    jsonText = response.read()
+#    return_dict = json.loads(jsonText)
+#    
+#    if not return_dict:
+#        return HttpResponseRedirect(LOGIN_URL)
+#    
+#    username = return_dict.get('sAccount')
+#    name = return_dict.get('sUserName')
+#    uid= return_dict.get('iUserID')
+#        
+#    #user
+#    u = _user.get_or_create_user_by_params(username=username)[0]
+#    u.set_password(username)
+#    u.first_name=name
+#    u.save()
+#    
+#    user = authenticate(username=u.username, password=u.username)
+#    jlogin(request, user)
+    
+    user = request.user
+    
+    #lastest 10 alarms
+    alarms = get_unsolved_alarms()
+    alarms = alarms[:10]
+    for obj in alarms:
+        info =  get_product_of_host(obj.get('endpoint'))
+        obj['p_name'] = info.get("p_name")
+        obj['p_set'] = info.get("p_set")
+        obj['p_module'] = info.get("p_module")
+        
+        monitor_item = " ".join([obj.get('metric'),obj.get('func'),obj.get('operator'),obj.get('rightValue')])
+        obj['monitor_item'] = monitor_item
+        
+        leftValue = obj.get('leftValue',"")
+        obj['leftValue'] = leftValue
+    
+    name = user.first_name
+    if user.username in SPECIAL_USERS:
+        name = u'张延礼'
+    endpoints = get_hosts_of_user(name)
+    
+    #cpu top10
+    cpu_list = []
+    
+    #mem top10
+    mem_list = []
+    for endpoint in endpoints:
+        value_dict = get_last_data(endpoint,'mem.memfree.percent')
+        if value_dict.get('timestamp'):
+            mem_list.append((100 - value_dict.get('value'), endpoint))
+    mem_list.sort(reverse=True)
+    
+    #disk top10
+    disk_list = []
+    
+    return locals()
+

@@ -1,0 +1,153 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-10-29 13:31:50
+ * @msg     大图页ng
+ */
+
+var myBigChart = angular.module('myBigChart', ['highcharts-ng', 'ui.bootstrap.datetimepicker']);
+
+// instead of {{}}
+myBigChart.config(['$interpolateProvider', function ($interpolateProvider) {
+    $interpolateProvider.startSymbol('{[');
+    $interpolateProvider.endSymbol(']}');
+}]);
+
+// page controller
+myBigChart.controller('BigChart', ['$http', '$interval', '$scope', function ($http, $interval, $scope) {
+    var vm = this,
+        transform = function (data) {
+            return $.param(data);
+        },
+        path = angular.element("#path").val(),
+        graph_type = angular.element("#graph_type").val(),
+        urlH = '/chart/data/?id=' + path + '&graph_type=' + graph_type;
+
+    var date = new Date(),
+        dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    // global parameter
+    var globalParam = {
+        start: dateStart,
+        end: date
+    };
+
+    var watchParam = {
+        cf: 'AVERAGE',
+        sum: 'off',
+        sumonly: 'off',
+        compare: null
+    };
+
+    vm.watchParam = angular.copy(watchParam);
+    vm.globalParam = angular.copy(globalParam);
+
+    vm.reset = function () {
+        vm.watchParam = angular.copy(watchParam);
+        vm.globalParam = angular.copy(globalParam);
+    };
+
+    // draw
+    vm.show = function () {
+        active(vm.globalParam, vm.watchParam);
+    };
+
+    // watch
+    $scope.$watch('vm.watchParam', function (newVal, oldVal) {
+        if (!angular.equals(newVal, oldVal)) {
+            active(vm.globalParam, newVal);
+        }
+    }, true);
+
+    active(vm.globalParam, vm.watchParam);
+
+    $interval(function () {
+        var newDate = new Date();
+
+        vm.globalParam.end = newDate;
+        vm.globalParam.start = new Date(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
+
+        active(vm.globalParam, vm.watchParam);
+    }, 300000);
+
+    function active(param, watchparam) {
+        var start = param.start,
+            end = param.end,
+            compare = watchparam.compare,
+            nowTime = parseInt(date.getTime() / 1000),
+            startTime = parseInt(start.getTime() / 1000),
+            endTime = parseInt(end.getTime() / 1000),
+            compareTime = '';
+
+        if (compare !== null && compare !== '') {
+            compareTime = parseInt(compare.getTime() / 1000);
+
+            if(compareTime > nowTime) {
+                alert('请选择过去时间进行对比！');
+
+                watchparam.compare = null;
+
+                return false;
+            }
+        }
+
+        if (startTime >= endTime) {
+            alert('开始时间不能大于等于结束时间！');
+            return false;
+        }
+
+        $http({
+            method: "POST",
+            url: urlH + '&start=' + startTime + '&end=' + endTime + '&cf=' + watchparam.cf + '&sum=' + watchparam.sum + '&sumonly=' + watchparam.sumonly + '&compare=' + compareTime,
+            data: {},
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            transformRequest: transform
+        }).success(function (data) {
+            var ret = data.series_list,
+                series = ret[0],
+                header = series[0].header;
+
+            vm.charts = {
+                options: {
+                    chart: {
+                        type: 'line',
+                        zoomType: 'x'
+                    },
+                    tooltip: {
+                        xDateFormat: '%Y-%m-%d %H:%M:%S',
+                        valueDecimals: 2
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        dateTimeLabelFormats: {
+                            hour: '%H:%M'
+                                /*millisecond: '%H:%M:%S.%L',
+                                second: '%H:%M:%S',
+                                minute: '%H:%M',
+                                hour: '%H:%M',
+                                day: '%e. %b',
+                                week: '%e. %b',
+                                month: '%b \'%y',
+                                year: '%Y'*/
+                        },
+                        minRange: 1000, // 不能放大超过1s
+                        minTickInterval: 1000 // 放大间隔最小为1s
+                    },
+                    yAxis: {
+                        max: series[0].y_max,
+                        min: series[0].y_min
+                    }
+                },
+                series: series,
+                title: {
+                    text: null,
+                    header: header
+                }
+            };
+        }).error(function () {
+            alert('绘图失败了:(');
+        });
+    }
+}]);

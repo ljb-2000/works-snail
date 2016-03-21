@@ -1,0 +1,4 @@
+<script type="text/javascript" src="/static/src/tool/jstree/jstree.min.js?v=201511301743"></script>
+<script type="text/javascript" src="/static/src/tool/jstree/jstree.checkbox.js?v=201511301743"></script>
+<script type="text/javascript" src="/static/src/tool/data_table/js/jquery.dataTables.min.js?v=201511301743"></script>
+<script type="text/javascript" src="/static/src/tool/jquery/2.1.4/jquery-ui.min.js?v=201511301743"></script>

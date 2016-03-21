@@ -1,0 +1,120 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/2
+# Usage:
+# --------------------------------
+
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from models import ServerPluginSetting
+import traceback
+import logging
+import simplejson as json
+
+logger = logging.getLogger("logger")
+
+
+@csrf_exempt
+@require_POST
+def plugin_setting_add(request):
+    result = {"msg": ""}
+    code = 500
+    try:
+        data = request.POST
+        params = {
+            "ip": data.get("ip", ""),
+            "keys": data.get("keys", ""),
+            "values": data.get("values", "")
+        }
+        for key, value in params.iteritems():
+            if not value:
+                result['msg'] = '{0} is required'.format(key)
+        if not result['msg']:
+            keys = params['keys'].split(',')
+            values = params['values'].split(',')
+            total = len(keys)
+            if total != len(values):
+                result['msg'] = "key,value pair not match"
+            else:
+                for i in range(total):
+                    ServerPluginSetting.objects.create(ip=params['ip'], key=keys[i], value=values[i])
+                result['msg'] = 'add plugin values ok!'
+                code = 200
+    except Exception, e:
+        logger.error(e.message)
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = 'add plugin value fail'
+        print error
+
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))
+
+@csrf_exempt
+@require_POST
+def plugin_setting_delete(request):
+    result = {"msg":""}
+    code = 500
+    try:
+        s_id = request.POST.get("id","")
+        if not s_id:
+            result['msg'] = 'id is required'
+        else:
+            ids = s_id.split(',')
+            ServerPluginSetting.objects.filter(id__in=ids).delete()
+            code = 200
+            result['msg'] = 'ok'
+    except ServerPluginSetting.DoesNotExist:
+        result['msg'] = 'setting not exist'
+    except Exception, e:
+        logger.error(e.message)
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = 'add plugin value fail'
+        print error
+
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))
+
+@csrf_exempt
+@require_POST
+def plugin_setting_update(request):
+    result = {"msg":""}
+    code = 500
+    try:
+        s_id = request.POST.get("id","")
+        s_ip = request.POST.get("ip","")
+        s_key = request.POST.get("key","")
+        s_value = request.POST.get("value","")
+
+        if not s_id:
+            result['msg'] = 'id is required'
+        else:
+            setting = ServerPluginSetting.objects.get(id=s_id)
+            setting.ip=s_ip
+            setting.key=s_key
+            setting.value=s_value
+            setting.save()
+            code = 200
+            result['msg'] = 'ok'
+    except ServerPluginSetting.DoesNotExist:
+        result['msg'] = 'setting not exist'
+    except Exception, e:
+        logger.error(e.message)
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = 'add plugin value fail'
+        print error
+
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))

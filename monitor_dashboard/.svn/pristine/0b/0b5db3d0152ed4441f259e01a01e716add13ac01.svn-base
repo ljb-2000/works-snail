@@ -1,0 +1,258 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-02 15:20:29
+ * @version $Id$
+ */
+
+// 提示窗功能
+function showAlert(type, msg, auto) {
+    var winWidth = parseInt($(window).width()),
+        body = $('body'),
+        msg = '<div id="a_msg" class="a-msg ' + type + '">' + msg + '</div>',
+        layout = '<div id="a_layout" class="a-layout"></div>';
+
+    if ($('#a_msg')) {
+        $('#a_msg').remove();
+    } 
+
+    body.append(msg);
+
+    var msgBox = $('#a_msg'),
+        msgWidth = msgBox.outerWidth(true),
+        msgTop = msgBox.position().top - msgBox.scrollTop() + 50,
+        msgleft = (winWidth - msgWidth) / 2;
+
+    msgBox.css({
+        'top': msgTop,
+        'left': msgleft
+    });
+
+    if (auto === true) {
+        msgBox.slideDown('fast', function() {
+            var seconds = 2,
+                e = $(this),
+                time = setInterval(function() {
+                    seconds--;
+
+                    if (seconds <= 0) {
+                        clearInterval(time);
+
+                        e.slideUp('fast', function() {
+                            $(this).remove();
+                        });
+                    }
+                }, 1000);
+        });
+    } else {
+        body.append(layout);
+
+        var layoutBox = $('#a_layout');
+
+        layoutBox.show();
+
+        msgBox.slideDown('fast');
+
+        layoutBox.on('click', function() {
+            if (msgBox.length) {
+                msgBox.slideUp('fast', function() {
+                    $(this).remove();
+                    layoutBox.remove();
+                });
+            }
+        });
+    }
+}
+
+// 批量筛选框
+function filterIp(txt, msg) {
+
+    'use strict';
+
+    var ipTxt = txt.replace(new RegExp('\t', 'g'), ' ').trim(),
+        iparr = ipTxt.split('\n'),
+        evens = _.filter(iparr, function(num) {
+            return num;
+        }), // 去空行
+        ips = _.map(evens, function(num) {
+            return num.trim();
+        }); // 去空格
+
+    msg.html('');
+
+    for (var i = 0, len = ips.length; i < len; i++) {
+        if (isIp(ips[i]) === false) {
+            msg.html('存在非法的IP格式，请检查');
+            return false;
+            break;
+        }
+    }
+
+    return ips;
+}
+
+// 验证ip格式
+function isIp(ip) {
+    var reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
+
+    if (!reg.test(ip)) {
+        return false;
+    }
+}
+
+// 左边栏高度自适应
+function getLeftHeight(status) {
+    var uContent = $(".u-right .panel-body"),
+        tabContent = $(".u-left .tab-content"),
+        uHeight = uContent.outerHeight(),
+        tabHeight = tabContent.outerHeight();
+
+    function getH() {
+        var h = $(window).height(),
+            hLeft = h - 180;
+
+        tabContent.height(hLeft);
+    }
+
+    if (status) {
+        if (tabHeight < uHeight) {
+            tabContent.outerHeight(uHeight);
+        } else {
+            getH();
+        }
+    } else {
+        if (tabHeight <= uHeight) {
+            tabContent.outerHeight(uHeight);
+        } else {
+            getH();
+        }
+    }
+}
+
+// 全选、全不选
+function checkAll(checkedAll, checkedIt) {
+    $(document).on("click", checkedAll, function() {
+        if ($(this).prop("checked")) {
+            $(checkedIt).prop("checked", true).parents("tr").addClass('checknow');
+        } else {
+            $(checkedIt).prop("checked", false).parents("tr").removeClass('checknow');
+        }
+    });
+
+    $(document).on("click", checkedIt, function() {
+        if ($(this).prop("checked") === true) {
+            $(this).parents("tr").addClass('checknow');
+        }
+        if ($(this).prop("checked") === false) {
+            $(checkedAll).prop("checked", false);
+            $(this).parents("tr").removeClass('checknow');
+        }
+        if ($(checkedIt).filter(":checked").length >= $(checkedIt).length) {
+            $(checkedAll).prop("checked", true);
+        }
+    });
+}
+
+// 获取选中行
+function getCheckedTr(table) {
+    var checkedTr = table.find('input:checked'),
+        checkedArr = [];
+
+    for (var i = 0, len = checkedTr.length; i < len; i++) {
+        var val = checkedTr.eq(i).prop('value');
+        checkedArr.push(val);
+    }
+
+    return checkedArr;
+}
+
+$(function() {
+
+    // 导航高亮
+    (function lightNavbar() {
+        var path = window.location.pathname,
+            firstPath = path.substring(0, path.indexOf('/', 1));
+
+        $('.h-menu a[href^="' + firstPath + '"]').addClass("active");
+        $('.h-nav a[href="' + path + '"]').addClass("active");
+
+        var index = $('.h-menu .active').parent().index();
+
+        $('.h-nav>div').eq(index).removeClass('hide').siblings().addClass('hide');
+    })();
+
+    getLeftHeight('load');
+
+    $(window).resize(function() {
+        getLeftHeight();
+    });
+
+    $(document).on('click', '.paginate_button,.paginate_active', function() {
+        getLeftHeight();
+    });
+
+    // treenode add title
+    $(document).on('mouseover', '.jstree-anchor', function() {
+        var title = $(this).text();
+
+        $(this).prop('title', title);
+    });
+
+    // 全选、全不选
+    (function loadCheckedAll() {
+        var checkedAll = ".check-all",
+            checkedIt = ".check-it";
+
+        checkAll(checkedAll, checkedIt);
+    })();
+
+    // 翻页清空全选按钮
+    $(document).on('click', '.paginate_button, .paginate_active', function() {
+        $(this).parents('.dataTables_wrapper').find(':checked').prop('checked', false).parents('tr').removeClass('checknow');
+    });
+
+    // 查询表格刷新功能
+    $.fn.dataTableExt.oApi.fnReloadAjax = function(oSettings, sNewSource, fnCallback, bStandingRedraw) {
+        if (typeof sNewSource != 'undefined' && sNewSource != null) {
+            oSettings.sAjaxSource = sNewSource;
+        }
+
+        // Server-side processing should just call fnDraw
+        if (oSettings.oFeatures.bServerSide) {
+            this.fnDraw();
+            return;
+        }
+
+        this.oApi._fnProcessingDisplay(oSettings, true);
+        var that = this,
+            iStart = oSettings._iDisplayStart,
+            aData = [];
+
+        this.oApi._fnServerParams(oSettings, aData);
+
+        oSettings.fnServerData.call(oSettings.oInstance, oSettings.sAjaxSource, aData, function(json) {
+            that.oApi._fnClearTable(oSettings);
+            var aData = (oSettings.sAjaxDataProp !== "") ?
+                that.oApi._fnGetObjectDataFn(oSettings.sAjaxDataProp)(json) : json;
+
+            for (var i = 0; i < aData.length; i++) {
+                that.oApi._fnAddData(oSettings, aData[i]);
+            }
+
+            oSettings.aiDisplay = oSettings.aiDisplayMaster.slice();
+
+            if (typeof bStandingRedraw != 'undefined' && bStandingRedraw === true) {
+                oSettings._iDisplayStart = iStart;
+                that.fnDraw(false);
+            } else {
+                that.fnDraw();
+            }
+
+            that.oApi._fnProcessingDisplay(oSettings, false);
+
+            if (typeof fnCallback == 'function' && fnCallback != null) {
+                fnCallback(oSettings);
+            }
+        }, oSettings);
+    }
+});

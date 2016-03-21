@@ -1,0 +1,215 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/2
+# Usage:
+# --------------------------------
+
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from utils.decorator import login_required
+from models import ServerPluginSetting
+import traceback
+import logging
+import simplejson as json
+import os
+import datetime
+from openpyxl import load_workbook
+from utils.common import send_log,update_plugin_cache_by_ips
+
+logger = logging.getLogger("logger")
+
+
+@csrf_exempt
+@require_POST
+@login_required
+def plugin_setting_add(request):
+    user = request.user
+    result = {"msg": ""}
+    code = 500
+    try:
+        data = request.POST
+        ip = data.get("ip", "")
+        params = {
+            "ip": ip,
+            "keys": data.get("keys", ""),
+            "values": data.get("values", "")
+        }
+        for key, value in params.iteritems():
+            if not value:
+                result['msg'] = '{0} is required'.format(key)
+        if not result['msg']:
+            keys = params['keys'].split(',')
+            values = params['values'].split(',')
+            total = len(keys)
+            if total != len(values):
+                result['msg'] = "key,value pair not match"
+            else:
+                for i in range(total):
+                    obj=ServerPluginSetting.objects.create(ip=params['ip'], key=keys[i], value=values[i])
+                    send_log(username=user.username, action="add", obj_type='plugin',
+                        message=u"添加插件值, ID:{0}, ip:{3}, key:{1},value:{2}".format(obj.id,keys[i],values[i],params['ip']),remark=json.dumps(obj.get_dict()))
+                result['msg'] = 'add plugin values ok!'
+                code = 200
+                update_plugin_cache_by_ips([ip])
+    except Exception, e:
+        logger.error(e.message)
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = 'add plugin value fail'
+        print error
+
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))
+
+@csrf_exempt
+@require_POST
+@login_required()
+def plugin_setting_delete(request):
+    user=request.user
+    result = {"msg":""}
+    code = 500
+    try:
+        s_id = request.POST.get("id","")
+        if not s_id:
+            result['msg'] = 'id is required'
+        else:
+            ids = s_id.split(',')
+            objs = ServerPluginSetting.objects.filter(id__in=ids)
+            data=dict()
+            ips = set()
+            [ips.add(obj.ip) for obj in objs]
+            [data.update({obj.id:obj.get_dict()}) for obj in objs]
+            objs.delete()
+            send_log(username=user.username, action="delete", obj_type='plugin',
+                 message=u"删除插件值配置, id:{0}".format(",".join(ids)),remark=json.dumps(data))
+            code = 200
+            result['msg'] = 'ok'
+
+            update_plugin_cache_by_ips(list(ips))
+    except ServerPluginSetting.DoesNotExist:
+        result['msg'] = 'setting not exist'
+    except Exception, e:
+        logger.error(e.message)
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = 'add plugin value fail'
+        print error
+
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))
+
+@csrf_exempt
+@require_POST
+@login_required()
+def plugin_setting_update(request):
+    user = request.user
+    result = {"msg":""}
+    code = 500
+    ips = set()
+    try:
+        s_id = request.POST.get("id","")
+        s_ip = request.POST.get("ip","")
+        s_key = request.POST.get("key","")
+        s_value = request.POST.get("value","")
+
+        if not s_id:
+            result['msg'] = 'id is required'
+        else:
+            setting = ServerPluginSetting.objects.get(id=s_id)
+            before = setting.get_dict()
+            ips.add(setting.ip)
+            setting.ip=s_ip
+            setting.key=s_key
+            setting.value=s_value
+            setting.save()
+            after = setting.get_dict()
+            code = 200
+            result['msg'] = 'ok'
+            send_log(username=user.username, action="update", obj_type='plugin',
+                 message=u"更新插件值, id:{0}".format(setting.id),remark=json.dumps({
+                "before":before,
+                "after":after
+            }))
+            ips.add(s_ip)
+            update_plugin_cache_by_ips(list(ips))
+    except ServerPluginSetting.DoesNotExist:
+        result['msg'] = 'setting not exist'
+    except Exception, e:
+        logger.error(e.message)
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = 'add plugin value fail'
+        print error
+
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))
+
+
+@csrf_exempt
+@require_POST
+@login_required
+def plugin_setting_import(request):
+    user = request.user
+    result = {"msg": ""}
+    code = 500
+    ips = set()
+    try:
+        uploadfile = request.FILES['up_field']
+        if not uploadfile:
+            result['msg'] = "please select a excel format file"
+        else:
+            file_dir = os.path.join(os.getcwd(), "uploads")
+            if not os.path.isdir(file_dir):
+                os.makedirs(file_dir)
+                logger.debug("## create upload folder, path:{0}".format(file_dir))
+            file_path = os.path.join(file_dir, datetime.datetime.now().strftime("%Y%m%d%H%M%S")+'.xlsx')
+            logger.debug("setting file path:{0}".format(file_path))
+            tempfile = open(file_path, 'w+')
+            tempfile.write(uploadfile.read())
+            tempfile.close()
+            wb = load_workbook(filename=file_path,read_only=True,use_iterators=True,guess_types=False)
+            for sheet in wb._sheets:
+                for item in sheet:
+                    ip = item[0].value
+                    key = item[1].value
+                    value = item[2].value
+                    if not ip or not key:
+                        continue
+                    obj,is_create = ServerPluginSetting.objects.get_or_create(ip=ip, key=key)
+                    if not is_create:
+                        before=obj.get_dict()
+                    obj.value = value
+                    obj.save()
+                    if is_create:
+                       send_log(username=user.username, action="add", obj_type='plugin',
+                                 message=u"导入新建插件值, id:{0}".format(obj.id),remark=json.dumps(obj.get_dict()))
+                    else:
+                       send_log(username=user.username, action="add", obj_type='plugin',
+                                 message=u"导入更新插件值,ip:{0},key:{1},value:{2},obj_id:{3}".format(ip, key, value,
+                                                                                                       obj.id),remark=json.dumps({
+                               "before":before,
+                                "after":obj.get_dict()
+                           }))
+                    ips.add(ip)
+            code = 200
+            result['msg'] = 'ok'
+    except Exception, e:
+        error = traceback.format_exc()
+        logger.error(error)
+        result['msg'] = u"处理出错,请确认文件格式为xlsx且内容格式为:IP、KEY、VALUE"
+        print error
+    update_plugin_cache_by_ips(list(ips))
+    return HttpResponse(json.dumps({
+        "code": code,
+        "result": result
+    }))

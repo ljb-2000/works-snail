@@ -1,0 +1,84 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json
+import traceback
+import datetime, time
+from utils.ctranslate import LazyEncoder
+from django.db.transaction import commit_on_success
+from django.core.paginator import Paginator
+from apps.plugin.models import ServerPluginSetting
+
+@login_required
+@csrf_exempt
+@render_to('server_plug/plug.html')
+def server_plug(request):
+    return locals()
+
+@login_required
+@csrf_exempt
+def server_plugin_list(request):
+    user = request.user
+
+    null = request.GET.get('null',False)
+    iptxt = request.GET.get('iptxt', '').strip()
+    key = request.GET.get('key',"")
+
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, 'endpoint', 'metric', 'r_value', 'timestamp']
+
+    if null:
+        settings = []
+        total = 0
+    else:
+        settings = ServerPluginSetting.objects.all()
+        order_item = order_list[iSortCol_0]
+
+        #查询
+        if iptxt:
+            ip_list = iptxt.split(',')
+            settings = settings.filter(ip__in=ip_list)
+
+        if key:
+            settings = settings.filter(key__icontains=key)
+        total = settings.count()
+
+    #第一个参数表示需要分页的对象，可为list、tuple、QuerySet，只要它有count()或者__len__()函数
+    #第二个参数为每页显示记录数
+    p = Paginator(settings, iDisplayLength)
+    page_range = p.page_range #页数list
+    page = p.page(page_range[iDisplayStart / iDisplayLength])
+    object_list = page.object_list
+
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    sdicts["aaData"] = []
+    try:
+        for obj in object_list:
+            check_html = u"<input type='checkbox' value='%s' class='check-it'/>" % obj.id
+            operation = "<span onclick='deletePluginSetting({0});' class='pointer'>删除</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span data-toggle='modal' data-target='#plug_update' onclick='updatePluginSetting(this,{0});'>修改</span>".format(obj.id)
+            data = [check_html,obj.ip,obj.key,obj.value,operation]
+            sdicts["aaData"].append(data)
+    except:
+        print traceback.format_exc()
+        sdicts["aaData"] = []
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^server_plug/plug/$', server_plug, name='server_plug'),
+    url(r'^server_plugin_list/$', server_plugin_list),
+)

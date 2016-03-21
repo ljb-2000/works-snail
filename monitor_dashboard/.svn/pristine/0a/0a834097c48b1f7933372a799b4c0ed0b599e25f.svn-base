@@ -1,0 +1,338 @@
+# -- encoding=utf-8 --
+from ast import literal_eval
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json
+from django.core.paginator import Paginator
+import datetime
+from utils.ctranslate import LazyEncoder
+import time
+from utils.db_conn import monitor_event_db_conn
+from utils.util import get_unsolved_alarms
+from utils.util import get_product_of_host
+import traceback
+import logging
+from releaseinfo import SPECIAL_USERS
+from utils.common import get_product_list_by_user
+from apps.monitor.models import PRODUCT_TYPE_DICT,PRODUCT_TYPE_MAP,ThirdAlarm
+
+logger = logging.getLogger("logger")
+
+@login_required
+@csrf_exempt
+@render_to('warning_query/unrecovery.html')
+def warning_query_unrecovery_index(request):
+    return locals()
+
+@login_required
+@csrf_exempt
+def warning_query_unrecovery_list(request):
+    user = request.user
+    iptxt = request.GET.get('iptxt', '').strip()
+    ip = request.GET.get('ip', '').strip()
+    null = request.GET.get('null',False)
+
+    p_set = request.GET.get('p_set',"")
+    metric = request.GET.get('metric_text',"")
+    time_from = request.GET.get('time_from',"")
+    time_to = request.GET.get('time_to',"")
+
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, 'endpoint', 'p_name','p_set','p_module',None, 'r_value', None, 'eventTime']
+
+    order_item = order_list[iSortCol_0]
+
+    if null:
+        alarms = []
+    else:
+        alarms = get_unsolved_alarms()
+        #查询
+        if iptxt:
+            ip_list = iptxt.split(',')
+            alarms = [alarm for alarm in alarms if alarm['endpoint'] in ip_list ]
+
+        if ip:
+            alarms = [alarm for alarm in alarms if alarm['endpoint']==ip ]
+
+        if metric:
+            alarms = [alarm for alarm in alarms if str(alarm['metric']).find(metric)!=-1 ]
+
+        if time_from:
+            stime = time.mktime(time.strptime(time_from,'%Y-%m-%d %H:%M'))
+            alarms = [alarm for alarm in alarms if alarm['timestamp'] >= stime ]
+
+        if time_to:
+            etime = time.mktime(time.strptime(time_to,'%Y-%m-%d %H:%M'))
+            alarms = [alarm for alarm in alarms if alarm['timestamp'] <= etime ]
+        alarms = sorted(alarms,key=lambda a:a['timestamp'],reverse=True)
+    p = Paginator(alarms, iDisplayLength)
+    total = p.count #总数
+    page_range = p.page_range #页数list
+    page = p.page(page_range[iDisplayStart / iDisplayLength])
+    object_list = page.object_list
+
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["aaData"] = []
+    try:
+        for obj in object_list:
+            info =  get_product_of_host(obj.get('endpoint'))
+            check_html = u"<input type='checkbox' value='%s' class='check-it'/>" % obj.get('id')
+            endpoint = "<a href='/monitor_query/query/?iptxt=%s'>%s</a>"%(obj.get('endpoint'),obj.get('endpoint'))
+            monitor_item = " ".join([obj.get('metric'),obj.get('func'),obj.get('operator'),obj.get('rightValue')])
+            tags = obj.get("counter").split(obj.get('metric'))[1].strip()
+            data = [check_html, endpoint, info.get("p_name"),info.get("p_set"),info.get("p_module"),monitor_item, obj.get('leftValue',""),tags, obj.get("alarm_time","")]
+            sdicts["aaData"].append(data)
+        if p_set:
+            sdicts["aaData"] = [item for item in sdicts["aaData"] if item[3] and str(item[3]).__contains__(p_set)]
+        if user.username not in SPECIAL_USERS:
+            products = get_product_list_by_user(user.first_name)
+            sdicts["aaData"] = [item for item in sdicts["aaData"] if item[2] in products]
+        if order_item:
+            order_index =order_list.index(order_item)
+            if sSortDir_0=='desc':
+                sdicts["aaData"]=sorted(sdicts["aaData"],key=lambda a:a[order_index],reverse=True)
+            else:
+                sdicts["aaData"]=sorted(sdicts["aaData"],key=lambda a:a[order_index],reverse=False)
+        total=len(sdicts["aaData"])
+    except:
+        print traceback.format_exc()
+        sdicts["aaData"] = []
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+@render_to('warning_query/recovery.html')
+def warning_query_recovery_index(request):
+    return locals()
+
+@login_required
+@csrf_exempt
+def warning_query_recovery_list(request):
+    user = request.user
+    table_name = "event_%s" % (datetime.datetime.now().strftime("%Y%m"))
+
+    null = request.GET.get('null',False)
+    iptxt = request.GET.get('iptxt', '').strip()
+
+    ip = request.GET.get('ip', '').strip()
+
+    p_set = request.GET.get('p_set',"")
+    metric = request.GET.get('metric_text',"")
+    time_from = request.GET.get('time_from',"")
+    time_to = request.GET.get('time_to',"")
+
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, 'endpoint', 'product_name', 'p_set', 'p_module', None,None,'eventTime']
+    order_item = order_list[iSortCol_0]
+
+    sdicts = {}
+    products = ["all"]
+    if user.username not in SPECIAL_USERS:
+        products=get_product_list_by_user(user.first_name)
+    try:
+        if null or not products:
+            rows = []
+            total = 0
+        else:
+            sql = '''SELECT * FROM %(table_name)s WHERE status="PROBLEM" ''' % ({'table_name': table_name})
+            total_sql = '''SELECT count(*) num FROM %(table_name)s WHERE status="PROBLEM" ''' % ({'table_name': table_name})
+
+            #查询
+            if iptxt:
+                ip_list = iptxt.split(',')
+                sql += " AND endpoint in ('%s')"%"','".join(ip_list)
+                total_sql += " AND endpoint in ('%s')"%"','".join(ip_list)
+
+            if ip:
+                sql += " AND endpoint='%s' "%ip
+                total_sql += " AND endpoint='%s' "%ip
+
+            if metric:
+                sql += " AND strategy like ('%%%s%%')"%metric
+                total_sql += " AND strategy like ('%%%s%%')"%metric
+                # sql += " AND strategy like ('%%\"%s\"%%')"%metric
+
+            if time_from:
+                stime = time.mktime(time.strptime(time_from,'%Y-%m-%d %H:%M'))
+                sql += " AND eventTime >= %s "%stime
+                total_sql += " AND eventTime >= %s "%stime
+
+            if time_to:
+                etime = time.mktime(time.strptime(time_to,'%Y-%m-%d %H:%M'))
+                sql += " AND eventTime <= %s "%etime
+                total_sql += " AND eventTime <= %s "%etime
+
+            if p_set:
+                sql += " AND p_set like ('%%%s%%')"%p_set
+                total_sql += " AND p_set like ('%%%s%%')"%p_set
+
+            if products[0]!='all':
+                sql += " AND product_name in ('%s') "%"','".join(products)
+                total_sql += " AND product_name in ('%s') "%"','".join(products)
+
+            #排序
+            if order_item:
+                if sSortDir_0 == "desc":
+                    sql += ' order by %s desc'%order_item
+                else:
+                    sql += ' order by %s'%order_item
+            else:
+                sql += 'order by id desc'
+
+            logger.debug(sql)
+            logger.debug(total_sql)
+
+            sql = sql + ' limit %s,%s'%(iDisplayStart,iDisplayLength)
+            rows = monitor_event_db_conn.query_all(sql)
+
+            total_query = monitor_event_db_conn.query_all(total_sql)
+            total = total_query[0].get("num",0)
+
+        p = Paginator(rows, iDisplayLength)
+        # total = p.count #总数
+        page_range = p.page_range #页数list
+        # page = p.page(page_range[iDisplayStart / iDisplayLength])
+        page = p.page(page_range[0])
+        object_list = page.object_list
+
+        sdicts["sEcho"] = sEcho
+        sdicts["iTotalRecords"] = total
+        sdicts["iTotalDisplayRecords"] = total
+        sdicts["aaData"] = []
+
+        for obj in object_list:
+            #封装数组，按照列数填入对应的值
+            strategy = json.loads(obj['strategy'])
+            event_time = obj.get("eventTime","")
+            alarm_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(event_time))
+            check_html = u"<input type='checkbox' value='%s' class='check-it'/>" % obj.get('id')
+            fmt_stategy = " ".join([strategy["metric"],strategy["func"],strategy["operator"],str(strategy["rightValue"])])
+            tags = ""
+            pushed_tags = literal_eval(obj["pushedTags"])
+            for key,value in pushed_tags.iteritems():
+                tags += ", "+key+"="+value
+            tags = tags.strip(", ")
+            data = [check_html, obj.get('endpoint'), obj.get('product_name'),obj.get("p_set"),obj.get("p_module"),fmt_stategy, obj.get("leftValue"),tags,alarm_time]
+            sdicts["aaData"].append(data)
+    except Exception,e:
+        error = traceback.format_exc()
+        logger.error(error)
+        print e
+        sdicts["aaData"] = []
+        sdicts["sEcho"] = sEcho
+        sdicts["iTotalRecords"] = 0
+        sdicts["iTotalDisplayRecords"] = 0
+
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+@render_to('warning_query/other_server.html')
+def warning_query_other_server_index(request):
+    user = request.user
+    product_dict = {}
+    if not user.username in SPECIAL_USERS:
+        products = get_product_list_by_user(user.first_name)
+        product_set = set(products).intersection(set(PRODUCT_TYPE_DICT.values()))
+        # product_set=set([u'免卡',u'关云长'])
+        [product_dict.update({PRODUCT_TYPE_MAP.get(item):item}) for item in product_set]
+    else:
+        product_dict = PRODUCT_TYPE_DICT
+
+    return locals()
+
+@login_required
+@csrf_exempt
+def warning_query_third_list(request):
+    user = request.user
+    products=['all']
+    if not user.username in SPECIAL_USERS:
+        products = get_product_list_by_user(user.first_name)
+    product = request.GET.get('product',"")
+    time_from = request.GET.get('time_from',"")
+    time_to = request.GET.get('time_to',"")
+
+    iDisplayLength = int(request.GET.get('iDisplayLength'))
+    iDisplayStart = int(request.GET.get('iDisplayStart'))
+    sEcho = int(request.GET.get('sEcho'))
+#    sSearch = request.GET.get('sSearch', None)
+    iSortCol_0 = int(request.GET.get('iSortCol_0',0))
+    sSortDir_0 = request.GET.get('sSortDir_0')
+    order_list = [None, 'product', None, 'create_time']
+
+    order_item = order_list[iSortCol_0]
+
+    if products and products[0]=='all':
+        alarms = ThirdAlarm.objects.all()
+    else:
+        product_set = set(products).intersection(set(PRODUCT_TYPE_DICT.values()))
+        product_ids = [PRODUCT_TYPE_MAP[item] for item in product_set]
+        alarms = ThirdAlarm.objects.filter(product__in=product_ids)
+
+    if product:
+        alarms = alarms.filter(product=product)
+
+    if time_from:
+        stime = time.mktime(time.strptime(time_from,'%Y-%m-%d %H:%M'))
+        alarms = alarms.filter(create_time__gte=stime)
+
+    if time_to:
+        etime = time.mktime(time.strptime(time_to,'%Y-%m-%d %H:%M'))
+        alarms = alarms.filter(create_time__lte=etime)
+
+    if order_item:
+        if sSortDir_0 == "desc":
+            order_item = '-%s' % order_item
+        alarms = alarms.order_by(order_item)
+    else:
+        alarms = alarms.order_by('-id')
+
+    p = Paginator(alarms, iDisplayLength)
+    total = p.count #总数
+    page_range = p.page_range #页数list
+    page = p.page(page_range[iDisplayStart / iDisplayLength])
+    object_list = page.object_list
+
+    sdicts = {}
+    sdicts["sEcho"] = sEcho
+    sdicts["aaData"] = []
+    try:
+        for obj in object_list:
+            check_html = u"<input type='checkbox' value='%s' class='check-it'/>" % obj.id
+            data = [check_html, obj.get_product_display(),obj.content,time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(obj.create_time))]
+            sdicts["aaData"].append(data)
+    except:
+        print traceback.format_exc()
+        sdicts["aaData"] = []
+    sdicts["iTotalRecords"] = total
+    sdicts["iTotalDisplayRecords"] = total
+    return HttpResponse(json.dumps(sdicts, cls=LazyEncoder))
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^warning_query/unrecovery/$', warning_query_unrecovery_index),
+    url(r'^warning_query/recovery/$', warning_query_recovery_index),
+    url(r'^warning_query/unrecovery/list$', warning_query_unrecovery_list),
+    url(r'^warning_query/recovery/list$', warning_query_recovery_list),
+    url(r'^warning_query/other_server/$', warning_query_other_server_index),
+    url(r'^warning_query/other_server/list$', warning_query_third_list),
+)

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛智能监控平台</title>
+{% include "import_css.html" %}
+</head>
+<body>
+    <!--主界面开始-->
+    <div class="container-fluid">
+        {% include "header.html" %}
+        <!-- 页面主体开始-->
+        <div class="row">
+            <!--屏幕展示面板开始-->
+            <div class="u-right" style="margin:18px 0 0;">
+                <ul id="my_tabs" class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active">
+                        <a href="#home" aria-controls="home" role="tab" data-toggle="tab">
+                            选择屏幕
+                        </a>
+                    </li>
+                </ul>
+                <div id="my_contents" class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="home">
+                        <div class="screen-pannel-box panel-body">
+                            <div class="game-wrap clearfix">
+                                <dl style="border-left: 1px solid #ccc;">
+                                    <dt>大型网游</dt>
+                                    <dd>
+                                        <ul>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/1102/417bc4acdcfd4b6a1d126da53c974eaa89cac20e.jpeg">
+                                                    <div class="text">
+                                                        <b>九阴真经<i class="icon-H"></i></b>
+                                                        <div class="pstext">真武侠RPG</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0914/0d75bb00ca8fa7b08f8d2ca6aa39aa0b9ef018fb.jpeg">
+                                                    <div class="text">
+                                                        <b>九阳神功<i class="icon-H"></i></b>
+                                                        <div class="pstext">全平台3D武侠英雄团战网游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/b1d6f9f63393840880467db3dc83420eaa6c15f1.jpeg">
+                                                    <div class="text">
+                                                        <b>黑金<i class="icon-H"></i></b>
+                                                        <div class="pstext">双面魔幻RPG</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/3cbee0563bb626e377cca8175a83bd91e692da4b.jpeg">
+                                                    <div class="text">
+                                                        <b>音乐侠<i class="icon-H"></i></b>
+                                                        <div class="pstext">3D高清舞蹈交友网游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0914/d4ef73d7059677ec70c00367451e5b93b37e6371.jpeg">
+                                                    <div class="text">
+                                                        <b>天子<i class="icon-H"></i></b>
+                                                        <div class="pstext">玄幻RPG</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/339bf06ba80a65e94d4d8772f324f1d61e61357b.jpeg">
+                                                    <div class="text">
+                                                        <b>舞街区<i class="icon-H"></i></b>
+                                                        <div class="pstext">时尚交友音乐舞蹈网游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/e3d1658649a7de8f12271a4e5fffae112706d636.jpeg">
+                                                    <div class="text">
+                                                        <b>航海世纪<i class="icon-H"></i></b>
+                                                        <div class="pstext">3D海战RPG</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/2ac7c53f09c965b9b504af61729129351eee29df.jpeg">
+                                                    <div class="text">
+                                                        <b>机甲世纪<i class="icon-H"></i></b>
+                                                        <div class="pstext">3D大型MMORPG</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                        </ul>
+                                    </dd>
+                                </dl>
+                                <dl>
+                                    <dt>手机游戏</dt>
+                                    <dd>
+                                        <ul>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/1020/0ffe27f158e609af2c6696d77a55230d1f566cce.jpeg">
+                                                    <div class="text">
+                                                        <b>九阴<i class="icon-H"></i></b>
+                                                        <div class="pstext">国民级武侠手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/1102/143669dbd9f04178ef3a4b7cdbc3a14f6ce6dedc.jpeg">
+                                                    <div class="text">
+                                                        <b>天子<i class="icon-H"></i></b>
+                                                        <div class="pstext">平民国战动作手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/360126b61647bee23245d63a7f23671a11c03822.jpeg">
+                                                    <div class="text">
+                                                        <b>九阳神功<i class="icon-H"></i></b>
+                                                        <div class="pstext">全球功夫MOBA手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0914/6030d32b23a5e6355d17dffa830f7910dfd99183.jpeg">
+                                                    <div class="text">
+                                                        <b>横行冒险王<i class="icon-H"></i></b>
+                                                        <div class="pstext">超人气横版格斗手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/58dd7f7d4181d5852aeb987663ee6172aa8f2729.jpeg">
+                                                    <div class="text">
+                                                        <b>魔法呆呆碰<i class="icon-H"></i></b>
+                                                        <div class="pstext">RPG动作三消手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/c8555cf8cfc3bac9af62b5c83cc300a5640b5db5.jpeg">
+                                                    <div class="text">
+                                                        <b>让麻将飞<i class="icon-H"></i></b>
+                                                        <div class="pstext">新派麻将卡牌手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0914/89a95dbdd1c9951fa4fc9860319fbb35bf180043.jpeg">
+                                                    <div class="text">
+                                                        <b>龙战<i class="icon-H"></i></b>
+                                                        <div class="pstext">SRPG魔幻征战手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/af9449fcd49596fe4a994eef3adbcef7736ebe09.jpeg">
+                                                    <div class="text">
+                                                        <b>音乐侠谭维维<i class="icon-H"></i></b>
+                                                        <div class="pstext">明星艺人定制手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                        </ul>
+                                        <ul>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/1102/a7f19b61a582d170832a044d428c4eecc77efbab.jpeg">
+                                                    <div class="text">
+                                                        <b>太极熊猫<i class="icon-H"></i></b>
+                                                        <div class="pstext">现象级全球动作手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/5d9da75566c5b0aae9367a995ec835e1084c42dd.jpeg">
+                                                    <div class="text">
+                                                        <b>关云长<i class="icon-H"></i></b>
+                                                        <div class="pstext">即时操控三国动作手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0914/86840b1c16d318682633f0f6bb176d305bc6086e.jpeg">
+                                                    <div class="text">
+                                                        <b>太极熊猫2<i class="icon-H"></i></b>
+                                                        <div class="pstext">无限制全球动作手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/d409d710c9a38224ee844f6c13a37b7bb0f51e84.jpeg">
+                                                    <div class="text">
+                                                        <b>樱花三国<i class="icon-H"></i></b>
+                                                        <div class="pstext">无双动作手游精魂力作</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/d17fe227a3a2ada4c9f819ec1078212ce72d8a11.jpeg">
+                                                    <div class="text">
+                                                        <b>神龙部落2<i class="icon-H"></i></b>
+                                                        <div class="pstext">全民驯龙冒险手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/9c8a076ed870cebd9c2bd0ba4a39ec4a87bb0203.jpeg">
+                                                    <div class="text">
+                                                        <b>心之城堡<i class="icon-H"></i></b>
+                                                        <div class="pstext">3D即时战斗手游心动之作</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/da751f88afe459ff5320e063f427a2ece32460eb.jpeg">
+                                                    <div class="text">
+                                                        <b>战塔英雄<i class="icon-H"></i></b>
+                                                        <div class="pstext">创新塔防对战手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/3e13afeef39a8fcf7e0529cc027ccd90fee8ee59.jpeg">
+                                                    <div class="text">
+                                                        <b>仙之痕<i class="icon-H"></i></b>
+                                                        <div class="pstext">全息3D战斗手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/d75cc1e5b84c893a5ccc2d9d58bbe358f7cbec51.jpeg">
+                                                    <div class="text">
+                                                        <b>英雄之城2<i class="icon-H"></i></b>
+                                                        <div class="pstext">3D魔幻战棋手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                        </ul>
+                                    </dd>
+                                </dl>
+                                <dl>
+                                    <dt>电视游戏</dt>
+                                    <dd>
+                                        <ul>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0914/aa58a0628c3f582e15752e40ac070fd3fce20326.jpeg">
+                                                    <div class="text">
+                                                        <b>九阳神功<i class="icon-H"></i></b>
+                                                        <div class="pstext">全平台3D武侠英雄团战网游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/78d658db03fe3c6a7cf3088fc8cc155ecebbb82c.jpeg">
+                                                    <div class="text">
+                                                        <b>九阴真经<i class="icon-H"></i></b>
+                                                        <div class="pstext">4K级真武侠网游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/0bcbed04341d3f156838fc91a4ba61c9d9c63d6b.jpeg">
+                                                    <div class="text">
+                                                        <b>太极熊猫<i class="icon-H"></i></b>
+                                                        <div class="pstext">4K级全球动作手游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                        </ul>
+                                    </dd>
+                                </dl>
+                                <dl>
+                                    <dt>网页游戏</dt>
+                                    <dd>
+                                        <ul>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0914/79b1b5d89eef9b59f3baee6f81a2f752d6b86983.jpeg">
+                                                    <div class="text">
+                                                        <b>帝国文明<i class="icon-H"></i></b>
+                                                        <div class="pstext">策略&即时战略</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0914/5ff066929471bf580c9c864f678ff9a0329a1745.jpeg">
+                                                    <div class="text">
+                                                        <b>X幻想<i class="icon-H"></i></b>
+                                                        <div class="pstext">战斗ARPG</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/d37a3303142d8bdb9b98986ffff133547d8380e1.jpeg">
+                                                    <div class="text">
+                                                        <b>大武侠志<i class="icon-H"></i></b>
+                                                        <div class="pstext">休闲武侠RPG</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/b9a73c1abe0d34f9c38d1c13722541f6a78f0be0.jpeg">
+                                                    <div class="text">
+                                                        <b>大三国志<i class="icon-H"></i></b>
+                                                        <div class="pstext">战争策略类网页游戏</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/84f573167766b1efe883e19d76946ae4632ba4f3.jpeg">
+                                                    <div class="text">
+                                                        <b>大航海志<i class="icon-H"></i></b>
+                                                        <div class="pstext">海战页游</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                            <li>
+                                                <a class="showbar" href='javascript:void(0);'>
+                                                    <img src="http://att1.niucdn.com/woniu.com/2015/0714/cc9348a22593fd8499a99db4fe5a200d118b37a1.jpeg">
+                                                    <div class="text">
+                                                        <b>英雄之城<i class="icon-H"></i></b>
+                                                        <div class="pstext">战争类SLG</div>
+                                                    </div>
+                                                </a>
+                                                <span class="layer">选择</span>
+                                            </li>
+                                        </ul>
+                                    </dd>
+                                </dl>
+                            </div>
+                            <div class="screen-wrap" style="display:none;">
+                                <form class="screen-wrap-form">
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" placeholder="搜索屏幕...">
+                                    </div>
+                                    <div class="screen-list-wrap list-group">
+                                        <a href="#" data-tab="screen_gyc_01" class="list-group-item">屏幕1</a>
+                                        <a href="#" data-tab="screen_gyc_02" class="list-group-item">屏幕2</a>
+                                        <a href="#" data-tab="screen_gyc_03" class="list-group-item">屏幕3</a>
+                                        <a href="#" data-tab="screen_gyc_04" class="list-group-item">屏幕4</a>
+                                        <a href="#" data-tab="screen_gyc_05" class="list-group-item">屏幕5</a>
+                                    </div>
+                                    <div class="form-group">
+                                        <button id="go_back_screen" class="btn btn-primary btn-block" onclick="return false;">
+                                            <span class="glyphicon glyphicon-arrow-left"></span>
+                                            返回
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--屏幕展示面板结束-->
+        </div>
+        <!-- 页面主体结束-->
+    </div>
+{% include "import_js.html" %}
+{% include "import_tooljs.html" %}
+<script type="text/javascript" src="/static/src/jq/common.js?v=201512021459"></script>
+<script type="text/javascript" src="/static/src/jq/monitor_query/screen_show.js?v=201512021459"></script>
+</body>
+</html>

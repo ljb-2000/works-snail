@@ -1,0 +1,124 @@
+/**
+ * 
+ * @authors Your Name (you@example.org)
+ * @date    2015-11-24 15:07:09
+ * @version $Id$
+ */
+
+$(function() {
+
+    // datatable
+    var plugTable = $('#plug_table').dataTable({
+        "sDom": 'lfrtip',
+        "bLengthChange": false,
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [1, 2, 3]
+        }],
+
+        "aaSorting": [
+            [3, "desc"]
+        ],
+        //"bProcessing": true,
+        //"bServerSide": true,
+        "sPaginationType": "full_numbers",
+        //"sAjaxSource": "/user_self_host_list/",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+
+    // 批量筛选功能
+    $(document).on("click", "#plug_filter", function() {
+        var txt = $("#u_fliter").val(),
+            msg = $(".filter-msg"),
+            result = filterIp(txt, msg);
+
+        if (result === false) {
+            return false;
+        } else {
+            plugTable.fnReloadAjax('/user_self_plug_list/?p=0&iptxt=' + result);
+
+            $('#node_arr').val(result);
+
+            $('#plug_table').find('.check-all').prop('checked', false);
+        }
+    });
+
+    // jstree绑定onchange事件
+    function changeJstree() {
+        var nodeId = $('#u_jstree').jstree().get_bottom_selected();
+
+        if (nodeId.length) {
+            $.ajax({
+                    url: "/ajax_get_ip_by_tree/",
+                    type: 'POST',
+                    data: {
+                        nodeIdLists: nodeId
+                    }
+                })
+                .done(function(data) {
+                    if (data.length) {
+                        plugTable.fnReloadAjax('/user_self_plug_list/?p=0&iptxt=' + data);
+                        $('#node_arr').val(data);
+                    } else {
+                        plugTable.fnReloadAjax('/user_self_plug_list/?p=0&null=1');
+                        $('#node_arr').val('null');
+                    }
+
+                    $('#host_table').find('.check-all').prop('checked', false);
+                });
+        } else {
+            plugTable.fnReloadAjax('/user_self_plug_list/?p=0');
+            $('#node_arr').val('');
+        }
+    }
+
+    // load jstree
+    $('#u_jstree').on('changed.jstree', function() {
+
+        changeJstree();
+
+    }).jstree({
+        "plugins": ["checkbox"],
+        'core': {
+            "themes": {
+                "theme": "classic",
+                "dots": true,
+                "icons": true
+            },
+            'dataType': 'json',
+            'data': {
+                'url': '/ajax_get_group_hosts/'
+            }
+        }
+    });
+
+    //模糊查询jstree
+    $("#search_tree").off("click").on("click", function() {
+        var grp_str = $("#search_tree_text").val(),
+            selectedId = $('#u_jstree').jstree().get_bottom_selected();
+
+        $.jstree.destroy();
+
+        $('#u_jstree').on('changed.jstree', function() {
+            changeJstree();
+
+        }).jstree({
+            "plugins": ["checkbox"],
+            'core': {
+                "themes": {
+                    "theme": "classic",
+                    "dots": true,
+                    "icons": true
+                },
+                'dataType': 'json',
+                'data': {
+                    'url': '/ajax_get_group_hosts/?grp_str=' + grp_str + '&selected_id=' + selectedId
+                }
+            }
+        });
+    });
+});

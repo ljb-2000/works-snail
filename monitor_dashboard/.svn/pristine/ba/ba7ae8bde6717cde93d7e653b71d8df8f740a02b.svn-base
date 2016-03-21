@@ -1,0 +1,279 @@
+
+    <div id="step_one_wrap" class="step-wrap">
+        <div class="form-group">
+            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">操作：<span class="red">*</span></label>
+            <div class="col-sm-6">
+                <select id="acreen_setting_type" class="form-control" disabled>
+                    <option value="1" selected>创建屏幕</option>
+                    <option value="2">编辑屏幕</option>
+                    <option value="3">+graph</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">屏幕名称：<span class="red">*</span></label>
+            <div class="col-sm-6">
+                <input id="screen_name" class="form-control" placeholder="请输入屏幕名称">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">设定标题：<span class="red">*</span></label>
+            <div class="col-sm-6">
+                <input id="screen_title" class="form-control" placeholder="请输入标题">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">所属业务：<span class="red">*</span></label>
+            <div class="col-sm-6">
+                <select id="product_name" class="form-control">
+                    <option value=''>--请选择所属业务--</option>
+                    {% for p in p_list %}
+                    <option value="{{p}}">{{p}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <button class="btn next-step" style="margin: 50px 0 0 270px;width: 150px;" onclick="return false;">
+                <span class="glyphicon glyphicon-arrow-down"></span>
+                下一步
+            </button>
+            <button class="btn save-step hide" style="margin: 50px 0 0 10px;width: 150px;" onclick="return false;">
+                <span class="glyphicon glyphicon-save"></span>
+                保存
+            </button>
+        </div>
+    </div>
+
+    <div id="step_three_wrap" class="step-wrap" style="display:none;"> 
+        <!--左侧部分开始-->
+        <div class="pull-left u-left">
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active"><a href="#m_tab1" aria-controls="m-tab1" role="tab" data-toggle="tab">IP筛选</a></li>
+                <li role="presentation"><a href="#m_tab3" aria-controls="m-tab3" role="tab" data-toggle="tab">主机组筛选</a></li>
+            </ul>
+
+            <div class="tab-content" style="min-height:675px;">
+                <div role="tabpanel" class="tab-pane active" id="m_tab1">
+                    <div class="form-group">
+                        <label for="u_fliter">ip信息：<span class="red">*</span></label>
+                        <textarea class="form-control" id="u_fliter" placeholder="请输入ip，多个ip以‘回车’分隔">
+                        192.168.17.128
+                        192.168.17.136
+                        </textarea>
+                    </div>
+                    <div class="form-group mt30">
+                        <button id="query_filter" class="btn btn-primary btn-block" onclick="return false;">
+                            <span class="glyphicon glyphicon-ok"></span>
+                            确定
+                        </button>
+                    </div>
+                    <div class="form-group text-center">
+                        <span class="filter-msg u-red"></span>
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="m_tab3">
+                    <div class="input-group">
+                        <input id="search_tree_text" type="text" class="tree-search form-control" placeholder="模糊排序">
+                        <div id="search_tree" class="tree-search-btn input-group-addon"><span class="glyphicon glyphicon-search"></span></div>
+                    </div>
+                    <div id="u_jstree">
+                        
+                    </div>
+                </div>
+                <input id="node_arr" type="hidden">
+            </div>
+        </div>
+        <!--左侧部分结束-->
+        <!--右侧部分开始-->
+        <div class="u-right">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">筛选主机/监控项</h3>
+                    <span class="left-menu-open">
+                        已选 <span class="host-num">0</span> 台主机 / <span class="plot-num">0</span> 个监控项
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <span class="glyphicon glyphicon-indent-right"></span>
+                    </span>
+                </div>
+                <div class="panel-body pb0">
+                    <fieldset>
+                        <legend class="u-legend">
+                            <span id="host_menu" class="active glyphicon glyphicon-chevron-up"></span>
+                            筛选主机
+                        </legend>
+                        <div id="host_form" name="host-form" class="form-inline">
+                            <div class="form-group">
+                                <label for="">搜索：</label>
+                                <input id="search_host" type="text" class="form-control" placeholder="请输入主机名">
+                                <input id="search_set" type="text" class="form-control" placeholder="请输入SET">
+                            </div>
+                            <table id="query_table" class="table table-hover table-striped mt30">
+                                <thead>
+                                    <tr>
+                                        <th width='5%'><input type="checkbox" class="check-all"></th>
+                                        <th>Endpoints</th>
+                                        <th>PRODUCT</th>
+                                        <th>SET</th>
+                                        <th>MODULE</th>
+                                    </tr>
+                                </thead>
+                                <tbody> 
+                                </tbody>
+                            </table>
+                        </div>
+                    </fieldset>
+                    <fieldset class="mt20">
+                        <legend class="u-legend">
+                            <span id="plot_menu" class="glyphicon glyphicon-chevron-down"></span>
+                            筛选监控项
+                        </legend>
+                        <div id="plot_form" name="plot-form" class="form-inline" style="display:none;">
+                            <div class="form-group">
+                                <label for="">搜索：</label>
+                                <input id="search_plot" type="text" class="form-control" placeholder="请输入监控项名">
+                            </div>
+                            <table id="query_plot_table" class="table table-hover table-striped mt30">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" class="plot-all"></th>
+                                        <th>Counters</th>
+                                    </tr>
+                                </thead>
+                                <tbody> 
+                                </tbody>
+                            </table>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+        <!--右侧部分结束-->
+       
+
+        <!-- 隐藏选中栏开始 -->
+        <div class="add-pannel">
+            <span class="left-menu glyphicon glyphicon-indent-left"></span>
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active"><a href="#add_tab1" aria-controls="add-tab1" role="tab" data-toggle="tab">已选主机</a></li>
+                <li role="presentation"><a href="#add_tab2" aria-controls="add-tab2" role="tab" data-toggle="tab">已选监控项</a></li>
+            </ul>
+
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="add_tab1">
+                    <div class="form-group mt20">
+                        <button id="plot-view" class="btn btn-primary btn-block" onclick="return false;">
+                            <span class="glyphicon glyphicon-eye-open"></span>
+                            查看监控项
+                        </button>
+                        <button id="clear_host" class="btn btn-default btn-block" onclick="return false;">
+                            <span class="glyphicon glyphicon-repeat"></span>
+                            清空
+                        </button>
+                    </div>
+                    <table id="lf_host_table" class="lf-table table table-hover table-striped mt30">
+                        <thead>
+                            <tr>
+                                <th width='140px'>主机名</th>
+                                <th width='60px'>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody  style="max-height: 171px;overflow-y: auto;">
+                        </tbody>
+                    </table>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="add_tab2">
+                    <div class="form-group mt20">
+                        <button id="clear_plot" class="btn btn-default btn-block" onclick="return false;">
+                            <span class="glyphicon glyphicon-repeat"></span>
+                            清空
+                        </button>
+                        <button class="btn next-step btn-block" onclick="return false;">
+                            <span class="glyphicon glyphicon-arrow-down"></span>
+                            下一步
+                        </button>
+                        <button class="btn prev-step btn-block" onclick="return false;">
+                            <span class="glyphicon glyphicon-arrow-up"></span>
+                            上一步
+                        </button>
+                        <button class="btn save-step btn-block hide" onclick="return false;">
+                            <span class="glyphicon glyphicon-save"></span>
+                            保存
+                        </button>
+                    </div>
+                    <table id="lf_plot_table" class="lf-table table table-hover table-striped mt30">
+                        <thead>
+                            <tr>
+                                <th  width='114px'>监控项名</th>
+                                <th  width='80px'>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- 隐藏选中栏结束 -->
+    </div>
+
+    <div id="step_four_wrap" class="step-wrap" style="display:none;">
+        <div class="form-group">
+            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">默认时间跨度：<span class="red">*</span></label>
+            <div class="col-sm-6">
+                <select id="time_span" class="form-control">
+                    <option value="3600" selected>1小时</option>
+                    <option value="21600">6小时</option>
+                    <option value="43200">12小时</option>
+                    <option value="86400">1天</option>
+                    <option value="604800">7天</option>
+                    <option value="2595000">1月</option>
+                    <option value="31104000">1年</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">视角：<span class="red">*</span></label>
+            <div class="col-sm-6">
+                <div id="screen_view" class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-default active">
+                        <input type="radio" name="views" id="views_one" data-type="h" autocomplete="off" checked> endpoint视角
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="views" id="views_two" data-type="k" autocomplete="off"> counter视角
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="views" id="views_three" data-type="a" autocomplete="off"> 组合视角
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="views" id="views_four" data-type="q" autocomplete="off"> 趋势视角
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-offset-1 col-sm-2 control-label text-muted">是否加和：<span class="red">*</span></label>
+            <div class="col-sm-6">
+                <div id="is_sum" class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-default active">
+                        <input type="radio" name="sum" id="sum_off" data-type="" autocomplete="off"> 否
+                      </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="sum" id="sum_on" data-type="sum" autocomplete="off"> 是
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <button id="step-complete" class="btn" style="margin: 50px 0 0 270px;width: 150px;" onclick="return false;">
+                <span class="glyphicon glyphicon-ok-sign"></span>
+                完成
+            </button>
+            <button class="btn prev-step" style="margin: 50px 0 0 10px;width: 150px;" onclick="return false;">
+                <span class="glyphicon glyphicon-arrow-up"></span>
+                上一步
+            </button>
+        </div>
+    </div>

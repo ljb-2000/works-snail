@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/7
+# Usage:
+# --------------------------------
+
+import requests
+import traceback
+from releaseinfo import PRODUCT_URL
+from utils.db_conn import DB
+from config import monitor
+
+def get_product_list_by_user(cnname):
+    """
+        get cn product list of user's cnname.
+    """
+    p_list = []
+    if cnname:
+        try:
+            resp = requests.post(PRODUCT_URL,data={
+                "username":cnname
+            }).json()
+            p_list=[item['productname'] for item in resp]
+        except Exception,e:
+            error = traceback.format_exc()
+            print error
+    return p_list
+
+
+def get_hosts_of_user(username):
+    products = get_product_list_by_user(username)
+    if not products:
+        return []
+    sql = "select endpoint from alarm_agentinfo WHERE product_name in (\'%s\')"%("','".join(products))
+    monitor_db_conn = DB(
+        monitor.DB_HOST,
+        monitor.DB_PORT,
+        monitor.DB_USER,
+        monitor.DB_PASS,
+        monitor.DB_NAME)
+    result = monitor_db_conn.query_all(sql)
+    return sorted([item['endpoint'] for item in result])
+
+def get_set_by_ip_list(ip_list):
+    if not ip_list:
+        return []
+    sql = """select DISTINCT p_set from alarm_agentinfo WHERE endpoint in (\'%s\')"""%("','".join(ip_list))
+    monitor_db_conn = DB(
+        monitor.DB_HOST,
+        monitor.DB_PORT,
+        monitor.DB_USER,
+        monitor.DB_PASS,
+        monitor.DB_NAME)
+    result = monitor_db_conn.query_all(sql)
+    data = set()
+    for item in result:
+        p_set = item['p_set']
+        if p_set:
+            [data.add(i) for i in p_set.split(',')]
+    return list(data)

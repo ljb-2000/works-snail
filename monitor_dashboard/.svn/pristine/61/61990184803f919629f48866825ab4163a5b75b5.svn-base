@@ -1,0 +1,422 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-04 09:57:45
+ * @msg     屏幕配置页js
+ */
+
+// datatable
+var screenSettingTable = $('#screen_setting_table').dataTable({
+    "sDom": 'lfrtip',
+    "bLengthChange": false,
+    "iDisplayLength": 10,
+    "aoColumnDefs": [{
+        "bSortable": false,
+        "aTargets": [0, 3, 4, 5]
+    }],
+
+    // "aaSorting": [[ 8, "desc" ]],
+    "bProcessing": true,
+    "bServerSide": true,
+    "sPaginationType": "full_numbers",
+
+    "sAjaxSource": "/screen_list/screen_list/",
+    "bFilter": false,
+    "oLanguage": {
+        "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+    }
+});
+
+$(function() {
+    // 创建屏幕
+    $('#creat_screen').on('click', function() {
+        getStepOne();
+    });
+
+    // 渲染第一步
+    function getStepOne() {
+        $.ajax({
+                url: '/screen_list/screen_add/',
+                type: 'GET',
+                dataType: 'json'
+            })
+            .done(function(data) {
+                $('#step_one_wrap').html(data.html).show().siblings().hide();
+
+                $('#screen_setting_form').slideUp(400).next().slideDown(400);
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+
+                return false;
+            });
+    }
+
+    // 上一步
+    $(document).on('click', '.prev-step', function() {
+        $(this).parents('.step-wrap').slideUp(400).prev().slideDown(400);
+    });
+
+    // 全选、全不选
+    (function() {
+        var checkedAll = ".screen-all",
+            checkedIt = ".screen-it";
+
+        checkAll(checkedAll, checkedIt);
+    })();
+
+    // 编辑屏幕
+    $(document).on('click', '.edit-screen', function() {
+        var id = $(this).parents('tr').find(':checkbox').val();
+
+        $.ajax({
+                url: '/screen_list/screen_get_title/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    screen_id: id
+                }
+            })
+            .done(function(data) {
+                var list = data,
+                    html = '<option value="">--请选择设定标题--</option>';
+
+                list.forEach(function(e) {
+                    html += '<option value=' + e.id + '>' + e.title + '</option>';
+                });
+
+                $('#select_title').empty().append(html);
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            });
+
+        $(document).on('click', '#confirm_title', function() {
+            var graphId = $('#select_title').val();
+            if(!graphId){
+                showAlert('jNotify', '请选择设定 :(', true);
+                return false;
+            }
+            $.ajax({
+                    url: '/screen_list/screen_edit/?graph_id=' + graphId,
+                    type: 'GET',
+                    dataType: 'json'
+                })
+                .done(function(data) {
+                    if (data.ret === 1) {
+                        $('#edit_screen').modal('hide');
+
+                        $('#step_one_wrap').html(data.html).show().siblings().hide();
+
+                        $('#step_two_wrap').html(data.html2);
+
+                        $('#step_three_wrap').html(data.html3);
+
+                        $('#screen_setting_form').slideUp(400).next().slideDown(400);
+
+                        $('#acreen_setting_type option').eq(1).prop('selected', true);
+
+                        $('.save-step').removeClass('hide');
+
+                        $('#screen_id_hide').val(id);
+
+                        $('#screen_title').attr('data-id', graphId);
+                    } else {
+                        showAlert('jError', data.msg, true);
+                    }
+                })
+                .fail(function() {
+                    showAlert('jError', '编辑失败 :(', true);
+                });
+        });
+
+    });
+
+    // +graph 
+    $(document).on('click', '.add-graph', function() {
+        var id = $(this).parents('tr').find(':checkbox').val();
+
+        $.ajax({
+                url: '/screen_list/screen_graph_add/?screen_id=' + id,
+                type: 'GET',
+                dataType: 'json'
+            })
+            .done(function(data) {
+                if(data.ret === 1) {
+                    $('#step_one_wrap').html(data.html).show().siblings().hide();
+
+                    $('#step_two_wrap').html(data.html2);
+
+                    $('#step_three_wrap').html(data.html3);
+
+                    $('#screen_setting_form').slideUp(400).next().slideDown(400);
+
+                    $('#acreen_setting_type option').eq(2).prop('selected', true);
+
+                    $('#screen_id_hide').val(id);
+                } else {
+                    showAlert('jError', data.msg, false);
+                }
+            })
+            .fail(function() {
+                showAlert('jError', '操作失败 :(', false);
+            });
+    });
+
+    // 完成屏幕操作
+    $(document).on('click', '#step-complete', function() {
+        var param = getParam();
+
+        // 完成创建屏幕
+        if (param.settingType === '1') {
+            var url = '/screen_list/graph_add/';
+
+            createScreen(param, url);
+        }
+
+        // 完成编辑屏幕
+        if (param.settingType === '2') {
+            saveEdit();
+        }
+
+        // 完成+graph
+        if (param.settingType === '3') {
+            var url = '/screen_list/screen_graph_add/';
+
+            createScreen(param, url);
+        }
+    });
+
+    // 创建屏幕ajax
+    function createScreen(param, url) {
+        $.ajax({
+                url: url,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    screen_id: param.screenId,
+                    screen_name: param.screenName,
+                    title: param.title,
+                    hosts: param.getHost(),
+                    counters: param.getPlot(),
+                    timespan: param.timespan,
+                    graph_type: param.graphType,
+                    is_sum: param.isSum
+                }
+            })
+            .done(function(data) {
+                if (data.ret === 1) {
+
+                    showAlert('jSuccess', data.msg, true);
+
+                    $('#new_screen_form').slideUp(400).prev().slideDown(400);
+
+                    setTimeout(function() {
+                        screenSettingTable.fnReloadAjax();
+
+                        $('#screen_setting_table').find('.screen-all').prop('checked', false);
+                    }, 200);
+
+                } else {
+                    showAlert('jError', data.msg, false);
+                }
+            })
+            .fail(function() {
+                showAlert('jError', '操作失败 :(', false);
+            });
+    }
+
+    // 获取用户输入信息
+    function getParam() {
+        var param = {
+            settingType: $('#acreen_setting_type').val(),
+            screenName: $('#screen_name').val().trim(),
+            title: $('#screen_title').val().trim(),
+            productName: $('#product_name').val(),
+            screenId: $('#screen_id_hide').val(),
+            getHost: function() {
+                var hostArr = [],
+                    hostId = $('#lf_host_table tbody tr'),
+                    i,
+                    len;
+
+                for (i = 0, len = hostId.length; i < len; i++) {
+                    var dataId = hostId.eq(i).attr('data-id');
+
+                    hostArr.push(dataId);
+                };
+
+                return hostArr;
+            },
+            getPlot: function() {
+                var plotArr = [],
+                    plotId = $('#lf_plot_table tbody tr'),
+                    i,
+                    len;
+
+                for (i = 0, len = plotId.length; i < len; i++) {
+                    var dataId = plotId.eq(i).attr('data-id');
+
+                    plotArr.push(dataId);
+                };
+
+                return plotArr;
+            },
+            timespan: $('#time_span').val(),
+            graphType: $('#screen_view .active input').attr('data-type'),
+            isSum: $('#is_sum .active input').attr('data-type')
+        }
+
+        return param;
+    }
+
+    // 搜索屏幕
+    $('#screen_item').on('input', function() {
+        reloadScreen();
+    });
+
+    $('#screen_product').on('change', function() {
+        reloadScreen();
+    });
+
+    function reloadScreen() {
+        var screenName = $('#screen_item').val(),
+            productName = $('#screen_product').val();
+
+        screenSettingTable.fnReloadAjax('/screen_list/screen_list/?p=0&screen_name=' + screenName + '&product_name=' + productName);
+
+        $('#screen_setting_table').find('.screen-all').prop('checked', false);
+    }
+
+    // 验证输入
+    $(document).on('click', '#step_one_wrap .next-step', function() {
+        var param = getParam(),
+            url = null;
+
+        if (!param.screenName || !param.title || !param.productName) {
+            showAlert('jNotify', '有未填写的输入项，请检查 :)', true);
+
+            return false;
+        }
+
+        if (param.settingType === '2' || param.settingType === '3') {
+            $('#step_one_wrap .next-step').parents('.step-wrap').slideUp(400).next().slideDown(400);
+        }
+
+        if (param.settingType === '1') {
+            $.ajax({
+                    url: '/screen_list/screen_add/',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        screen_name: param.screenName,
+                        product_name: param.productName,
+                    }
+                })
+                .done(function(data) {
+                    if (data.ret === 1) {
+                        $('#step_two_wrap').empty().html(data.html);
+
+                        $('#screen_id_hide').val(data.screen_id);
+
+                        $('#step_one_wrap .next-step').parents('.step-wrap').slideUp(400).next().slideDown(400);
+                    } else {
+                        showAlert('jError', data.msg, false);
+                    }
+                })
+                .fail(function() {
+                    showAlert('jError', '出错了 :(', false);
+                });
+        };
+    });
+
+    $(document).on('click', '#step_two_wrap .next-step', function() {
+        if (!$('#lf_plot_table tbody tr').length) {
+            showAlert('jNotify', '请先选择监控项 :)', true);
+
+            return false;
+        }
+
+        $(this).parents('.step-wrap').slideUp(400).next().slideDown(400);
+    });
+
+    // 编辑保存ajax
+    $(document).on('click', '.save-step', saveEdit);
+
+    function saveEdit() {
+        var param = getParam(),
+            screenId = $('#screen_id_hide').val(),
+            graphId = $('#screen_title').attr('data-id');
+
+        if (!param.screenName || !param.title || !param.productName || !param.getHost().length || !param.getPlot().length) {
+            showAlert('jNotify', '有未填写的输入项，请检查 :)', true);
+
+            return false;
+        }
+
+        $.ajax({
+                url: '/screen_list/screen_edit/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    screen_name: param.screenName,
+                    title: param.title,
+                    product_name: param.productName,
+                    hosts: param.getHost(),
+                    counters: param.getPlot(),
+                    timespan: param.timespan,
+                    graph_type: param.graphType,
+                    is_sum: param.isSum,
+                    screen_id: screenId,
+                    graph_id: graphId
+                }
+            })
+            .done(function(data) {
+                if (data.ret === 1) {
+                    $('#new_screen_form').slideUp(400).prev().slideDown(400);
+
+                    setTimeout(function() {
+                        screenSettingTable.fnReloadAjax();
+
+                        $('#screen_setting_table').find('.screen-all').prop('checked', false);
+                    }, 200);
+
+                    showAlert('jSuccess', data.msg, true);
+                }
+
+            })
+            .fail(function() {
+                showAlert('jError', '保存失败 :(', false);
+            });
+    }
+
+    // 删除屏幕
+    $(document).on('click', '.delete-screen', function() {
+        var e = $(this),
+            screenId = e.parents('tr').find(':checkbox').prop('value'),
+            isConfirm = confirm("确定要删除这个screen？");
+
+        if (isConfirm) {
+            $.ajax({
+                    url: '/screen_list/screen_delete/',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        screen_id: screenId
+                    }
+                })
+                .done(function(data) {
+                    if (data.ret === 1) {
+                        showAlert('jSuccess', data.msg, true);
+
+                        screenSettingTable.fnReloadAjax();
+                    } else {
+                        showAlert('jError', data.msg, false);
+                    }
+                })
+                .fail(function() {
+                    showAlert('jError', '删除失败 :(', false);
+                });
+        };
+    });
+});

@@ -1,0 +1,9 @@
+#===============================================================================#
+# DATABASE dashboard															#
+#===============================================================================#
+
+ALTER TABLE `dashboard_screen`
+ADD COLUMN `product_name`  char(200) NULL AFTER `name`;
+
+ALTER TABLE `tmp_graph`
+ADD COLUMN `name`  varchar(1024) NULL AFTER `counters`;

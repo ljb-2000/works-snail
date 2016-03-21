@@ -1,0 +1,120 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json
+import datetime, time
+from utils.ctranslate import LazyEncoder
+from django.db.transaction import commit_on_success
+from utils.db_conn import DB
+from config import dashboard
+from utils.chart import add_tmpgraph,get_tmp_graph,get_chart_data_h,get_chart_data_k,get_chart_data_a,get_chart_data_q
+
+@login_required
+@csrf_exempt
+def chart(request):
+    endpoints = request.POST.getlist("endpoints[]") or []
+    counters = request.POST.getlist("counters[]") or []
+    graph_type = request.POST.get("graph_type") or dashboard.GRAPH_TYPE_HOST
+    
+    id_ = add_tmpgraph(endpoints, counters)
+    
+    ret = {
+            "ok": False,
+            "id": id_,
+            "params": {
+                "graph_type": graph_type,
+            },
+    }
+    if id_:
+        ret['ok'] = True
+
+    return HttpResponse(json.dumps(ret, cls=LazyEncoder))
+
+@login_required
+@csrf_exempt
+@render_to('charts/big_charts.html')
+def chart_big(request):
+    g_id = request.GET.get('id')
+    return locals()
+
+@login_required
+@csrf_exempt
+@render_to('charts/charts.html')
+def charts(request):
+    g_id = request.GET.get("id")
+    graph_type = request.GET.get("graph_type") or dashboard.GRAPH_TYPE_HOST
+    return locals()
+
+@login_required
+@csrf_exempt
+def chart_data(request):
+    now = int(time.time())
+
+    g_id = request.GET.get("id")
+    if not g_id:
+        raise(400, "no graph id given")
+    
+#    nav_header = request.GET.get("nav_header") or "on"
+#    legend = request.GET.get("legend") or "off"
+    graph_type = request.GET.get("graph_type") or dashboard.GRAPH_TYPE_HOST
+    sum = request.GET.get("sum") or "off" #是否求和
+    sumonly = request.GET.get("sumonly") or "off" #是否只显示求和
+    cf = (request.GET.get("cf") or "AVERAGE").upper() # MAX, MIN, AVGRAGE, LAST
+
+    start = int(request.GET.get("start") or -3600)
+    if start < 0:
+        start = now + start
+
+    end = int(request.GET.get("end") or 0)
+    if end <= 0:
+        end = now + end
+    end = end - 60
+    
+    tmp_graph =  get_tmp_graph(g_id)
+    if not tmp_graph:
+        raise(404, "no graph which id is %s" %g_id)
+
+    counters = tmp_graph.get('counters')
+    if not counters:
+        raise(400, "no counters of %s" %g_id)
+    counters = sorted(set(counters))
+
+    endpoints = tmp_graph.get('endpoints')
+    if not endpoints:
+        raise(400, "no endpoints of %s" %g_id)
+    endpoints = sorted(set(endpoints))
+    
+    ret = {}
+    if graph_type == dashboard.GRAPH_TYPE_HOST:
+        series_list = get_chart_data_h(counters, endpoints, cf, start, end, sum, sumonly)
+        ret['ymax'] = None
+        ret['ymin'] = None
+    elif graph_type == dashboard.GRAPH_TYPE_KEY:
+        series_list = get_chart_data_k(counters, endpoints, cf, start, end, sum, sumonly)
+        ret['ymax'] = None
+        ret['ymin'] = None
+    elif graph_type == dashboard.GRAPH_TYPE_MIX:
+        series_list = get_chart_data_a(counters, endpoints, cf, start, end, sum, sumonly)
+        ret['ymax'] = None
+        ret['ymin'] = None
+    else:
+        series_list = get_chart_data_q(counters, endpoints, cf, start, end, sum, sumonly)
+        ret['ymax'] = 100
+        ret['ymin'] = 0
+    
+    ret['series_list'] = series_list
+    return HttpResponse(json.dumps(ret, cls=LazyEncoder))
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^chart/$', chart, name='chart'),
+    url(r'^chart/big/$', chart_big, name='chart_big'),
+    url(r'^charts/$', charts, name='charts'),
+    url(r'^chart/data/$', chart_data, name='chart_data'),
+)

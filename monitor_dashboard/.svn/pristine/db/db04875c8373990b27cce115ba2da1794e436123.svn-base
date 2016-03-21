@@ -1,0 +1,74 @@
+# -- encoding=utf-8 --
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+import json
+import datetime, time
+from utils.ctranslate import LazyEncoder
+from django.db.transaction import commit_on_success
+from utils.db_conn import DB
+from config import dashboard
+
+
+@login_required
+@csrf_exempt
+@render_to('monitor_query/screen_setting.html')
+def screen_setting_index(request):
+    return locals()
+
+@csrf_exempt
+def dash_screen_add(request):
+    if request.method == "POST":
+        name = request.POST.get("screen_name")
+        pid = request.POST.get("pid", '0')
+        
+        dashboard_db_conn = DB(
+            dashboard.DASHBOARD_DB_HOST,
+            dashboard.DASHBOARD_DB_PORT,
+            dashboard.DASHBOARD_DB_USER,
+            dashboard.DASHBOARD_DB_PASSWD,
+            dashboard.DASHBOARD_DB_NAME)
+        
+        sql = '''insert into dashboard_screen (pid, name) values(%s, %s)''', (pid, name)
+        cursor = dashboard_db_conn.execute()
+        id_ = cursor.lastrowid
+        dashboard_db_conn.commit()
+        cursor.close()
+        
+#        return redirect("/screen/%s" % screen.id)
+    else:
+        pid = request.GET.get("pid", '0')
+        
+        dashboard_db_conn = DB(
+            dashboard.DASHBOARD_DB_HOST,
+            dashboard.DASHBOARD_DB_PORT,
+            dashboard.DASHBOARD_DB_USER,
+            dashboard.DASHBOARD_DB_PASSWD,
+            dashboard.DASHBOARD_DB_NAME)
+        
+        sql = '''select id, pid, name, time from dashboard_screen where id=%s'''%(id)
+        cursor = dashboard_db_conn.execute(sql)
+        screen = cursor.fetchone()
+        cursor.close()
+        
+#        return render_template("screen/add.html", **locals())
+
+
+@login_required
+@csrf_exempt
+@render_to('monitor_query/screen_show.html')
+def screen_show_index(request):
+    return locals()
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^monitor_query/screen_setting/$', screen_setting_index, name='screen_setting_index'),
+    
+    
+    url(r'^monitor_query/screen_show/$', screen_show_index, name='screen_show_index'),
+)

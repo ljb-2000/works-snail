@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import os, sys
+sys.path.insert(0, os.path.abspath(os.curdir))
+
+from utils.decorator import render_to, login_required
+from django.views.decorators.csrf import csrf_exempt
+import logging
+
+from utils.common import get_user_perm,get_all_products
+
+logger = logging.getLogger("logger")
+
+@login_required
+@render_to("report/low_chart.html")
+def low_chart(request):
+    user = request.user
+    #permission
+    user = get_user_perm(user)
+    products = get_all_products()
+    return locals()
+
+@login_required
+@render_to("report/low_machine.html")
+def low_machine(request):
+    user = request.user
+    #permission
+    user = get_user_perm(user)
+    
+    return locals()
+
+@login_required
+@render_to("report/warning_count.html")
+def warning_count(request):
+    user = request.user
+    #permission
+    user = get_user_perm(user)
+    products = get_all_products()
+    return locals()
+
+from django.conf.urls import patterns, url
+urlpatterns = patterns('',
+    url(r'^report/low_chart/$', low_chart, name='low_chart'),
+    url(r'^report/low_machine/$', low_machine, name='low_machine'),
+    url(r'^report/warning_count/$', warning_count, name='warning_count'),
+)

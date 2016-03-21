@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜗牛智能监控平台</title>
+{% include "import_css.html" %}
+<link type="text/css" rel="stylesheet" href="/static/src/tool/boot_datetimepicker/css/bootstrap-datetimepicker.min.css">
+</head>
+<body>
+    <!--主界面开始-->
+    <div class="container-fluid">
+        {% include "header.html" %}
+        <!-- 页面主体开始-->
+        <div class="row">
+            <!--查询显示面板开始-->
+            <div class="u-right" style="margin:18px 0 0;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">报表面板</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form class="form-inline" onsubmit="return false">
+                            <div class="form-group">
+                                <div id="select_time" class="input-group date datetime-to col-md-8" data-date="" data-date-format="yyyy-mm" data-link-field="dtp_input2" data-link-format="yyyy-mm">
+                                    <input id="month_data" class="form-control" size="16" type="text" value="" placeholder="选择月份" style="width:140px;" readonly>
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-remove"></span></span>
+                                    <span class="input-group-addon"><span class="glyphicon glyphicon-th"></span></span>
+                                </div>
+                                <input type="hidden" id="dtp_input1" value=""><br>
+                            </div>
+                            <div class="form-group">
+                                <button id="search_machine" class="btn btn-default">
+                                    <span class="glyphicon glyphicon-search"></span>
+                                    查询
+                                </button>
+                            </div>
+                        </form>
+                        <div class="alert alert-warning mt20">
+                            查询只显示 CPU使用率&lt;20% &amp; 内存使用率&lt;30% &amp; 磁盘使用率&lt;40% 的内容
+                        </div>
+                        <table id="machine_table" class="table table-hover table-striped mt30">
+                            <thead>
+                                <tr>
+                                    <th width='20%'>产品名称</th>
+                                    <th>低负载数(台)</th>
+                                    <th>已分配数(台)</th>
+                                    <th>比例(%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!--查询显示面板结束-->
+        </div>
+        <!-- 页面主体结束-->
+    </div>
+    {% include "import_js.html" %}
+    <script type="text/javascript" src="/static/src/tool/boot_datetimepicker/js/bootstrap-datetimepicker.min.js?v=201511301743"></script>
+    <script type="text/javascript" src="/static/src/tool/data_table/js/jquery.dataTables.min.js?v=201602161352"></script>
+    <script type="text/javascript" src="/static/src/jq/common.js?v=201512301459"></script>
+    <script type="text/javascript" src="/static/src/jq/overview/low_machine.js?v=201602251449"></script>
+</body>
+</html>

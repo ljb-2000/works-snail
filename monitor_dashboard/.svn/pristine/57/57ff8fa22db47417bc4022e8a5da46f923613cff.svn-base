@@ -1,0 +1,400 @@
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2015-11-04 09:57:45
+ * @msg     屏幕展示页js
+ */
+
+$(function() {
+
+    // 选择屏幕动画效果
+    (function() {
+        $('.game-wrap li').hover(function() {
+            var e = $(this).find('.showbar');
+
+            e.next().stop().animate({
+                "bottom": "0"
+            }, 400);
+        }, function() {
+            var e = $(this).find('.showbar');
+
+            e.next().stop().animate({
+                "bottom": "-74px"
+            }, 400);
+        });
+    })();
+
+    // 进入屏幕效果
+    $('.game-wrap .layer').on('click', function() {
+        var that = $(this),
+            productName = that.prev().find('b').text(),
+            txt = null;
+
+        $('.screen-product').html(productName);
+
+        $('#search-screen').val('');
+
+        refreshList(productName, txt, that);
+    });
+
+    // 查询屏幕ajax
+    $('#search-screen').on('input', function() {
+        var txt = $(this).val(),
+            productName = $('.screen-product').text();
+
+        refreshList(productName, txt);
+    });
+
+    // 刷新屏幕列表
+    function refreshList(productName, txt, that) {
+        $.ajax({
+                url: '/monitor_query/ajax_get_screens_by_product/',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    product_name: productName,
+                    txt: txt
+                }
+            })
+            .done(function(data) {
+                var screenList = '';
+
+                data.forEach(function(e) {
+                    screenList += '<a href="#" data-tab="'+ e.id +'" class="list-group-item">'+ e.name +'</a>';
+                });
+
+                $('.screen-list-wrap').empty().append(screenList);
+
+                if (!txt && that) {
+                    that.parents('.game-wrap').slideUp(400).next().show();
+                }
+                
+            })
+            .fail(function() {
+                showAlert('jError', '出错了 :(', false);
+            });
+    }
+
+    // 返回产品列表
+    $('#go_back_screen').on('click', function() {
+        $(this).parents('.screen-wrap').slideUp(400).prev().slideDown(400);
+    });
+
+    // 增加标签页
+    function addTab(tabArr, valueArr, dataArr) {
+        var obj = $('#my_tabs a[href="#' + tabArr + '"]');
+
+        if (obj.length) {
+            obj.tab('show');
+        } else {
+            $('#my_tabs').append('<li role="presentation" style="  position: relative;" >\
+                    <i class="glyphicon glyphicon-remove mytab-close"></i>\
+                    <a href="#' + tabArr + '" aria-controls="' + tabArr + '" role="tab" data-toggle="tab" style="padding-right: 24px;">\
+                        ' + valueArr + '\
+                    </a>\
+                </li>');
+
+            $('#my_contents').append('<div role="tabpanel" class="tab-pane" id="' + tabArr + '"></div>');
+
+            $('#' + tabArr).html(dataArr);
+
+            $('#my_tabs a:last').tab('show');
+
+            var $tab = $('#' + tabArr),
+                warp = $tab.find('.charts-wrap'),
+                data = [{
+                    "color": "#7cb5ec",
+                    "max": 96.842105,
+                    "pointInterval": 60000,
+                    "cf": "AVERAGE",
+                    "header": "cpu.idle",
+                    "marker": {
+                        "enabled": false
+                    },
+                    "avg": 82.91353637288137,
+                    "data": [87.878788, 85.858586, 88.888889, 39.361702, 43.434343, 62.0, 91.919192, 94.791667, 90.909091, 90.909091, 89.108911, 93.877551, 91.0, 94.897959, 92.783505, 89.89899, 90.816327, 89.690722, 87.878788, 49.494949, 55.0, 88.888889, 93.814433, 65.306122, 88.77551, 89.89899, 87.878788, 84.848485, 91.836735, 91.836735, 59.183673, 89.795918, 92.783505, 88.118812, 59.59596, 61.616162, 94.736842, 92.857143, 93.877551, 62.626263, 92.783505, 90.909091, 96.842105, 92.783505, 64.285714, 92.857143, 91.919192, 63.636364, 94.791667, 92.0, 51.515152, 92.857143, 92.929293, 67.346939, 92.708333, 93.75, 60.606061, 95.918367, 92.783505],
+                    "last": 92.783505,
+                    "name": "192.168.17.128",
+                    "min": 39.361702,
+                    "pointStart": 1449736920000
+                }, {
+                    "color": "#434348",
+                    "max": 100.0,
+                    "pointInterval": 60000,
+                    "cf": "AVERAGE",
+                    "header": "cpu.idle",
+                    "marker": {
+                        "enabled": false
+                    },
+                    "avg": 99.56167142372882,
+                    "data": [98.019802, 100.0, 100.0, 100.0, 100.0, 100.0, 99.0, 99.0, 99.009901, 100.0, 100.0, 100.0, 100.0, 98.019802, 100.0, 100.0, 99.0, 99.0, 100.0, 99.0, 100.0, 99.009901, 100.0, 100.0, 100.0, 100.0, 99.009901, 99.009901, 100.0, 100.0, 99.0, 100.0, 100.0, 100.0, 100.0, 100.0, 99.0, 100.0, 100.0, 99.0, 100.0, 99.0, 100.0, 100.0, 99.0, 100.0, 98.019802, 99.0, 100.0, 100.0, 99.009901, 99.009901, 99.009901, 100.0, 100.0, 99.0, 99.009901, 100.0, 100.0],
+                    "last": 100.0,
+                    "name": "192.168.17.136",
+                    "min": 98.019802,
+                    "pointStart": 1449736920000
+                }],
+                param = {
+                    header: data[0].header,
+                    chartId: parseInt(Math.random() * 999 + 1, 10)
+                },
+                chartId = param.chartId;
+
+            createChart(param, warp);
+
+            setCharts(chartId, data);
+
+            setList(chartId, data);
+        }
+    }
+
+    $(document).on('click', '.screen-list-wrap a', function() {
+        var tabArr = $(this).attr('data-tab');
+
+        // TODO AJAX
+        var num = parseInt(Math.random() * 999 + 1, 10),
+            module = '<div class="charts-wrap">\
+                </div>\
+                <div class="screen-tool-menu">\
+                    <span class="glyphicon glyphicon-indent-right"></span>\
+                </div>\
+                <div class="screen-tool-bar">\
+                    <span class="left-menu glyphicon glyphicon-indent-left"></span>\
+                    <ul class="nav nav-tabs" role="tablist">\
+                        <li role="presentation" class="active"><a href="#filter_tab" aria-controls="filter_tab" role="tab" data-toggle="tab">筛选</a></li>\
+                        <li role="presentation"><a href="#screen_tab" aria-controls="screen_tab" role="tab" data-toggle="tab">已选</a></li>\
+                    </ul>\
+                    <div class="tab-content">\
+                        <div role="tabpanel" class="tab-pane active" id="filter_tab">\
+                            <form>\
+                                <input type="text" class="chart-search form-control" placeholder="请输入counter">\
+                                <table class="screen-counter-table table table-hover table-striped">\
+                                    <thead>\
+                                        <tr>\
+                                            <th width="50px">\
+                                                <input class="chart-all" type="checkbox">\
+                                            </th>\
+                                            <th width="215px">Counters</th>\
+                                        </tr>\
+                                    </thead>\
+                                    <tbody>\
+                                        <tr>\
+                                            <td>\
+                                                <input class="chart-it" type="checkbox">\
+                                            </td>\
+                                            <td>cpu.idle</td>\
+                                        </tr>\
+                                        <tr>\
+                                            <td>\
+                                                <input class="chart-it" type="checkbox">\
+                                            </td>\
+                                            <td>cpu.idle</td>\
+                                        </tr>\
+                                        <tr>\
+                                            <td>\
+                                                <input class="chart-it" type="checkbox">\
+                                            </td>\
+                                            <td>cpu.idle</td>\
+                                        </tr>\
+                                        <tr>\
+                                            <td>\
+                                                <input class="chart-it" type="checkbox">\
+                                            </td>\
+                                            <td>cpu.idle</td>\
+                                        </tr>\
+                                        <tr>\
+                                            <td>\
+                                                <input class="chart-it" type="checkbox">\
+                                            </td>\
+                                            <td>cpu.idle</td>\
+                                        </tr>\
+                                        <tr>\
+                                            <td>\
+                                                <input class="chart-it" type="checkbox">\
+                                            </td>\
+                                            <td>cpu.idle</td>\
+                                        </tr>\
+                                    </tbody>\
+                                </table>\
+                            </form>\
+                        </div>\
+                        <div role="tabpanel" class="tab-pane" id="screen_tab">\
+                            <button class="btn btn-default btn-block mt15">\
+                                <span class="glyphicon glyphicon-repeat"></span>清空</button>\
+                            <table class="screen-selected-table table table-hover table-striped mt15">\
+                                <thead>\
+                                    <tr>\
+                                        <th width="200px">Counters</th>\
+                                        <th width="65px">\
+                                            <span>操作</span>\
+                                        </th>\
+                                    </tr>\
+                                </thead>\
+                                <tbody>\
+                                    <tr>\
+                                        <td>cpu.idle</td>\
+                                        <td>\
+                                            <span class="pointer glyphicon glyphicon-trash"></span>\
+                                        </td>\
+                                    </tr>\
+                                    <tr>\
+                                        <td>cpu.idle</td>\
+                                        <td>\
+                                            <span class="pointer glyphicon glyphicon-trash"></span>\
+                                        </td>\
+                                    </tr>\
+                                    <tr>\
+                                        <td>cpu.idle</td>\
+                                        <td>\
+                                            <span class="pointer glyphicon glyphicon-trash"></span>\
+                                        </td>\
+                                    </tr>\
+                                    <tr>\
+                                        <td>cpu.idle</td>\
+                                        <td>\
+                                            <span class="pointer glyphicon glyphicon-trash"></span>\
+                                        </td>\
+                                    </tr>\
+                                    <tr>\
+                                        <td>cpu.idle</td>\
+                                        <td>\
+                                            <span class="pointer glyphicon glyphicon-trash"></span>\
+                                        </td>\
+                                    </tr>\
+                                    <tr>\
+                                        <td>cpu.idle</td>\
+                                        <td>\
+                                            <span class="pointer glyphicon glyphicon-trash"></span>\
+                                        </td>\
+                                    </tr>\
+                                </tbody>\
+                            </table>\
+                        </div>\
+                    </div>\
+                </div>';
+
+        addTab(tabArr, '屏幕' + num + ' --关云长', module);
+    });
+
+    // 渲染chart html模板
+    function createChart(param, warp) {
+        var html = '<div class="c-highchart panel panel-default">\
+            <div class="panel-heading clearfix">\
+                <h3 class="panel-title pull-left">' + param.header + '</h3>\
+                <div class="btn-group pull-right">\
+                    <a class="btn btn-xs btn-default dropdown-toggle" data-toggle="dropdown" href="javascript:;">\
+                        <span class="caret"></span>\
+                    </a>\
+                    <ul class="dropdown-menu" style="min-width:100px; margin:0;">\
+                        <li><a href="#">查看大图</a></li>\
+                        <li><a href="#">求和</a></li>\
+                    </ul>\
+                </div>\
+            </div>\
+            <div class="panel-body">\
+                <div id="' + param.chartId + '" class="chart-box">\
+                </div>\
+                <table class="table chart-table table-striped table-hover" style="color:#63524D;">\
+                    <thead>\
+                        <tr>\
+                            <th width="250px"></th>\
+                            <th width="80px">last</th>\
+                            <th width="80px">min</th>\
+                            <th width="80px">avg</th>\
+                            <th width="80px">max</th>\
+                        </tr>\
+                    </thead>\
+                    <tbody class="chart-list">\
+                    </tbody>\
+                </table>\
+            </div>\
+        </div>';
+
+        warp.append(html);
+    }
+
+    // 渲染chart 绘图模板
+    function setCharts(id, data) {
+        $('#' + id).highcharts({
+            chart: {
+                type: 'line',
+                zoomType: 'x'
+            },
+            tooltip: {
+                xDateFormat: '%Y-%m-%d %H:%M:%S',
+                valueDecimals: 2
+            },
+            xAxis: {
+                type: 'datetime',
+                dateTimeLabelFormats: {
+                    hour: '%H:%M'
+                },
+                minRange: 1000, // 不能放大超过1s
+                minTickInterval: 1000 // 放大间隔最小为1s
+            },
+            series: data,
+            title: {
+                text: null
+            }
+        });
+    }
+
+    // 渲染 chart底部list
+    function setList(chartId, data) {
+        var chartList = $('#' + chartId).next().find('.chart-list'),
+            list = '';
+
+        data.forEach(function(e) {
+            list += '<tr>\
+                <td>' + e.name + '</td>\
+                <td>' + Number(e.last).toFixed(2) + '</td>\
+                <td>' + Number(e.min).toFixed(2) + '</td>\
+                <td>' + Number(e.avg).toFixed(2) + '</td>\
+                <td>' + Number(e.max).toFixed(2) + '</td>\
+            </tr>';
+        });
+
+        chartList.append(list);
+    }
+
+    // 关闭标签页
+    function deleteTab(that) {
+        var e = that.parent(),
+            prev = e.prev(),
+            tabArr = that.next().attr('aria-controls');
+        panel = $('#my_contents').find('#' + tabArr);
+
+        e.remove();
+        panel.remove();
+        prev.find('a').tab('show');
+    }
+
+    $(document).on('click', '.mytab-close', function() {
+        deleteTab($(this));
+    });
+
+    // 右侧选中栏高度设定
+    (function() {
+        var tabH = $(window).height();
+
+        $(".screen-tool-bar").height(tabH);
+
+        $(window).resize(function() {
+            var tabH = $(window).height();
+
+            $(".screen-tool-bar").height(tabH);
+        });
+    })();
+
+    // 右侧栏展开隐藏
+    $(document).on("click", ".left-menu", function() {
+        $(".screen-tool-bar").stop().animate({
+            "right": "-345px"
+        }, 600);
+    });
+
+    $(document).on("click", ".screen-tool-menu", function() {
+        $(".screen-tool-bar").stop().animate({
+            "right": "0"
+        }, 600);
+    });
+});

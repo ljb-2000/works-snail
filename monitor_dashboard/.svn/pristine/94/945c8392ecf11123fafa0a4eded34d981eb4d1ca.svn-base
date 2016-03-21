@@ -1,0 +1,86 @@
+/**
+ * 
+ * @authors Your Name (you@example.org)
+ * @date    2016-02-23 11:52:55
+ * @version $Id$
+ */
+
+// datetime
+$('#select_time').datetimepicker({
+    weekStart: 1,
+    todayBtn: 1,
+    autoclose: 1,
+    todayHighlight: 1,
+    startView: 3,
+    minView: 3,
+    forceParse: 0,
+    linkField: "mirror_field",
+    pickerPosition: "bottom-left"
+});
+
+$(function() {
+
+    // datatable
+    var lowchartTable = $('#lowdata_table').dataTable({
+        "sDom": 'lfrtip',
+        "bLengthChange": false,
+        "iDisplayLength": 10,
+        "aoColumnDefs": [{
+            "bSortable": false,
+            "aTargets": [0]
+        }],
+
+        // "aaSorting": [[ 8, "desc" ]],
+        "bProcessing": false,
+        "bServerSide": false,
+        "sPaginationType": "full_numbers",
+        //"sAjaxSource": "/warning_query/unrecovery/list",
+        "bFilter": false,
+        "oLanguage": {
+            "sUrl": '/static/src/tool/data_table/cn/jquery.dataTable.cn.txt'
+        }
+    });
+
+    // 导航高亮
+    (function lightNavbar() {
+        var path = window.location.pathname,
+            firstPath = path.substring(0, path.indexOf('/', 1));
+
+        $('.h-menu a[href^="' + firstPath + '"]').addClass("active");
+        $('.h-nav a[href="' + path + '"]').addClass("active");
+
+        var index = $('.h-menu .active').parent().index();
+
+        $('.h-nav>div').eq(index).removeClass('hide').siblings('div').addClass('hide');
+
+        var left = $('.h-nav .active').position().left,
+            width = $('.h-nav .active').width();
+
+        $('#line_active').css({
+            width: width,
+            left: left
+        });
+    })();
+
+    // 高度自适应
+    (function () {
+        var wrap = $(window).height() - 180;
+
+        $('.u-right .panel-body').css({
+            minHeight: wrap
+        });
+    })();
+
+    // 查询功能
+    function searchData() {
+        var curMonth = $('#month_data').val(),
+            product = $('#screen_product').val(),
+            set = $('#search_set').val(),
+            module = $('$search_module').val();
+
+        // TODO AJAX
+    }
+
+    // 点击查询按钮
+    $('#search_lowdata').on('click', searchData);
+});
