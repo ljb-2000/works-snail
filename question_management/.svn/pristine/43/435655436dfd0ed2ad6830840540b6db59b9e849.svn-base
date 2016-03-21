@@ -1,0 +1,21 @@
+[uwsgi]                                                                                                                                                              
+socket = 127.0.0.1:9003
+master = true
+pythonpath = /opt/www/question_management
+module = question_management.wsgi
+processes = 8
+;daemonize = /var/log/uwsgi_question.log
+buffer-size = 65535
+pidfile = /tmp/uwsgi_question.pid
+cpu-affinity = 1
+memory-report = 1
+threads = 8
+listen = 128
+post-buffering = 100M
+stats = 127.0.0.1:1719
+socket-timeout = 120
+max-requests = 5000
+disable-logging = false
+;touch-reload=/opt/www/question_management/question_management.ini
+;py-autoreload=3
+;env=DJANGO_SETTINGS_MODULE=question_management.settings

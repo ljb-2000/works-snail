@@ -1,0 +1,40 @@
+2015-10-22 15:47:59,726 [Thread-16:27312] [logger:42] [DEBUG]- [user login] luozh login ok.
+2015-10-26 09:34:18,085 [Thread-9:4772] [logger:42] [DEBUG]- [user login] luozh login ok.
+2015-10-26 14:44:48,686 [Thread-48:5252] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:45:01,236 [Thread-52:6280] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:45:05,878 [Thread-54:6556] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:45:12,371 [Thread-56:6500] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:45:20,351 [Thread-58:3552] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:45:45,091 [Thread-60:6516] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:50:12,049 [Thread-91:6008] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:50:16,914 [Thread-93:6240] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:51:56,084 [Thread-117:6776] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:52:01,413 [Thread-119:6560] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:52:12,607 [Thread-121:6308] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:52:15,492 [Thread-123:6564] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:52:17,598 [Thread-125:6648] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:52:20,763 [Thread-127:5060] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 14:52:28,928 [Thread-129:6648] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 15:14:55,434 [Thread-290:7004] [logger:42] [DEBUG]- [user login] luozh login ok.
+2015-10-26 15:18:06,141 [Thread-406:6164] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 15:20:01,385 [Thread-441:4292] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 15:20:07,727 [Thread-443:6392] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 16:00:54,482 [Thread-944:3120] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 16:01:47,676 [Thread-975:6728] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 16:02:41,891 [Thread-1006:7012] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 16:02:54,049 [Thread-1013:4376] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 16:03:06,582 [Thread-1018:856] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 16:03:17,710 [Thread-1023:6984] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 16:03:37,944 [Thread-1055:5460] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 16:03:47,506 [Thread-1062:2452] [logger:79] [ERROR]- Product对象不存在（{'id': 0}）
+2015-10-26 16:59:31,644 [Thread-28:7292] [logger:81] [ERROR]- Product对象存在多条记录（{'title__icontains': u'a'}）
+2015-10-26 16:59:39,111 [Thread-29:7836] [logger:81] [ERROR]- Product对象存在多条记录（{'title__icontains': u'1'}）
+2015-10-26 16:59:41,210 [Thread-30:5040] [logger:81] [ERROR]- Product对象存在多条记录（{'title__icontains': u'1'}）
+2015-10-26 17:02:31,480 [Thread-31:7824] [logger:79] [ERROR]- Product对象不存在（{'title__icontains': u'k'}）
+2015-10-26 17:02:56,187 [Thread-32:7292] [logger:81] [ERROR]- Product对象存在多条记录（{'title__icontains': u'a'}）
+2015-10-26 17:03:31,267 [Thread-28:7240] [logger:81] [ERROR]- Product对象存在多条记录（{'title__icontains': u'1'}）
+2015-10-26 17:03:57,016 [Thread-29:6712] [logger:81] [ERROR]- Product对象存在多条记录（{'title__icontains': u'a'}）
+2015-10-27 09:16:26,624 [Thread-395:2060] [logger:42] [DEBUG]- [user login] luozh login ok.
+2015-10-27 09:35:47,359 [Thread-632:9156] [logger:42] [DEBUG]- [user login] luozh login ok.
+2015-10-27 17:25:02,030 [Thread-934:9468] [logger:42] [DEBUG]- [user login] luozh login ok.
+2015-11-03 11:49:30,405 [Thread-9:4484] [logger:42] [DEBUG]- [user login] luozh login ok.

@@ -1,0 +1,124 @@
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+                <h3 class="modal-title">
+                    <span class="glyphicon glyphicon-edit"></span>
+                    问题跟进
+                </h3>
+            </div>
+            <div class="modal-body">
+                <form class="m-inputform form-horizontal" name="issueModify" data-id="{{ question.id }}">  
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">所属业务：<span class="red">*</span></label>
+                        <div class="col-sm-6">
+                          <select class="m-product form-control">
+                                <option value="">--请选择所属业务--</option>
+                                {% for product_name in product_add %}
+                                    <option value="{{ product_name }}" {% if product_name == question.product.name %}selected{% endif %}>{{ product_name }}</option>
+                                {% endfor %}
+                          </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">发现时间：<span class="red">*</span></label>
+                        <div class="col-sm-4">
+                              <input type="text" class="modify-time form-control" value="{{ question.qtime }}" disabled>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">状态：<span class="red">*</span></label>
+                        <div class="col-sm-6">
+                            <div class="btn-group m-status" data-toggle="buttons">
+                                <label class="m-open btn btn-default {% if question.status == 0 %}active{% else %}disabled{% endif %}">
+                                    <input type="radio" name="0" autocomplete="off"> open
+                                </label>
+                                <label class="m-close btn btn-default {% if question.status == 1 %}active{% endif %}">
+                                    <input type="radio" name="1" autocomplete="off"> close
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">级别：<span class="red">*</span></label>
+                        <div class="col-sm-6">
+                            <div class="btn-group m-level" data-toggle="buttons">
+                                 <label class="btn btn-default {% if question.level == 1 %}active{% endif %}">
+                                    <input type="radio" name="1" autocomplete="off"> 严重
+                                </label>
+                                <label class="btn btn-default {% if question.level == 2 %}active{% endif %}">
+                                    <input type="radio" name="2" autocomplete="off"> 一般
+                                </label>
+                                <label class="btn btn-default {% if question.level == 3 %}active{% endif %}">
+                                    <input type="radio" name="3" autocomplete="off"> 轻微
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">类型：<span class="red">*</span></label>
+                        <div class="col-sm-8">
+                            <div class="btn-group m-type" data-toggle="buttons">
+                                 <label class="btn btn-default {% if question.qtype == 1 %}active{% endif %}">
+                                    <input type="radio" name="1" autocomplete="off"> 硬件
+                                </label>
+                                <label class="btn btn-default {% if question.qtype == 2 %}active{% endif %}">
+                                    <input type="radio" name="2" autocomplete="off"> IDC环境
+                                </label>
+                                <label class="btn btn-default {% if question.qtype == 3 %}active{% endif %}">
+                                    <input type="radio" name="3" autocomplete="off"> 系统及软件
+                                </label>
+                                <label class="btn btn-default {% if question.qtype == 4 %}active{% endif %}">
+                                    <input type="radio" name="4" autocomplete="off"> 应用程序
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">标题：<span class="red">*</span></label>
+                        <div class="col-sm-6">
+                            <input type="text" class="m-title form-control" name="title" placeholder="限制50字符，必填" value="{{ question.title }}">
+                        </div>
+                        <span class="pass glyphicon glyphicon-ok hide"></span>
+                        <span class="inpass glyphicon glyphicon-remove hide"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">问题描述：<span class="red">*</span></label>
+                        <div class="col-sm-6">
+                            <textarea class="m-describe form-control h75" name="description" placeholder="限制1500字符，必填" ng-maxlength="1500">{{ question.describe }}</textarea>
+                        </div>
+                        <span class="pass glyphicon glyphicon-ok hide"></span>
+                        <span class="inpass glyphicon glyphicon-remove hide"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">问题原因：<span class="red pull-right close-show {% if question.status == 0 %}hide{% endif %}">*</span></label>
+                        <div class="col-sm-6">
+                            <textarea class="m-reason form-control h75" name="reason" placeholder="限制1500字符，状态为close时必填">{{ question.reason }}</textarea>
+                        </div>
+                        <span class="pass glyphicon glyphicon-ok hide"></span>
+                        <span class="inpass glyphicon glyphicon-remove hide"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">解决措施：<span class="red pull-right close-show {% if question.status == 0 %}hide{% endif %}">*</span></label>
+                        <div class="col-sm-6">
+                            <textarea class="m-result form-control h75" name="result" placeholder="限制1500字符，状态为close时必填">{{ question.solution }}</textarea>
+                        </div>
+                        <span class="pass glyphicon glyphicon-ok hide"></span>
+                        <span class="inpass glyphicon glyphicon-remove hide"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="text-align:center;">
+                <button class="m-submit btn btn-primary mr82" type="button">
+                    <span class="glyphicon glyphicon-ok"></span>
+                    提交
+                </button>
+                <button class="m-clear btn btn-default" type="button" data-dismiss="modal">
+                    <span class="glyphicon glyphicon-remove"></span>
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
