@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/2
+# Usage:
+# --------------------------------
+
+from django.core.management.base import BaseCommand
+import traceback
+import time
+import datetime
+import json
+from releaseinfo import PLUGIN_SETTING_KEY_PREFIX
+from utils.redisclient import rc
+from apps.plugin.models import ServerPluginSetting
+
+TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+class Command(BaseCommand):
+
+    def handle(self, **options):
+        while True:
+            try:
+                settings = ServerPluginSetting.objects.all()
+                setting_dict = {}
+                for setting in settings:
+                    setting_dict.setdefault(setting.ip,{}).update({setting.key:setting.value})
+
+                for ip,value in setting_dict.iteritems():
+                    rc.set(PLUGIN_SETTING_KEY_PREFIX + ip, json.dumps(value), ex=60 * 60)
+            except:
+                print traceback.format_exc()
+            print datetime.datetime.now().strftime(TIME_FORMAT)," Done"
+            time.sleep(60 * 1)

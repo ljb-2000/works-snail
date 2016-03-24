@@ -1,0 +1,273 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+# --------------------------------
+# Author: shenjh@snail.com
+# Date: 2015/12/7
+# Usage:
+# --------------------------------
+import json
+import time
+import datetime
+import requests
+import traceback
+from apps.plugin.models import ServerPluginSetting
+from releaseinfo import PRODUCT_URL,SEND_LOG_URL, PLUGIN_SETTING_KEY_PREFIX, QUERY_API, ACCOUNT_AUTH_URL, sysid,PRODUCT_ALL_URL
+from utils.db_conn import DB, get_conn_monitor
+from config import monitor
+from utils.redisclient import rc
+from enums.enum_user import MENUS
+import urllib, urllib2
+import pymssql
+
+def avg(a):
+    if a:
+        return reduce(lambda x,y: x+y, a)/len(a)
+    return 0
+
+class MSSQL:
+    """
+    对pymssql的简单封装
+  pymssql库，该库到这里下载：http://www.lfd.uci.edu/~gohlke/pythonlibs/#pymssql
+    使用该库时，需要在Sql Server Configuration Manager里面将TCP/IP协议开启
+    """
+
+    def __init__(self,host,user,pwd):
+        self.host = host
+        self.user = user
+        self.pwd = pwd
+
+    def __GetConnect(self):
+        """
+        得到连接信息
+        返回: conn.cursor()
+        """
+        self.conn = pymssql.connect(host=self.host,user=self.user,password=self.pwd,charset="utf8")
+        cur = self.conn.cursor()
+        if not cur:
+            print u"连接数据库失败"
+            return None
+        else:
+            return cur
+
+    def ExecQuery(self,sql):
+        """
+        执行查询语句
+        返回的是一个包含tuple的list，list的元素是记录行，tuple的元素是每行记录的字段
+
+        调用示例：
+                ms = MSSQL(host="localhost",user="sa",pwd="123456",db="PythonWeiboStatistics")
+                resList = ms.ExecQuery("SELECT id,NickName FROM WeiBoUser")
+                for (id,NickName) in resList:
+                    print str(id),NickName
+        """
+        cur = self.__GetConnect()
+        cur.execute(sql)
+        res = cur.fetchall()
+#        res = cur.fetchone()
+
+        #查询完毕后必须关闭连接
+        self.conn.close()
+        return res
+
+    def ExecNonQuery(self,sql):
+        """
+        执行非查询语句
+
+        调用示例：
+            cur = self.__GetConnect()
+            cur.execute(sql)
+            self.conn.commit()
+            self.conn.close()
+        """
+        cur = self.__GetConnect()
+        cur.execute(sql)
+        self.conn.commit()
+        self.conn.close()
+
+def get_user_perm(user):
+    uid = user.last_name
+    data = {'action':'getfuncjson1','SysId':sysid,'UID':uid}
+    req = urllib2.Request(ACCOUNT_AUTH_URL)
+       
+    params = urllib.urlencode(data)
+    response = urllib2.urlopen(req, params)
+    jsonText = response.read()
+    json_dict = json.loads(jsonText)
+    userinfo_list = json_dict.get('userinfo',[])
+    for userinfo in userinfo_list:
+        perm_name = userinfo.get('sFunctionName')
+        if perm_name and MENUS.get(perm_name):
+            setattr(user, 'has_perm_%s'%MENUS.get(perm_name), True)
+
+#     for perm in MENUS.values():
+#         setattr(user, 'has_perm_%s'%perm, True)
+
+    return user
+
+def get_product_list_by_user(cnname):
+    """
+        get cn product list of user's cnname.
+    """
+    p_list = []
+    if cnname:
+        try:
+            resp = requests.post(PRODUCT_URL,data={
+                "username":cnname
+            }).json()
+            p_list=[item['productname'] for item in resp]
+        except Exception,e:
+            error = traceback.format_exc()
+            print error
+    return p_list
+
+
+def get_hosts_of_user(username):
+    products = get_product_list_by_user(username)
+    if not products:
+        return []
+    sql = "select endpoint from alarm_agentinfo WHERE product_name in (\'%s\')"%("','".join(products))
+    monitor_db_conn = DB(
+        monitor.DB_HOST,
+        monitor.DB_PORT,
+        monitor.DB_USER,
+        monitor.DB_PASS,
+        monitor.DB_NAME)
+    result = monitor_db_conn.query_all(sql)
+    return sorted([item['endpoint'] for item in result])
+
+def get_set_by_ip_list(ip_list):
+    if not ip_list:
+        return []
+    sql = """select DISTINCT p_set from alarm_agentinfo WHERE endpoint in (\'%s\')"""%("','".join(ip_list))
+    monitor_db_conn = DB(
+        monitor.DB_HOST,
+        monitor.DB_PORT,
+        monitor.DB_USER,
+        monitor.DB_PASS,
+        monitor.DB_NAME)
+    result = monitor_db_conn.query_all(sql)
+    data = set()
+    for item in result:
+        p_set = item['p_set']
+        if p_set:
+            [data.add(i) for i in p_set.split(',')]
+    return list(data)
+
+def send_log(username,action,message,obj_type,remark=""):
+    try:
+        require_list = ['user','action','message']
+        data = {
+            "user":username,
+            "action":action,
+            "message":message,
+            "source":"monitor_dashboard",
+            "obj_type":obj_type,
+            "remark":remark
+        }
+        for i in require_list:
+            if not data[i]:
+                raise RuntimeError,"ERROR: {0} IS REQUIRED"
+        if data['action'] not in ['login','logout','add','delete','update']:
+            raise RuntimeError,"ERROR: invalid action value"
+        if data['obj_type'] not in ['plugin','host','user',"userself","screen"]:
+            raise RuntimeError,"ERROR: invalid obj_type value"
+        requests.post(SEND_LOG_URL,data=data,timeout=5)
+    except RuntimeError,e:
+        raise e
+    except Exception,e:
+        print e
+        print traceback.format_exc()
+
+def update_plugin_cache_by_ips(ip_list):
+    if not ip_list:
+        return
+    print "start update cache, ips:",ip_list
+    settings = ServerPluginSetting.objects.filter(ip__in=ip_list)
+    setting_dict = {}
+    for setting in settings:
+        setting_dict.setdefault(setting.ip,{}).update({setting.key:setting.value})
+
+    for ip,value in setting_dict.iteritems():
+        rc.set(PLUGIN_SETTING_KEY_PREFIX+ip,json.dumps(value),ex=60*60)
+    print "update cache done."
+    
+    
+def get_history_data(endpoint, counter, end=None, start=None, cf=None):
+    if not end:
+        end = int(time.time()) # 起始时间戳
+    if not start:
+        start = end - 3600  # 截至时间戳 （例子中为查询过去一个小时的数据）
+    if not cf:
+        cf = "AVERAGE"
+    
+    d = {
+            "start": start,
+            "end": end,
+            "cf": cf,
+            "endpoint_counters": [
+                {
+                    "endpoint": endpoint,
+                    "counter": counter,
+                },
+            ],
+    }
+    
+    query_api = QUERY_API + 'graph/history'
+    r = requests.post(query_api, data=json.dumps(d))
+    ret_dict = json.loads(r.text)[0]
+    values_list = ret_dict.get('Values')
+    return values_list
+
+def get_last_data(endpoint, counter):
+    d = [{"endpoint":endpoint, "counter":counter}]
+    query_api = QUERY_API + 'graph/last'
+    try:
+        r = requests.post(query_api, data=json.dumps(d))
+        ret_list = json.loads(r.text)
+        ret_dict = ret_list[0]
+        value_dict = ret_dict.get('value')
+    except:
+        value_dict = {}
+        print d
+    return value_dict
+
+def get_last_datas(endpoints, counter):
+    if endpoints:
+        d = [{"endpoint":ip, "counter":counter} for ip in endpoints]
+        query_api = QUERY_API + 'graph/last'
+        try:
+            r = requests.post(query_api, data=json.dumps(d))
+            ret_list = json.loads(r.text)
+        except:
+            ret_list = []
+            print d
+        return ret_list
+    return []
+
+def get_all_products():
+    """
+        获取所有产品列表.
+    """
+    res =  requests.post(PRODUCT_ALL_URL).json()
+    products = []
+    for i in res:
+        products.append(i['VERSION_NAME'])
+    return products
+
+def get_agent_info_result(sql):
+    """
+        获取agentinfo查询.
+    """
+    try:
+        monitor_db_conn = get_conn_monitor()
+        result = monitor_db_conn.query_all(sql)
+        return result
+    except Exception,e:
+        print traceback.format_exc()
+    return {}
+
+def get_last_month():
+    now = datetime.datetime.now()
+    last = "%4d-%02d"%(now.year-1 if now.month==1 else now.year,12 if now.month==1 else now.month-1)
+    return last
