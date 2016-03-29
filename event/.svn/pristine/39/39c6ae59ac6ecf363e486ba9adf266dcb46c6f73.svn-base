@@ -1,0 +1,90 @@
+@charset "UTF-8";
+/**
+ * 
+ * @authors luozh@snail.com
+ * @date    2016-03-22 11:24:40
+ * @description 公用样式
+ */
+
+html,
+body {
+    font-family: Arial, "Helvetica Neue", "Luxi Sans", "DejaVu Sans", Tahoma, "Hiragino Sans GB", STHeiti, "Microsoft YaHei";
+}
+
+body {
+    min-width: 1024px; 
+    background-color: #ffffff;
+}
+
+a {
+   color: #005380;
+}
+
+a:active,
+a:focus {
+    outline: none !important;
+}
+
+ul {
+    list-style: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #ccc !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+button:focus {
+    border-color: none !important;
+    outline: none !important;
+}
+
+textarea {
+    resize: none !important;
+}
+
+.form-control[disabled],
+fieldset[disabled] .form-control {
+    cursor: default !important;
+}
+
+.mt30 {
+    margin-top: 30px;
+}
+
+.pr0 {
+    padding-right: 0;
+}
+
+.table tr td {
+    font-size: 12px;
+}
+
+.right-wrap {
+    padding: 0 15px;
+}
+
+.right-header {
+    border-bottom: 1px solid #DDD;
+    padding: 16px 0px;
+    min-height: 70px;
+}
+
+.right-header h5 {
+    margin: 8px 8px 8px 0;
+    display: inline-block;
+    text-indent: 8px;
+    border-left: 2px solid #88B7E0;
+}
+
+.right-body {
+    position: relative;
+    padding-top: 20px;
+}
+
+.modal-backdrop {
+    z-index: 0;
+}
